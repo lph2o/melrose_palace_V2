@@ -1,0 +1,6 @@
+{
+  "name": "Sénégal Immobilier Consulting",
+  "description": "Vente de parcelles de 150 m² à Sébikhotane (Sénégal) avec délibération et NICAD. Terrains accessibles dès 300 €/mois pour la diaspora et résidents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
