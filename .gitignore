@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Artifact généré (public/mobile-audit.html + scripts/build-mobile-audit.cjs)
+public/mobile-audit-standalone.html

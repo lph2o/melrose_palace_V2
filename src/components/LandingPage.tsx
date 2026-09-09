@@ -30,7 +30,8 @@ import {
   Layers,
   ChevronRight
 } from 'lucide-react';
-import { Language, BlogArticle, SiteSettings, Parcel } from '../types';
+import { Language, BlogArticle, SiteSettings, Parcel, UITranslations } from '../types';
+import { insertLead } from '../lib/supabase';
 import {
   TRANSLATIONS,
   CONNECTIVITY_ITEMS,
@@ -38,78 +39,17 @@ import {
   FAQ_ITEMS,
   BLOG_ARTICLES,
   COMPLEMENTARY_PACKS,
-  PAYMENT_SCHEDULE_TIERS
+  PAYMENT_SCHEDULE_TIERS,
+  TESTIMONIALS
 } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
-import aerialParcelsImage from '../assets/images/54_parcelles_officiel.jpg';
+import VideoShowcase from './VideoShowcase';
+const aerialParcelsImage = '/images/54_parcelles.png';
 import {
   CADASTRAL_BORNES,
   CADASTRAL_ROAD_NETWORK,
   CADASTRAL_PARCELS_GEO
 } from '../cadastreGeometry';
-
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: 'Dr. Mamadou Ndiaye',
-    role: {
-      FR: 'Ingénieur Télécom (Diaspora France - Lyon)',
-      EN: 'Telecom Engineer (Diaspora France - Lyon)',
-    },
-    location: 'Lyon / Dakar',
-    rating: 5,
-    quote: {
-      FR: 'Vivant à l\'étranger, j\'avais très peur des arnaques et des doubles ventes. Avec Sénégal Immobilier Consulting, j\'ai pu vérifier la délibération et le NICAD avant tout engagement. La mensualité de 300 € est d\'une souplesse incroyable.',
-      EN: 'Living abroad, I feared scams and duplicate sales. With Sénégal Immobilier Consulting, I verified the deliberation and NICAD before committing. The €300/mo payment is remarkably accessible.',
-    },
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
-    duration: '1:45',
-    relationship: {
-      FR: 'Acquéreur Parcelle #04 (150 m²)',
-      EN: 'Owner of Plot #04 (150 sqm)',
-    },
-  },
-  {
-    id: 2,
-    name: 'Aïssatou Ba',
-    role: {
-      FR: 'Cadre Financière (Diaspora USA - New York)',
-      EN: 'Financial Manager (Diaspora USA - New York)',
-    },
-    location: 'New York / Dakar',
-    rating: 5,
-    quote: {
-      FR: 'La position entre Diamniadio et l\'AIBD est parfaite. J\'ai pris le Pack 2 avec clôture immédiate : mon terrain est protégé et bien délimité. L\'équipe m\'a envoyé des vidéos régulières sur WhatsApp.',
-      EN: 'The position between Diamniadio and AIBD is strategic. I picked Pack 2 with perimeter fencing: my plot is secured from day one with video updates via WhatsApp.',
-    },
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop',
-    duration: '2:10',
-    relationship: {
-      FR: 'Acquéreur Parcelle #09 (Pack Clôture)',
-      EN: 'Owner of Plot #09 (Fencing Pack)',
-    },
-  },
-  {
-    id: 3,
-    name: 'Ousmane Diop',
-    role: {
-      FR: 'Entrepreneur & Investisseur Patrimonial',
-      EN: 'Entrepreneur & Estate Investor',
-    },
-    location: 'Dakar / Thiès',
-    rating: 5,
-    quote: {
-      FR: 'Acheter comptant à 13 500 € pour 150 m² à Sébikhotane est une opportunité en or. Avec la gare TER à 4 km et les grands chantiers publics, la plus-value dans 3 à 5 ans sera remarquable.',
-      EN: 'Buying full cash at €13,500 for 150 sqm in Sebikotane is a golden opportunity. With the TER station 4 km away, capital gains in 3 to 5 years will be substantial.',
-    },
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
-    duration: '1:30',
-    relationship: {
-      FR: 'Paiement Comptant (13 500 €)',
-      EN: 'Cash Buyer (€13,500)',
-    },
-  },
-];
 
 interface LandingPageProps {
   currentLanguage: Language;
@@ -137,6 +77,7 @@ export default function LandingPage({
   onSelectParcel,
 }: LandingPageProps) {
   const t = TRANSLATIONS[currentLanguage];
+  const ui = t.ui as UITranslations;
   const [activeFaq, setActiveFaq] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -175,6 +116,7 @@ export default function LandingPage({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+
   useEffect(() => {
     if (globalActiveFaqId) {
       setActiveFaq(globalActiveFaqId);
@@ -205,8 +147,21 @@ export default function LandingPage({
     setTimeout(() => {
       setFormLoading(false);
       setIsSubmitted(true);
+      // Enregistre la demande dans Supabase (Espace Gérant → onglet Demandes de contact)
+      insertLead({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        interest: formData.interest,
+        message: formData.message,
+      });
       // Construct WhatsApp message URL to redirect directly
-      const msg = `Bonjour Sénégal Immobilier Consulting, je m'appelle ${formData.name}. Je souhaite recevoir le dossier complet pour les parcelles de 150 m² à Sébikhotane (${formData.interest}). Tél: ${formData.phone}, Email: ${formData.email}. Note: ${formData.message}`;
+      const msg = ui.contactWaMsg
+        .replace('{name}', formData.name)
+        .replace('{interest}', formData.interest)
+        .replace('{phone}', formData.phone)
+        .replace('{email}', formData.email)
+        .replace('{message}', formData.message);
       const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(msg)}`;
       window.open(url, '_blank', 'noopener,noreferrer');
       setFormData({ name: '', email: '', phone: '', interest: 'Parcelle 150 m²', message: '' });
@@ -214,19 +169,23 @@ export default function LandingPage({
   };
 
   const openWhatsAppSimulator = () => {
-    const msg = `Bonjour Sénégal Immobilier Consulting, je souhaite étudier mon plan de financement personnalisé pour une parcelle de 150 m² à Sébikhotane :\n- Apport : ${simulatorDeposit.toLocaleString()} €\n- Reste : ${calculatedRemaining.toLocaleString()} €\n- Mensualité : ${simulatorMonthly} €/mois\n- Durée : ${calculatedDuration} mois.\nMerci de me recontacter pour m'indiquer la disponibilité.`;
+    const msg = `${ui.simWaMsgPrefix}\n- Apport : ${simulatorDeposit.toLocaleString()} €\n- Reste : ${calculatedRemaining.toLocaleString()} €\n- Mensualité : ${simulatorMonthly} €/mois\n- Durée : ${calculatedDuration} mois.\n${ui.simWaMsgSuffix}`;
     const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const openWhatsAppDossier = () => {
-    const msg = `Bonjour Sénégal Immobilier Consulting, je souhaite recevoir le dossier complet (délibération, plan cadastral, grille tarifaire) pour le programme de Sébikhotane.`;
+    const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(ui.dossierWaMsg)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const openWhatsApp = (msg: string) => {
     const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="bg-background text-on-background overflow-x-hidden">
+    <div className="bg-background text-on-background overflow-x-clip">
       {/* Scroll Depth Progress Indicator */}
       <div 
         id="scroll-progress-container"
@@ -241,36 +200,37 @@ export default function LandingPage({
 
       {/* TOP PROMO BANNER FOR FIRST 10 BUYERS */}
       {settings.promoActive && (
-        <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white text-xs font-medium py-2.5 px-4 text-center mt-[62px] sticky top-[56px] z-30 shadow-md">
+        <div
+          className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white text-xs font-medium py-2.5 px-4 text-center sticky z-30 shadow-md"
+          style={{ top: 'var(--nav-h)', marginTop: 'var(--nav-h)' }}
+        >
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-4">
             <span className="bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px]">
-              ⭐ {currentLanguage === 'FR' ? 'OFFRE SPÉCIALE LANCEMENT' : 'SPECIAL LAUNCH PROMO'}
+              ⭐ {settings.promoTitle || ui.promoBadge}
             </span>
             <span>
-              {currentLanguage === 'FR'
-                ? `10 Premières Parcelles : Frais de bornage & constitution de dossier offerts ! (Encore ${settings.promoPlotsRemaining} disponibles)`
-                : `First 10 Plots: Boundary survey & registration costs included! (${settings.promoPlotsRemaining} remaining)`}
+              {settings.promoDesc || ui.promoText.replace('{remaining}', String(settings.promoPlotsRemaining))}
             </span>
             <button
               onClick={() => {
                 setActiveTab('masterplan');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="underline font-bold hover:text-amber-100 cursor-pointer text-xs ml-1"
+              className="inline-block underline font-bold hover:text-amber-100 cursor-pointer text-xs ml-1 py-2 px-1"
             >
-              {currentLanguage === 'FR' ? 'Choisir ma parcelle →' : 'Pick my plot →'}
+              {ui.promoCta}
             </button>
           </div>
         </div>
       )}
 
       {/* SECTION 1: HERO VIEW */}
-      <section className={`relative min-h-[92vh] flex items-center justify-center overflow-hidden ${settings.promoActive ? 'pt-12 sm:pt-16' : 'pt-20 sm:pt-24'} pb-16`}>
+      <section className={`relative min-h-[92vh] flex items-center justify-center overflow-x-clip ${settings.promoActive ? 'pt-12 sm:pt-16' : 'pt-20 sm:pt-24'} pb-16`}>
         {/* Background Visual */}
         <div className="absolute inset-0 z-0 bg-[#001c13]">
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1800&auto=format&fit=crop"
-            alt="Terrains Sébikhotane Sénégal Immobilier Consulting"
+            alt={ui.heroImgAlt}
             className="w-full h-full object-cover opacity-35"
             referrerPolicy="no-referrer"
           />
@@ -353,7 +313,7 @@ export default function LandingPage({
                   className="w-full sm:w-auto bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/50 px-6 py-4 rounded-xl font-sans font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg"
                 >
                   <BookOpen className="w-4 h-4 text-amber-300" />
-                  <span>Plaquette PDF</span>
+                  <span>{ui.heroBrochureBtn}</span>
                 </button>
               )}
             </div>
@@ -365,7 +325,7 @@ export default function LandingPage({
           <div className="bg-[#002217]/95 backdrop-blur-md border-2 border-secondary-fixed/50 p-4 rounded-xl flex items-center space-x-3.5 shadow-2xl pointer-events-auto flex-1 hover:border-secondary-fixed transition-all">
             <div className="w-12 h-12 bg-secondary-fixed text-primary rounded-xl flex flex-col items-center justify-center font-mono font-bold shadow-md shrink-0">
               <span className="text-base font-bold leading-none">20</span>
-              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">lots</span>
+              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">{ui.heroStatLots}</span>
             </div>
             <div className="min-w-0">
               <p className="font-sans text-xs font-bold text-secondary-fixed uppercase tracking-wider mb-0.5">
@@ -380,14 +340,14 @@ export default function LandingPage({
           <div className="bg-[#002217]/95 backdrop-blur-md border-2 border-secondary-fixed/50 p-4 rounded-xl flex items-center space-x-3.5 shadow-2xl pointer-events-auto flex-1 hover:border-secondary-fixed transition-all">
             <div className="w-12 h-12 bg-secondary-fixed text-primary rounded-xl flex flex-col items-center justify-center font-mono font-bold shadow-md shrink-0">
               <span className="text-base font-bold leading-none">150</span>
-              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">m²</span>
+              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">{ui.heroStatSqm}</span>
             </div>
             <div className="min-w-0">
               <p className="font-sans text-xs font-bold text-secondary-fixed uppercase tracking-wider mb-0.5">
                 {currentLanguage === 'FR' ? 'Superficie de Référence' : 'Standard Plot Size'}
               </p>
               <p className="font-serif text-sm font-bold text-white tracking-tight leading-snug">
-                150 m² • Délibération & NICAD
+                {ui.heroStatSizeVal}
               </p>
             </div>
           </div>
@@ -395,14 +355,14 @@ export default function LandingPage({
           <div className="bg-[#002217]/95 backdrop-blur-md border-2 border-secondary-fixed/50 p-4 rounded-xl flex items-center space-x-3.5 shadow-2xl pointer-events-auto flex-1 hover:border-secondary-fixed transition-all">
             <div className="w-12 h-12 bg-secondary-fixed text-primary rounded-xl flex flex-col items-center justify-center font-mono font-bold shadow-md shrink-0">
               <span className="text-sm font-bold leading-none">300€</span>
-              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">/mois</span>
+              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">{ui.heroStatPerMonth}</span>
             </div>
             <div className="min-w-0">
               <p className="font-sans text-xs font-bold text-secondary-fixed uppercase tracking-wider mb-0.5">
                 {currentLanguage === 'FR' ? 'Paiement Échelonné' : 'Flexible Payment Plan'}
               </p>
               <p className="font-serif text-sm font-bold text-white tracking-tight leading-snug">
-                3 000 € d'apport • 300 €/mois × 40 mois
+                {ui.heroStatPayVal}
               </p>
             </div>
           </div>
@@ -452,10 +412,10 @@ export default function LandingPage({
               </div>
               <div>
                 <p className="font-serif font-bold text-sm sm:text-base text-amber-200">
-                  Engagement Contractuel Ferme
+                  {ui.guaranteesCommitment}
                 </p>
                 <p className="text-xs text-white/80 font-light">
-                  Remboursement intégral si nos engagements contractuels ne sont pas respectés • Dossier vérifiable avant tout paiement.
+                  {ui.guaranteesCommitmentDesc}
                 </p>
               </div>
             </div>
@@ -463,7 +423,7 @@ export default function LandingPage({
               onClick={openWhatsAppDossier}
               className="bg-amber-400 hover:bg-amber-300 text-primary px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors shrink-0 cursor-pointer shadow-md"
             >
-              Vérifier les documents
+              {ui.guaranteesVerifyDocs}
             </button>
           </div>
         </div>
@@ -478,8 +438,8 @@ export default function LandingPage({
             {visionViewMode === 'overlay' ? (
               <img
                 src={aerialParcelsImage}
-                alt="Vue aérienne par drone et délimitation réelle des 54 parcelles de terrain à Sébikhotane"
-                className="w-full h-full object-cover transform duration-700 group-hover:scale-102"
+                alt={ui.aerialImgAlt}
+                className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -594,7 +554,7 @@ export default function LandingPage({
             <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-30 pointer-events-auto">
               <span className="inline-flex items-center gap-1.5 bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/40 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide shadow-md">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                {visionViewMode === 'overlay' ? 'Orthophoto Drone • 54 Parcelles' : 'Plan Cadastral 2D'}
+                {visionViewMode === 'overlay' ? ui.visionOverlayBadge : ui.visionPlanBadge}
               </span>
 
               <div className="flex items-center bg-black/75 backdrop-blur-md border border-white/20 p-1 rounded-xl space-x-1 text-[10px] font-bold text-white">
@@ -604,7 +564,7 @@ export default function LandingPage({
                     visionViewMode === 'overlay' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/80'
                   }`}
                 >
-                  Vue Drone
+                  {ui.visionViewDrone}
                 </button>
                 <button
                   onClick={() => setVisionViewMode('plan')}
@@ -612,7 +572,7 @@ export default function LandingPage({
                     visionViewMode === 'plan' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/80'
                   }`}
                 >
-                  Plan 2D
+                  {ui.visionViewPlan}
                 </button>
               </div>
             </div>
@@ -621,13 +581,11 @@ export default function LandingPage({
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 z-20 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
               <div>
                 <span className="bg-secondary-fixed text-primary px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider shadow-xs">
-                  Plan Certifié 54 Lots • B1 à B17
+                  {ui.visionCertifiedBadge}
                 </span>
-                <h4 className="font-serif font-bold text-base sm:text-lg text-white">Sébikhotane • Domaine Dun Tni</h4>
+                <h4 className="font-serif font-bold text-base sm:text-lg text-white">{ui.visionDomainName}</h4>
                 <p className="text-[11px] text-white/90 font-light">
-                  {currentLanguage === 'FR'
-                    ? 'Délimitation certifiée en pointillés blancs • Parcelles viabilisées'
-                    : 'Certified white dashed boundaries • Serviced plots'}
+                  {ui.visionDashedLegendEn}
                 </p>
               </div>
 
@@ -638,7 +596,7 @@ export default function LandingPage({
                 }}
                 className="bg-white/15 hover:bg-white/25 border border-white/40 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer backdrop-blur-md shrink-0 shadow-md"
               >
-                <span>Explorer le Plan</span>
+                <span>{ui.heroExplorePlan}</span>
                 <ChevronRight className="w-3.5 h-3.5 text-secondary-fixed" />
               </button>
             </div>
@@ -705,6 +663,9 @@ export default function LandingPage({
         </div>
       </section>
 
+      {/* SECTION 2.5: VIDÉOS PRÉSENTATION DU DOMAINE */}
+      <VideoShowcase currentLanguage={currentLanguage} videos={settings.content?.videos} />
+
       {/* SECTION 3: UNE LOCALISATION STRATÉGIQUE (SÉBIKHOTANE) */}
       <section id="location" className="py-20 bg-surface-container-low px-4 md:px-12 scroll-mt-20">
         <div className="max-w-7xl mx-auto space-y-12">
@@ -726,18 +687,21 @@ export default function LandingPage({
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-3">
                   <span className="font-mono text-xs uppercase font-bold text-secondary">
-                    Positionnement Géographique
+                    {ui.locationCardTag}
                   </span>
                   <span className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-2.5 py-1 rounded-full border border-emerald-200">
-                    Sébikhotane • Région de Dakar
+                    {ui.locationRegionPill}
                   </span>
                 </div>
                 <h4 className="font-serif text-xl font-bold text-primary">
-                  Au Centre du Triangle d'Or : Diamniadio — AIBD — Port de Ndayane
+                  {ui.locationTriangleTitle}
                 </h4>
-                <p className="text-xs sm:text-sm text-on-surface-variant font-light leading-relaxed text-justify">
-                  Sébikhotane bénéficie d'un emplacement charnière. Située à moins de 20 minutes de l'Aéroport International Blaise Diagne et à proximité immédiate de l'autoroute à péage, la commune est également desservie par la future gare du Train Express Régional (TER), située à <strong>environ 4 km de notre domaine</strong>.
-                </p>
+                <p
+                  className="text-xs sm:text-sm text-on-surface-variant font-light leading-relaxed text-justify"
+                  dangerouslySetInnerHTML={{
+                    __html: ui.locationTriangleDesc.replace('<strong>', '<strong class="font-semibold">'),
+                  }}
+                />
               </div>
 
               {/* Infrastructure Connectivity List */}
@@ -745,43 +709,43 @@ export default function LandingPage({
                 <div className="p-3 rounded-xl bg-[#FAF9F5] border border-gray-200 flex items-start space-x-3">
                   <Plane className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-xs text-primary block">Aéroport AIBD</span>
-                    <span className="text-[11px] text-outline">À moins de 20 minutes en voiture</span>
+                    <span className="font-bold text-xs text-primary block">{ui.locationAibd}</span>
+                    <span className="text-[11px] text-outline">{ui.locationAibdSub}</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#FAF9F5] border border-gray-200 flex items-start space-x-3">
                   <Train className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-xs text-primary block">Gare TER Sébikhotane</span>
-                    <span className="text-[11px] text-outline">À environ 4 km de la gare</span>
+                    <span className="font-bold text-xs text-primary block">{ui.locationTer}</span>
+                    <span className="text-[11px] text-outline">{ui.locationTerSub}</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#FAF9F5] border border-gray-200 flex items-start space-x-3">
                   <Building className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-xs text-primary block">Pôle Diamniadio</span>
-                    <span className="text-[11px] text-outline">Nouveau centre administratif d'État</span>
+                    <span className="font-bold text-xs text-primary block">{ui.locationDiamniadio}</span>
+                    <span className="text-[11px] text-outline">{ui.locationDiamniadioSub}</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#FAF9F5] border border-gray-200 flex items-start space-x-3">
                   <Anchor className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-xs text-primary block">Futur Port de Ndayane</span>
-                    <span className="text-[11px] text-outline">Mégapôle logistique sous-régional</span>
+                    <span className="font-bold text-xs text-primary block">{ui.locationNdayane}</span>
+                    <span className="text-[11px] text-outline">{ui.locationNdayaneSub}</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                <span className="text-[11px] text-outline font-mono">Distances réelles et vérifiables</span>
+                <span className="text-[11px] text-outline font-mono">{ui.locationDistancesFootnote}</span>
                 <button
                   onClick={openWhatsAppDossier}
                   className="text-xs font-bold text-secondary hover:underline flex items-center space-x-1 cursor-pointer"
                 >
-                  <span>Demander le plan de situation</span>
+                  <span>{ui.locationRequestPlan}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -789,7 +753,7 @@ export default function LandingPage({
 
             {/* Right Quick Metrics Cards */}
             <div className="lg:col-span-5 flex flex-col space-y-4 justify-between">
-              {CONNECTIVITY_ITEMS.slice(0, 3).map((item) => (
+              {(settings.content?.connectivity ?? CONNECTIVITY_ITEMS).map((item) => (
                 <div
                   key={item.id}
                   className="bg-white p-5 rounded-2xl shadow-xs border border-gray-300 border-l-4 border-l-secondary flex flex-col justify-between hover:border-gray-400 hover:shadow-sm transition-all"
@@ -822,7 +786,7 @@ export default function LandingPage({
             <div className="lg:col-span-7 space-y-6">
               <div className="space-y-2">
                 <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary-fixed">
-                  TRANSPARENCE & SOUPLESSE BUDGÉTAIRE
+                  {ui.simulatorTransparencyTag}
                 </span>
                 <h3 className="font-serif text-2xl sm:text-4xl font-bold text-white">
                   {t.masterPlan.calculator.title}
@@ -835,7 +799,7 @@ export default function LandingPage({
               {/* Deposit Quick Tiers Buttons */}
               <div className="space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-wider text-secondary-fixed">
-                  1. Choisissez votre montant d'apport initial :
+                  {ui.simulatorDepositLabel}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[3000, 4000, 5000, 6000].map((amount) => (
@@ -850,7 +814,7 @@ export default function LandingPage({
                     >
                       {amount.toLocaleString()} €
                       <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                        {amount === 3000 ? 'Apport de base' : 'Option flexible'}
+                        {amount === 3000 ? ui.simulatorDepositBase : ui.simulatorDepositFlex}
                       </span>
                     </button>
                   ))}
@@ -861,10 +825,10 @@ export default function LandingPage({
               <div className="space-y-3 pt-2">
                 <div className="flex justify-between items-center text-xs">
                   <label className="font-bold uppercase tracking-wider text-secondary-fixed">
-                    2. Mensualité souhaitée :
+                    {ui.simulatorMonthlyLabel}
                   </label>
                   <span className="font-mono font-bold text-secondary-fixed bg-white/10 px-2.5 py-1 rounded">
-                    {simulatorMonthly} € / mois
+                    {simulatorMonthly} € {ui.simulatorPerMonth}
                   </span>
                 </div>
                 <input
@@ -878,7 +842,7 @@ export default function LandingPage({
                 />
                 <div className="flex justify-between text-[10px] font-mono text-white/60">
                   <span>250 €/mois</span>
-                  <span className="text-secondary-fixed font-bold">300 €/mois (Recommandé)</span>
+                  <span className="text-secondary-fixed font-bold">300 €/mois {ui.simulatorRecommended}</span>
                   <span>600 €/mois</span>
                 </div>
               </div>
@@ -886,20 +850,20 @@ export default function LandingPage({
               {/* Table of precalculated official options */}
               <div className="pt-2 border-t border-white/10">
                 <span className="text-[11px] text-white/70 block mb-2 font-mono">
-                  Grille de référence des plans d'échelonnement :
+                  {ui.simulatorGridLabel}
                 </span>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs text-white/90">
                     <thead>
                       <tr className="border-b border-white/15 text-[10px] uppercase font-mono text-secondary-fixed">
-                        <th className="pb-1.5">Acompte</th>
-                        <th className="pb-1.5">Reste à régler</th>
-                        <th className="pb-1.5">Mensualité</th>
-                        <th className="pb-1.5">Durée</th>
+                        <th className="pb-1.5">{ui.simulatorColDeposit}</th>
+                        <th className="pb-1.5">{ui.simulatorColRemaining}</th>
+                        <th className="pb-1.5">{ui.simulatorColMonthly}</th>
+                        <th className="pb-1.5">{ui.simulatorColDuration}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10 text-xs font-mono">
-                      {PAYMENT_SCHEDULE_TIERS.map((tier, idx) => (
+                      {(settings.content?.paymentTiers ?? PAYMENT_SCHEDULE_TIERS).map((tier, idx) => (
                         <tr
                           key={idx}
                           onClick={() => setSimulatorDeposit(tier.deposit)}
@@ -910,7 +874,7 @@ export default function LandingPage({
                           <td className="py-1.5">{tier.deposit.toLocaleString()} €</td>
                           <td className="py-1.5">{tier.remaining.toLocaleString()} €</td>
                           <td className="py-1.5">{tier.monthly} €</td>
-                          <td className="py-1.5 font-bold">{tier.duration} mois</td>
+                          <td className="py-1.5 font-bold">{tier.duration} {ui.simulatorMonths}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -923,47 +887,47 @@ export default function LandingPage({
             <div className="lg:col-span-5 bg-white text-primary rounded-2xl p-6 sm:p-8 shadow-xl border border-gray-200 space-y-6">
               <div className="border-b border-gray-200 pb-4">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-secondary">
-                  Estimation Personnalisée • 150 m²
+                  {ui.simulatorResultTag}
                 </span>
                 <h4 className="font-serif text-2xl font-bold text-primary mt-1">
-                  Plan de Paiement Direct
+                  {ui.simulatorResultTitle}
                 </h4>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  Direct avec Sénégal Immobilier Consulting (sans banque requise)
+                  {ui.simulatorResultSubtitle}
                 </p>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between items-center py-1.5 border-b border-gray-200">
-                  <span className="text-on-surface-variant">Prix de référence total :</span>
+                  <span className="text-on-surface-variant">{ui.simulatorRefPrice}</span>
                   <span className="font-mono font-bold text-sm text-primary">
                     {settings.basePrice.toLocaleString()} €
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center py-1.5 border-b border-gray-200">
-                  <span className="text-on-surface-variant">Votre apport initial (acompte) :</span>
+                  <span className="text-on-surface-variant">{ui.simulatorYourDeposit}</span>
                   <span className="font-mono font-bold text-sm text-emerald-700">
                     {simulatorDeposit.toLocaleString()} €
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center py-1.5 border-b border-gray-200">
-                  <span className="text-on-surface-variant">Reste à régler :</span>
+                  <span className="text-on-surface-variant">{ui.simulatorRemaining}</span>
                   <span className="font-mono font-bold text-sm text-primary">
                     {calculatedRemaining.toLocaleString()} €
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center py-2 bg-surface-container-low px-3 rounded-lg">
-                  <span className="font-bold text-primary">Mensualité :</span>
+                  <span className="font-bold text-primary">{ui.simulatorMonthlyRow}</span>
                   <span className="font-mono font-bold text-base text-secondary">
                     {simulatorMonthly} € / mois
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center py-2 bg-secondary/10 px-3 rounded-lg text-secondary">
-                  <span className="font-bold">Durée de l'échelonnement :</span>
+                  <span className="font-bold">{ui.simulatorDurationRow}</span>
                   <span className="font-mono font-bold text-base">
                     {calculatedDuration} mois
                   </span>
@@ -972,10 +936,16 @@ export default function LandingPage({
 
               {/* Cash payment alternative pill */}
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
-                <span className="font-bold block">💡 Option Paiement Comptant :</span>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Réglez votre terrain comptant à <strong>{settings.cashPrice.toLocaleString()} €</strong> au lieu de {settings.basePrice.toLocaleString()} € (économie immédiate de {(settings.basePrice - settings.cashPrice).toLocaleString()} € !).
-                </p>
+                <span className="font-bold block">{ui.simulatorCashTitle}</span>
+                <p
+                  className="text-[11px] text-amber-800 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: ui.simulatorCashDesc
+                      .replace('{cash}', `<strong>${settings.cashPrice.toLocaleString()} €</strong>`)
+                      .replace('{full}', `${settings.basePrice.toLocaleString()} €`)
+                      .replace('{saving}', `${(settings.basePrice - settings.cashPrice).toLocaleString()} €`),
+                  }}
+                />
               </div>
 
               {/* Action Button: WhatsApp Study */}
@@ -1007,7 +977,7 @@ export default function LandingPage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {COMPLEMENTARY_PACKS.map((pack) => (
+            {(settings.content?.packs ?? COMPLEMENTARY_PACKS).map((pack) => (
               <div
                 key={pack.id}
                 className={`bg-white rounded-2xl p-6 border transition-all duration-300 flex flex-col justify-between hover:shadow-lg ${
@@ -1038,7 +1008,7 @@ export default function LandingPage({
 
                   <div className="space-y-2 pt-3 border-t border-gray-200">
                     <span className="text-[10px] font-mono uppercase font-bold text-outline">
-                      Inclus dans ce pack :
+                      {ui.packsIncludedLabel}
                     </span>
                     <ul className="space-y-1.5 text-xs text-on-surface">
                       {pack.features[currentLanguage].map((feat, idx) => (
@@ -1054,13 +1024,13 @@ export default function LandingPage({
                 <div className="pt-6 mt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
-                      const msg = `Bonjour Sénégal Immobilier Consulting, je souhaite avoir des informations et un devis pour le « ${pack.title[currentLanguage]} » à Sébikhotane.`;
+                      const msg = `${ui.packsWaPrefix}${pack.title[currentLanguage]}${ui.packsWaSuffix}`;
                       const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(msg)}`;
                       window.open(url, '_blank', 'noopener,noreferrer');
                     }}
                     className="w-full py-2.5 px-3 rounded-xl border border-secondary text-secondary hover:bg-secondary hover:text-on-secondary font-bold text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer"
                   >
-                    <span>En savoir plus</span>
+                    <span>{ui.packsLearnMore}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -1086,11 +1056,7 @@ export default function LandingPage({
             </p>
           </div>
           <button
-            onClick={() => {
-              const msg = `Bonjour Sénégal Immobilier Consulting, je souhaite être tenu informé des solutions de financement bancaire avec vos établissements partenaires pour les parcelles de Sébikhotane.`;
-              const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(msg)}`;
-              window.open(url, '_blank', 'noopener,noreferrer');
-            }}
+            onClick={() => openWhatsApp(ui.bankWaMsg)}
             className="px-6 py-3 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 cursor-pointer shadow-sm"
           >
             {t.banking.btn}
@@ -1103,18 +1069,18 @@ export default function LandingPage({
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
-              TÉMOIGNAGES ACQUÉREURS
+              {ui.testimonialsTag}
             </span>
             <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
-              La Confiance de la Diaspora et des Résidents
+              {ui.testimonialsTitle}
             </h3>
             <p className="text-xs sm:text-sm text-outline font-light">
-              Découvrez les retours d'acquéreurs ayant choisi Sénégal Immobilier Consulting pour sécuriser leur parcelle.
+              {ui.testimonialsDesc}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((test) => (
+            {(settings.content?.testimonials ?? TESTIMONIALS).map((test) => (
               <div
                 key={test.id}
                 className="bg-white p-6 rounded-2xl border border-gray-300 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md hover:border-gray-400 transition-all"
@@ -1159,18 +1125,18 @@ export default function LandingPage({
         <div className="space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary block">
-              GUIDES PRATIQUES & SÉCURITÉ FONCIÈRE
+              {ui.insightsTag}
             </span>
             <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
-              Comprendre l'Investissement à Sébikhotane
+              {ui.insightsTitle}
             </h3>
             <p className="text-xs sm:text-sm text-outline font-light">
-              Articles et explications détaillées rédigés par Sénégal Immobilier Consulting pour vous guider pas à pas.
+              {ui.insightsDesc}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {BLOG_ARTICLES.map((article) => (
+            {(settings.content?.blogArticles ?? BLOG_ARTICLES).map((article) => (
               <div
                 key={article.id}
                 onClick={() => onSelectArticle?.(article)}
@@ -1197,7 +1163,7 @@ export default function LandingPage({
                     </p>
                   </div>
                   <div className="pt-2 border-t border-outline-variant/10 flex items-center justify-between text-xs font-bold text-secondary">
-                    <span>Lire le guide complet</span>
+                    <span>{ui.insightsReadGuide}</span>
                     <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                   </div>
                 </div>
@@ -1212,18 +1178,18 @@ export default function LandingPage({
         <div className="max-w-3xl mx-auto space-y-10">
           <div className="text-center space-y-2">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary block">
-              QUESTIONS FRÉQUENTES
+              {ui.faqTag}
             </span>
             <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
-              {currentLanguage === 'FR' ? 'Tout savoir avant d\'investir' : 'Everything you need to know before investing'}
+              {ui.faqTitle}
             </h3>
             <p className="text-xs sm:text-sm text-outline font-light">
-              Délibération, NICAD, mutation sous 2 mois, paiement échelonné : toutes les réponses à vos questions.
+              {ui.faqDesc}
             </p>
           </div>
 
           <div className="space-y-3">
-            {FAQ_ITEMS.map((faq) => {
+            {(settings.content?.faq ?? FAQ_ITEMS).map((faq) => {
               const isOpen = activeFaq === faq.id;
               return (
                 <div
@@ -1270,7 +1236,7 @@ export default function LandingPage({
           {/* Left Brief */}
           <div className="lg:col-span-5 space-y-6">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary-fixed">
-              CONTACTEZ UN CONSEILLER
+              {ui.contactAdvisorTag}
             </span>
             <h3 className="font-serif text-2xl sm:text-4xl font-bold text-white leading-tight">
               {t.contact.title}
@@ -1300,9 +1266,9 @@ export default function LandingPage({
                     href={`https://wa.me/${settings.whatsappCleanNumber}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono font-bold text-sm text-secondary-fixed hover:underline"
+                    className="inline-block font-mono font-bold text-sm text-secondary-fixed hover:underline py-1.5"
                   >
-                    Ouvrir WhatsApp direct →
+                    {ui.contactWhatsAppDirect}
                   </a>
                 </div>
               </div>
@@ -1313,7 +1279,7 @@ export default function LandingPage({
                 </div>
                 <div>
                   <span className="text-[11px] text-white/60 block">{t.contact.emailUs}</span>
-                  <a href={`mailto:${settings.contactEmail}`} className="font-mono text-xs text-white hover:underline">{settings.contactEmail}</a>
+                  <a href={`mailto:${settings.contactEmail}`} className="inline-block font-mono text-xs text-white hover:underline py-1.5">{settings.contactEmail}</a>
                 </div>
               </div>
 
@@ -1322,7 +1288,7 @@ export default function LandingPage({
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] text-white/60 block">Bureau au Sénégal</span>
+                  <span className="text-[11px] text-white/60 block">{ui.contactOfficeLabel}</span>
                   <span className="text-xs text-white font-medium">{settings.contactAddress || 'Dakar, Rufisque — Keury Kao'}</span>
                 </div>
               </div>
@@ -1334,7 +1300,7 @@ export default function LandingPage({
                     className="w-full py-2.5 px-4 rounded-xl bg-amber-400/15 border border-amber-400/40 text-amber-300 hover:bg-amber-400/25 transition-all text-xs font-semibold flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     <BookOpen className="w-4 h-4 text-amber-300" />
-                    <span>Consulter la Plaquette Dun Tni (7 pages PDF)</span>
+                    <span>{ui.contactBrochureBtn}</span>
                   </button>
                 </div>
               )}
@@ -1344,10 +1310,10 @@ export default function LandingPage({
           {/* Right Form */}
           <div className="lg:col-span-7 bg-white text-primary rounded-3xl p-6 sm:p-10 shadow-2xl border border-white/20">
             <h4 className="font-serif text-xl sm:text-2xl font-bold text-primary mb-1">
-              Recevoir le dossier complet du projet
+              {ui.contactFormTitle}
             </h4>
             <p className="text-xs text-on-surface-variant mb-6 font-light">
-              Remplissez le formulaire ci-dessous pour recevoir les plans de délimitation, la grille d'échelonnement et échanger avec votre conseiller dédié.
+              {ui.contactFormDesc}
             </p>
 
             {isSubmitted ? (
@@ -1359,7 +1325,7 @@ export default function LandingPage({
                   onClick={() => setIsSubmitted(false)}
                   className="mt-3 text-xs font-bold text-emerald-700 underline"
                 >
-                  Envoyer une autre demande
+                  {ui.contactFormReset}
                 </button>
               </div>
             ) : (
@@ -1375,7 +1341,7 @@ export default function LandingPage({
                       required
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="Ex: Babacar Diagne"
+                      placeholder={ui.contactFormPlaceholderName}
                       className="w-full p-3 rounded-xl border border-outline-variant/30 text-xs text-primary focus:ring-2 focus:ring-secondary focus:border-secondary"
                     />
                   </div>
@@ -1390,7 +1356,7 @@ export default function LandingPage({
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      placeholder="+33 6 12 34 56 78 / +221..."
+                      placeholder={ui.contactFormPlaceholderPhone}
                       className="w-full p-3 rounded-xl border border-outline-variant/30 text-xs text-primary focus:ring-2 focus:ring-secondary focus:border-secondary"
                     />
                   </div>
@@ -1406,7 +1372,7 @@ export default function LandingPage({
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="votre.email@exemple.com"
+                      placeholder={ui.contactFormPlaceholderEmail}
                       className="w-full p-3 rounded-xl border border-outline-variant/30 text-xs text-primary focus:ring-2 focus:ring-secondary focus:border-secondary"
                     />
                   </div>
@@ -1422,19 +1388,19 @@ export default function LandingPage({
                       className="w-full p-3 rounded-xl border border-outline-variant/30 text-xs text-primary bg-white focus:ring-2 focus:ring-secondary"
                     >
                       <option value="Paiement échelonné 3 000 € + 300 €/mois">
-                        Paiement échelonné 3 000 € + 300 €/mois
+                        {ui.contactFormInterest1}
                       </option>
                       <option value="Paiement comptant à 13 500 €">
-                        Paiement comptant (13 500 €)
+                        {ui.contactFormInterest2Short}
                       </option>
                       <option value="Pack Terrain + Clôture de sécurisation">
-                        Pack Terrain + Clôture de sécurisation
+                        {ui.contactFormInterest3}
                       </option>
                       <option value="Pack Terrain + Début de construction">
-                        Pack Terrain + Début de construction
+                        {ui.contactFormInterest4}
                       </option>
                       <option value="Financement bancaire partenaire">
-                        Financement bancaire partenaire
+                        {ui.contactFormInterest5}
                       </option>
                     </select>
                   </div>
@@ -1448,8 +1414,7 @@ export default function LandingPage({
                     id="message"
                     rows={3}
                     value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder="Précisez votre situation (résident, diaspora, délai souhaité)..."
+                    onChange={handleInputChange}                      placeholder={ui.contactFormPlaceholderMessage}
                     className="w-full p-3 rounded-xl border border-outline-variant/30 text-xs text-primary focus:ring-2 focus:ring-secondary"
                   />
                 </div>
@@ -1459,7 +1424,7 @@ export default function LandingPage({
                   disabled={formLoading}
                   className="w-full py-4 bg-secondary-container hover:bg-secondary-fixed-dim text-on-secondary-fixed font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
-                  <span>{formLoading ? 'Transmission en cours...' : t.contact.formSubmit}</span>
+                  <span>{formLoading ? ui.contactFormSubmitLoading : t.contact.formSubmit}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>

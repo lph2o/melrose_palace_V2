@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, Globe, PhoneCall, Search, Settings, ShieldCheck, Calculator, FileText } from 'lucide-react';
-import { Language, SiteSettings } from '../types';
+import { Language, SiteSettings, UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -30,6 +30,22 @@ export default function Navbar({
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = TRANSLATIONS[currentLanguage];
+  const ui = t.ui as UITranslations;
+
+  useEffect(() => {
+    // Keep the --nav-h CSS variable in sync with the real navbar height.
+    // The navbar has two heights (resting vs scrolled); keying this effect
+    // on isScrolled guarantees the variable is written AFTER React commits
+    // the matching padding class, so the measured height is always final.
+    const nav = document.getElementById('navbar');
+    if (!nav) return;
+    const syncNavHeight = () => {
+      document.documentElement.style.setProperty('--nav-h', `${nav.offsetHeight}px`);
+    };
+    syncNavHeight();
+    window.addEventListener('resize', syncNavHeight);
+    return () => window.removeEventListener('resize', syncNavHeight);
+  }, [isScrolled]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,7 +79,7 @@ export default function Navbar({
     <header className="relative">
       <nav
         id="navbar"
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 md:px-12 border-b ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300 px-4 md:px-12 border-b ${
           isScrolled || activeTab === 'masterplan'
             ? 'bg-[#00261a]/98 backdrop-blur-md shadow-lg py-2.5 border-white/10'
             : 'bg-[#00261a]/95 backdrop-blur-md shadow-sm py-3 border-white/10'
@@ -84,7 +100,7 @@ export default function Navbar({
             </div>
             <div>
               <span className="font-serif text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-secondary-fixed transition-colors block leading-tight">
-                Sénégal Immobilier Consulting
+                {settings.companyName || 'Sénégal Immobilier Consulting'}
               </span>
               <span className="text-[9px] font-mono tracking-widest uppercase text-secondary-fixed/80 font-medium hidden sm:block">
                 Sébikhotane
@@ -144,8 +160,8 @@ export default function Navbar({
             <button
               onClick={onSearchTrigger}
               className="p-2 rounded-full border border-white/15 text-white/90 hover:text-white hover:bg-white/10 transition-all cursor-pointer bg-white/5"
-              title={currentLanguage === 'FR' ? 'Rechercher parcelles, guides (Cmd+K)...' : 'Search plots, guides (Cmd+K)...'}
-              aria-label="Recherche"
+              title={ui.navSearchTitle}
+              aria-label={ui.navSearchAria}
             >
               <Search className="w-4 h-4 text-secondary-fixed" />
             </button>
@@ -154,7 +170,7 @@ export default function Navbar({
             <button
               onClick={toggleLanguage}
               className="flex items-center space-x-1 px-3 py-1.5 rounded-full border border-white/15 text-white hover:bg-white/10 transition-all text-xs font-semibold cursor-pointer bg-white/5"
-              title="Changer de langue"
+              title={ui.navLangTitle}
             >
               <Globe className="w-3.5 h-3.5 text-secondary-fixed" />
               <span>{currentLanguage === 'FR' ? 'EN' : 'FR'}</span>
@@ -174,8 +190,8 @@ export default function Navbar({
             <button
               onClick={onSearchTrigger}
               className="p-2 text-white/80 hover:text-white"
-              title="Rechercher"
-              aria-label="Rechercher"
+              title={ui.navMobileSearchTitle}
+              aria-label={ui.navMobileSearchTitle}
             >
               <Search className="w-4 h-4 text-secondary-fixed" />
             </button>
@@ -220,7 +236,7 @@ export default function Navbar({
                 <div className="flex items-center space-x-2 text-white/60">
                   <Search className="w-4 h-4 text-secondary-fixed" />
                   <span className="text-xs font-light">
-                    {currentLanguage === 'FR' ? 'Rechercher une parcelle de 150 m²...' : 'Search 150 sqm plots...'}
+                    {ui.mobileSearchPlaceholder}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono font-bold text-secondary-fixed">OK</span>
@@ -234,7 +250,7 @@ export default function Navbar({
                 }}
                 className="text-left font-serif text-base font-bold text-secondary-fixed py-2 border-b border-white/10 flex items-center justify-between"
               >
-                <span>{t.nav.masterPlan} (20 Disponibles)</span>
+                <span>{t.nav.masterPlan} {ui.mobileAvailableSuffix}</span>
                 <span className="text-[10px] bg-secondary-fixed text-primary px-2 py-0.5 rounded font-mono font-bold">150 m²</span>
               </button>
 
@@ -254,25 +270,25 @@ export default function Navbar({
                 onClick={() => handleNavLink('guarantees')}
                 className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
               >
-                {t.nav.guarantees} (Délibération & NICAD)
+                {t.nav.guarantees} {ui.guaranteesSuffix}
               </button>
               <button
                 onClick={() => handleNavLink('simulator-section')}
                 className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
               >
-                {t.nav.simulator} (Dès 300 €/mois)
+                {t.nav.simulator} {ui.simulatorSuffix}
               </button>
               <button
                 onClick={() => handleNavLink('packs-section')}
                 className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
               >
-                {t.nav.packs} (Clôture & Gros œuvre)
+                {t.nav.packs} {ui.packsSuffix}
               </button>
               <button
                 onClick={() => handleNavLink('faqs-section')}
                 className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
               >
-                FAQ Juridique
+                {t.nav.faq}
               </button>
 
               <div className="pt-3 border-t border-white/10 flex flex-col space-y-2.5">
@@ -285,7 +301,7 @@ export default function Navbar({
                     className="w-full py-2.5 px-4 bg-amber-400/15 border border-amber-400/40 text-amber-300 rounded-xl text-xs flex items-center justify-center space-x-2 font-semibold cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-amber-300" />
-                    <span>Consulter la Plaquette Officielle (PDF)</span>
+                    <span>{ui.mobileBrochureBtn}</span>
                   </button>
                 )}
 
@@ -304,7 +320,7 @@ export default function Navbar({
                   className="w-full py-2.5 border border-white/20 text-white/80 rounded-xl text-xs flex items-center justify-center space-x-2 cursor-pointer hover:bg-white/5"
                 >
                   <Settings className="w-3.5 h-3.5" />
-                  <span>Tableau de bord (Espace Gérant)</span>
+                  <span>{t.adminAccess}</span>
                 </button>
               </div>
             </div>

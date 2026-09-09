@@ -5,18 +5,28 @@ import MasterPlanPage from './components/MasterPlanPage';
 import Footer from './components/Footer';
 import SearchModal from './components/SearchModal';
 import BlogModal from './components/BlogModal';
-import AdminModal from './components/AdminModal';
+import AdminPage from './components/AdminPage';
 import BrochureModal from './components/BrochureModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
 import { Language, BlogArticle, SiteSettings, Parcel } from './types';
 import { DEFAULT_SITE_SETTINGS, PARCELS } from './data';
+import {
+  fetchRemoteSettings,
+  fetchRemoteParcels,
+  upsertRemoteSettings,
+  upsertRemoteParcel,
+  clearRemoteSettings,
+  clearRemoteParcels,
+  subscribeToTableChanges,
+  isSupabaseConfigured,
+  SyncResult,
+} from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('FR'); // French by default
   const [activeTab, setActiveTab] = useState<'home' | 'masterplan'>('home');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isBrochureOpen, setIsBrochureOpen] = useState(false);
   const [globalSelectedParcelId, setGlobalSelectedParcelId] = useState<number | null>(null);
   const [globalActiveArticle, setGlobalActiveArticle] = useState<BlogArticle | null>(null);
@@ -60,28 +70,108 @@ export default function App() {
     return PARCELS;
   });
 
-  const handleSaveSettings = (newSettings: SiteSettings) => {
+  // Indique si la première synchronisation cloud est terminée (skeletons KPI de l'admin)
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
+
+  // Synchronisation initiale avec Supabase (source de vérité cloud)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [remoteSettings, remoteParcels] = await Promise.all([
+          fetchRemoteSettings(),
+          fetchRemoteParcels(),
+        ]);
+        if (cancelled) return;
+        if (remoteSettings) {
+          setSettings(remoteSettings);
+          try {
+            localStorage.setItem('sic_site_settings', JSON.stringify(remoteSettings));
+          } catch {
+            // ignore
+          }
+        }
+        if (remoteParcels) {
+          setParcels(remoteParcels);
+          try {
+            localStorage.setItem('sic_parcels', JSON.stringify(remoteParcels));
+          } catch {
+            // ignore
+          }
+        }
+      } catch {
+        // Hors-ligne ou tables absentes : on garde localStorage puis les valeurs par défaut
+      } finally {
+        if (!cancelled) setInitialSyncDone(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Temps réel : les changements faits dans l'Espace Gérant (autre appareil,
+  // autre onglet) apparaissent ici automatiquement, sans rechargement.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const refreshParcels = () => {
+      fetchRemoteParcels().then((remote) => {
+        if (!remote) return;
+        setParcels(remote);
+        try {
+          localStorage.setItem('sic_parcels', JSON.stringify(remote));
+        } catch {
+          // ignore
+        }
+      });
+    };
+    const refreshSettings = () => {
+      fetchRemoteSettings().then((remote) => {
+        if (!remote) return;
+        setSettings(remote);
+        try {
+          localStorage.setItem('sic_site_settings', JSON.stringify(remote));
+        } catch {
+          // ignore
+        }
+      });
+    };
+    const unsubParcels = subscribeToTableChanges('parcels', refreshParcels);
+    const unsubSettings = subscribeToTableChanges('site_settings', refreshSettings);
+    return () => {
+      unsubParcels();
+      unsubSettings();
+    };
+  }, []);
+
+  // Retourne le résultat de la synchronisation cloud (ok + raison d'un échec)
+  const handleSaveSettings = async (newSettings: SiteSettings): Promise<SyncResult> => {
     setSettings(newSettings);
     try {
       localStorage.setItem('sic_site_settings', JSON.stringify(newSettings));
     } catch {
       // ignore
     }
+    return upsertRemoteSettings(newSettings);
   };
 
-  const handleUpdateParcelStatus = (id: number, status: 'Available' | 'Reserved' | 'Sold') => {
-    setParcels((prev) => {
-      const updated = prev.map((p) => (p.id === id ? { ...p, status } : p));
-      try {
-        localStorage.setItem('sic_parcels', JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-      return updated;
-    });
+  // Retourne le résultat de la synchronisation cloud (ok + raison d'un échec)
+  const handleUpdateParcelStatus = async (
+    id: number,
+    status: 'Available' | 'Reserved' | 'Sold'
+  ): Promise<SyncResult> => {
+    const updated = parcels.map((p) => (p.id === id ? { ...p, status } : p));
+    const changed = updated.find((p) => p.id === id);
+    setParcels(updated);
+    try {
+      localStorage.setItem('sic_parcels', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+    return changed ? upsertRemoteParcel(changed) : { ok: false, reason: 'unknown' };
   };
 
-  const handleResetDefaults = () => {
+  const handleResetDefaults = async (): Promise<void> => {
     setSettings(DEFAULT_SITE_SETTINGS);
     setParcels(PARCELS);
     try {
@@ -90,6 +180,40 @@ export default function App() {
     } catch {
       // ignore
     }
+    // Retour au cloud : suppression des lignes pour que les visiteurs voient les valeurs par défaut
+    await Promise.all([clearRemoteSettings(), clearRemoteParcels()]);
+  };
+
+  // ------------------------------------------------------------------
+  // Page administrateur dédiée : accessible via /admin (ou #/admin)
+  // ------------------------------------------------------------------
+  const isAdminPath = () =>
+    window.location.hash === '#/admin' ||
+    window.location.pathname.endsWith('/admin') ||
+    window.location.pathname.endsWith('/admin/');
+
+  const [isAdminRoute, setIsAdminRoute] = useState(isAdminPath);
+
+  useEffect(() => {
+    const sync = () => setIsAdminRoute(isAdminPath());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
+  }, []);
+
+  const navigateToAdmin = () => {
+    window.location.hash = '/admin';
+  };
+
+  const navigateAwayFromAdmin = () => {
+    if (window.location.pathname.endsWith('/admin')) {
+      window.history.pushState({}, '', '/');
+    }
+    window.location.hash = '';
+    setIsAdminRoute(false);
   };
 
   useEffect(() => {
@@ -127,8 +251,23 @@ export default function App() {
     setGlobalActiveFaqId(id);
   };
 
+  // Page admin dédiée : remplace toute l'interface publique
+  if (isAdminRoute) {
+    return (
+      <AdminPage
+        settings={settings}
+        parcels={parcels}
+        onSaveSettings={handleSaveSettings}
+        onUpdateParcelStatus={handleUpdateParcelStatus}
+        onResetDefaults={handleResetDefaults}
+        onBack={navigateAwayFromAdmin}
+        loading={!initialSyncDone}
+      />
+    );
+  }
+
   return (
-    <div className="bg-[#FAF9F5] text-primary min-h-screen flex flex-col justify-between selection:bg-secondary-fixed/50 selection:text-primary">
+    <div className="bg-[#FAF9F5] text-primary min-h-screen flex flex-col justify-between selection:bg-secondary-fixed/50 selection:text-primary overflow-x-clip">
       
       {/* Dynamic Floating Navbar */}
       <Navbar
@@ -138,7 +277,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         scrollToSection={scrollToSection}
         onSearchTrigger={() => setIsSearchOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={navigateToAdmin}
         onOpenBrochure={() => setIsBrochureOpen(true)}
         settings={settings}
       />
@@ -181,6 +320,7 @@ export default function App() {
                 globalSelectedParcelId={globalSelectedParcelId}
                 onClearGlobalSelectParcel={() => setGlobalSelectedParcelId(null)}
                 settings={settings}
+                parcels={parcels}
               />
             </motion.div>
           )}
@@ -192,7 +332,7 @@ export default function App() {
         currentLanguage={language}
         setActiveTab={setActiveTab}
         settings={settings}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={navigateToAdmin}
         onOpenBrochure={() => setIsBrochureOpen(true)}
       />
 
@@ -211,6 +351,7 @@ export default function App() {
             onSelectParcel={handleSelectParcel}
             onSelectArticle={handleSelectArticle}
             onSelectFaq={handleSelectFaq}
+            parcels={parcels}
           />
         )}
       </AnimatePresence>
@@ -226,18 +367,6 @@ export default function App() {
           />
         )}
       </AnimatePresence>
-
-      {/* Admin Management Modal */}
-      <AdminModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        settings={settings}
-        onSaveSettings={handleSaveSettings}
-        parcels={parcels}
-        onUpdateParcelStatus={handleUpdateParcelStatus}
-        onResetDefaults={handleResetDefaults}
-        currentLanguage={language}
-      />
 
       {/* Official Dun Tni Brochure PDF Modal */}
       <BrochureModal

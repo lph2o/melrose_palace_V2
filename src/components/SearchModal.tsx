@@ -10,6 +10,7 @@ interface SearchModalProps {
   onSelectParcel: (id: number) => void;
   onSelectArticle: (article: BlogArticle) => void;
   onSelectFaq: (id: string) => void;
+  parcels?: Parcel[];
 }
 
 export default function SearchModal({
@@ -18,6 +19,7 @@ export default function SearchModal({
   onSelectParcel,
   onSelectArticle,
   onSelectFaq,
+  parcels = PARCELS,
 }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +44,7 @@ export default function SearchModal({
     if (!normalizedQuery) return { parcels: [], articles: [], faqs: [] };
 
     // 1. Filter Parcels
-    const filteredParcels = PARCELS.filter((p) => {
+    const filteredParcels = parcels.filter((p) => {
       // Search by ID (direct number match or string hash match e.g. "plot 12", "08")
       const matchesId = p.id.toString() === normalizedQuery || 
                         `#${p.id}`.includes(normalizedQuery) ||

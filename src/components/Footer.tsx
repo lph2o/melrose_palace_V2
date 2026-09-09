@@ -108,7 +108,7 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
                 SIC
               </div>
               <span className="font-serif text-xl font-bold tracking-tight text-white">
-                Sénégal Immobilier Consulting
+                {settings.companyName || 'Sénégal Immobilier Consulting'}
               </span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed font-light max-w-sm">
@@ -124,13 +124,13 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
             <span className="text-xs font-bold font-mono uppercase text-secondary-fixed tracking-wider block">
               Navigation Rapide
             </span>
-            <div className="flex flex-col space-y-2 text-xs text-white/80">
+            <div className="flex flex-col space-y-1 text-xs text-white/80">
               <button
                 onClick={() => {
                   setActiveTab('home');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="text-left hover:text-secondary-fixed transition-colors"
+                className="text-left hover:text-secondary-fixed transition-colors py-1.5"
               >
                 Accueil & Vision
               </button>
@@ -139,7 +139,7 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
                   setActiveTab('masterplan');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="text-left hover:text-secondary-fixed transition-colors"
+                className="text-left hover:text-secondary-fixed transition-colors py-1.5"
               >
                 Les 20 Parcelles de 150 m² (Disponibilités)
               </button>
@@ -150,7 +150,7 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
                     document.getElementById('simulator-section')?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                className="text-left hover:text-secondary-fixed transition-colors"
+                className="text-left hover:text-secondary-fixed transition-colors py-1.5"
               >
                 Simulateur de Financement (Dès 300 €/mois)
               </button>
@@ -161,14 +161,14 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
                     document.getElementById('packs-section')?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                className="text-left hover:text-secondary-fixed transition-colors"
+                className="text-left hover:text-secondary-fixed transition-colors py-1.5"
               >
                 Packs Clôture & Construction
               </button>
               {onOpenBrochure && (
                 <button
                   onClick={onOpenBrochure}
-                  className="text-left text-amber-300 hover:text-amber-200 font-semibold transition-colors flex items-center space-x-1.5 pt-1"
+                  className="text-left text-amber-300 hover:text-amber-200 font-semibold transition-colors flex items-center space-x-1.5 py-1.5"
                 >
                   <span>📄 Plaquette Officielle Dun Tni (7 pages PDF)</span>
                 </button>
@@ -194,7 +194,7 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
                 Tél / WhatsApp : <strong className="text-white font-mono">{settings?.whatsappNumber || '+33 7 61 23 55 09'}</strong>
               </p>
               <p className="text-[11px] text-white/70">
-                Email : <a href={`mailto:${settings?.contactEmail || 'globalequalite@gmail.com'}`} className="text-white hover:underline">{settings?.contactEmail || 'globalequalite@gmail.com'}</a>
+                Email : <a href={`mailto:${settings?.contactEmail || 'globalequalite@gmail.com'}`} className="inline-block text-white hover:underline py-2">{settings?.contactEmail || 'globalequalite@gmail.com'}</a>
               </p>
               <p className="text-[11px] text-white/50">
                 Bureau : {settings?.contactAddress || 'Dakar, Rufisque — Keury Kao'}

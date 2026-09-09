@@ -46,6 +46,7 @@ interface MasterPlanPageProps {
   globalSelectedParcelId?: number | null;
   onClearGlobalSelectParcel?: () => void;
   settings?: SiteSettings;
+  parcels?: Parcel[];
 }
 
 export default function MasterPlanPage({
@@ -53,14 +54,18 @@ export default function MasterPlanPage({
   setActiveTab,
   globalSelectedParcelId,
   onClearGlobalSelectParcel,
-  settings = DEFAULT_SITE_SETTINGS
+  settings = DEFAULT_SITE_SETTINGS,
+  parcels = PARCELS
 }: MasterPlanPageProps) {
   const t = TRANSLATIONS[currentLanguage];
-  const allParcels = PARCELS;
+  // Parcelles live : mises à jour de l'Espace Gérant (cloud/localStorage) visibles ici
+  const allParcels = parcels;
 
   // Selection state
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(allParcels[0]);
   const [activeFilter, setActiveFilter] = useState<'All' | 'Phase1' | 'Promo' | 'Green' | 'Yellow' | 'Red' | 'Salmon'>('Phase1');
+  // Filtre par statut commercial (Disponibles / Réservées / Vendues)
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Available' | 'Reserved' | 'Sold'>('All');
   const [cadastreViewMode, setCadastreViewMode] = useState<'official' | 'status' | 'blueprint'>('official');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [tourParcel, setTourParcel] = useState<Parcel | null>(null);
@@ -149,14 +154,27 @@ export default function MasterPlanPage({
 
   const handleMouseUp = () => setIsDragging(false);
 
-  // Filter parcels
-  const visibleParcels = allParcels.filter(p => {
+  // Filtre par zone (Tranche / Promo / zones cadastrales) puis par statut commercial
+  const zoneFilteredParcels = allParcels.filter(p => {
     if (activeFilter === 'Phase1' && p.id > 20) return false;
     if (activeFilter === 'Promo' && !(p.isPromo || p.id <= 10)) return false;
     if (activeFilter === 'Green' && p.zone !== 'green') return false;
     if (activeFilter === 'Yellow' && p.zone !== 'yellow') return false;
     if (activeFilter === 'Red' && p.zone !== 'red') return false;
     if (activeFilter === 'Salmon' && p.zone !== 'salmon') return false;
+    return true;
+  });
+
+  // Compteurs de statut dans la sélection de zone courante (cohérents avec la carte)
+  const statusCounts = {
+    All: zoneFilteredParcels.length,
+    Available: zoneFilteredParcels.filter(p => p.status === 'Available').length,
+    Reserved: zoneFilteredParcels.filter(p => p.status === 'Reserved').length,
+    Sold: zoneFilteredParcels.filter(p => p.status === 'Sold').length,
+  };
+
+  const visibleParcels = zoneFilteredParcels.filter(p => {
+    if (statusFilter !== 'All' && p.status !== statusFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase().replace('#', '').replace('parcelle', '').replace('lot', '').trim();
       return p.id.toString().includes(q);
@@ -198,7 +216,7 @@ export default function MasterPlanPage({
         <nav className="flex items-center space-x-2 text-outline-variant text-[11px] font-bold uppercase tracking-wider">
           <button
             onClick={() => setActiveTab('home')}
-            className="hover:text-primary transition-colors cursor-pointer"
+            className="hover:text-primary transition-colors cursor-pointer py-1.5 px-1 -ml-1"
           >
             Accueil
           </button>
@@ -327,6 +345,62 @@ export default function MasterPlanPage({
             </button>
           </div>
 
+          {/* Filtres par statut commercial (Disponibles / Réservées / Vendues) */}
+          <div className="flex flex-wrap items-center gap-2 w-full pt-3 mt-1 border-t border-gray-100">
+            <span className="text-xs font-bold uppercase text-outline mr-1">Statut :</span>
+            {(['All', 'Available', 'Reserved', 'Sold'] as const).map((s) => {
+              const count = statusCounts[s];
+              const label =
+                s === 'All'
+                  ? t.masterPlan.filterAll
+                  : s === 'Available'
+                  ? t.masterPlan.filterAvailable
+                  : s === 'Reserved'
+                  ? t.masterPlan.filterReserved
+                  : t.masterPlan.filterSold;
+              // Les libellés i18n portent un compteur codé en dur (ex. « Disponibles (20) ») :
+              // on y substitue le vrai nombre de la sélection de zone courante.
+              const display = label.replace(/\d+/, String(count));
+              const isActive = statusFilter === s;
+              const pillCls =
+                s === 'Available'
+                  ? isActive
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                  : s === 'Reserved'
+                  ? isActive
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+                  : s === 'Sold'
+                  ? isActive
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
+                  : isActive
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 text-outline hover:text-primary';
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${pillCls}`}
+                >
+                  {s !== 'All' && (
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        s === 'Available'
+                          ? 'bg-emerald-500'
+                          : s === 'Reserved'
+                          ? 'bg-amber-400'
+                          : 'bg-rose-500'
+                      }`}
+                    />
+                  )}
+                  <span>{display}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="relative w-full md:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
             <input
@@ -408,21 +482,21 @@ export default function MasterPlanPage({
                 <div className="flex items-center space-x-1.5 bg-white border border-gray-200 rounded-xl p-1">
                   <button
                     onClick={zoomIn}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
+                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
                     title="Zoomer"
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={zoomOut}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
+                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
                     title="Dézoomer"
                   >
                     <ZoomOut className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={resetZoom}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
+                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
                     title="Réinitialiser"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -619,10 +693,20 @@ export default function MasterPlanPage({
                         textColor = '#FFFFFF';
                       }
                     } else if (cadastreViewMode === 'status') {
+                      // Vrai statut commercial (mis à jour depuis l'Espace Gérant) :
+                      // Disponible = vert, Réservée = ambre, Vendue = rouge
                       if (isSelected) {
                         fillColor = '#004D40';
                         strokeColor = '#002B1D';
                         textColor = '#FFFFFF';
+                      } else if (parcel.status === 'Sold') {
+                        fillColor = '#FEE2E2';
+                        strokeColor = '#DC2626';
+                        textColor = '#7F1D1D';
+                      } else if (parcel.status === 'Reserved') {
+                        fillColor = '#FEF3C7';
+                        strokeColor = '#F59E0B';
+                        textColor = '#78350F';
                       } else if (isPromo) {
                         fillColor = '#D1FAE5';
                         strokeColor = '#059669';
@@ -693,7 +777,7 @@ export default function MasterPlanPage({
                           150 m²
                         </text>
 
-                        {/* Tranche 1 indicator badge */}
+                        {/* Tranche 1 indicator badge — vrai statut commercial */}
                         {isPhase1 && (
                           <rect
                             x={geo.cx - 16}
@@ -701,8 +785,8 @@ export default function MasterPlanPage({
                             width="32"
                             height="9"
                             rx="2"
-                            fill={isSelected ? '#D4AF37' : '#004D40'}
-                            opacity={isSelected ? 1 : 0.85}
+                            fill={parcel.status === 'Sold' ? '#DC2626' : parcel.status === 'Reserved' ? '#D97706' : '#004D40'}
+                            opacity={0.9}
                           />
                         )}
                         {isPhase1 && (
@@ -714,7 +798,11 @@ export default function MasterPlanPage({
                             fontWeight="bold"
                             fill="#FFFFFF"
                           >
-                            T1 DISPO
+                            {parcel.status === 'Sold'
+                              ? 'T1 VENDUE'
+                              : parcel.status === 'Reserved'
+                              ? 'T1 RÉSERVÉE'
+                              : 'T1 DISPO'}
                           </text>
                         )}
 
@@ -932,9 +1020,17 @@ export default function MasterPlanPage({
                   </div>
 
                   <div className="flex flex-col items-end gap-1">
-                    {selectedParcel.id <= 20 ? (
+                    {selectedParcel.status === 'Sold' ? (
+                      <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {selectedParcel.id <= 20 ? 'Tranche 1 • Vendue' : 'Vendue'}
+                      </span>
+                    ) : selectedParcel.status === 'Reserved' ? (
+                      <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {selectedParcel.id <= 20 ? 'Tranche 1 • Réservée' : 'Réservée'}
+                      </span>
+                    ) : selectedParcel.id <= 20 ? (
                       <span className="bg-[#25D366]/15 text-[#0F6B4F] border border-[#25D366]/30 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Tranche 1 • Libre
+                        Tranche 1 • Disponible
                       </span>
                     ) : (
                       <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -1026,7 +1122,7 @@ export default function MasterPlanPage({
                 <div className="space-y-2.5 pt-2 border-t border-gray-200">
                   {/* WhatsApp Direct */}
                   <a
-                    href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(`Bonjour Sénégal Immobilier Consulting, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${selectedParcel.id} (${selectedParcel.dimensions || '150 m²'} - ${selectedParcel.zoneName?.FR || 'Sébikhotane'}).`)}`}
+                    href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(`Bonjour ${settings.companyName || 'Sénégal Immobilier Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${selectedParcel.id} (${selectedParcel.dimensions || '150 m²'} - ${selectedParcel.zoneName?.FR || 'Sébikhotane'}).`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-sm"
@@ -1105,7 +1201,7 @@ export default function MasterPlanPage({
 
           {/* Interactive Tier Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PAYMENT_SCHEDULE_TIERS.map((tier, idx) => {
+            {(settings.content?.paymentTiers ?? PAYMENT_SCHEDULE_TIERS).map((tier, idx) => {
               const isSelected = selectedTierIdx === idx;
               return (
                 <div
@@ -1249,7 +1345,15 @@ export default function MasterPlanPage({
                   {/* Pricing / Promo */}
                   <div className="border-t border-current/10 pt-2 flex justify-between items-center text-xs">
                     <span className="font-bold">300 €/m</span>
-                    {isPromo ? (
+                    {parcel.status === 'Sold' ? (
+                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider bg-rose-100 text-rose-800">
+                        Vendue
+                      </span>
+                    ) : parcel.status === 'Reserved' ? (
+                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider bg-amber-100 text-amber-800">
+                        Réservée
+                      </span>
+                    ) : isPromo ? (
                       <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ${
                         isSelected ? 'bg-secondary-fixed text-primary' : 'bg-emerald-50 text-emerald-800'
                       }`}>
@@ -1257,7 +1361,7 @@ export default function MasterPlanPage({
                       </span>
                     ) : (
                       <span className="text-[9px] opacity-70">
-                        {isPhase1 ? 'T1 Libre' : 'T2'}
+                        {isPhase1 ? 'T1 Disponible' : 'T2'}
                       </span>
                     )}
                   </div>

@@ -13,7 +13,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
   const quickMessages = currentLanguage === 'FR' ? [
     {
       label: '📄 Recevoir le dossier complet',
-      text: 'Bonjour Sénégal Immobilier Consulting, je souhaite recevoir le dossier complet du projet de Sébikhotane (54 parcelles).',
+      text: 'Bonjour ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', je souhaite recevoir le dossier complet du projet de Sébikhotane (54 parcelles).',
     },
     {
       label: '🟢 Vérifier une parcelle disponible',
@@ -30,7 +30,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
   ] : [
     {
       label: '📄 Request full documentation',
-      text: 'Hello Sénégal Immobilier Consulting, I would like to receive the full documentation for the Sebikotane project.',
+      text: 'Hello ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', I would like to receive the full documentation for the Sebikotane project.',
     },
     {
       label: '🟢 Check available plots',
@@ -48,8 +48,8 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
 
   const handleOpenWhatsApp = (customText?: string) => {
     const defaultText = currentLanguage === 'FR'
-      ? 'Bonjour Sénégal Immobilier Consulting, je souhaite avoir des informations concernant les parcelles de 150 m² à Sébikhotane.'
-      : 'Hello Sénégal Immobilier Consulting, I would like information regarding the 150 sqm plots in Sebikotane.';
+      ? 'Bonjour ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', je souhaite avoir des informations concernant les parcelles de 150 m² à Sébikhotane.'
+      : 'Hello ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', I would like information regarding the 150 sqm plots in Sebikotane.';
     
     const message = customText || defaultText;
     const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(message)}`;
@@ -129,11 +129,11 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
       {/* Main Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-3 rounded-full shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 transform hover:scale-105 cursor-pointer group select-none border-2 border-white"
+        className="relative flex items-center space-x-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-3 py-3 sm:px-4 rounded-full shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform hover:scale-105 active:scale-[0.98] cursor-pointer group select-none border-2 border-white"
         aria-label="Contacter sur WhatsApp"
       >
-        <MessageCircle className="w-6 h-6 fill-white" />
-        <span className="text-xs font-bold font-sans tracking-wide pr-1 hidden sm:inline">
+        <MessageCircle className="w-6 h-6 fill-white shrink-0" />
+        <span className="text-xs font-bold font-sans tracking-wide pr-1 hidden lg:inline">
           {currentLanguage === 'FR' ? 'WhatsApp Direct' : 'WhatsApp Us'}
         </span>
         <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-ping pointer-events-none" />
