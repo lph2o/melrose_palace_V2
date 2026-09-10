@@ -116,13 +116,13 @@ function upsertJsonLd(id: string, data: unknown) {
 /* JSON-LD                                                             */
 /* ------------------------------------------------------------------ */
 
-function organizationLd(settings: SiteSettings, url: string) {
+function organizationLd(settings: SiteSettings, url: string, image: string) {
   return {
     '@context': 'https://schema.org',
     '@type': ['Organization', 'RealEstateAgent'],
     name: settings.companyName,
     url,
-    image: DEFAULT_OG_IMAGE,
+    image,
     telephone: settings.whatsappNumber,
     email: settings.contactEmail,
     address: {
@@ -135,7 +135,7 @@ function organizationLd(settings: SiteSettings, url: string) {
   };
 }
 
-function productLd(settings: SiteSettings, url: string, lang: Language) {
+function productLd(settings: SiteSettings, url: string, lang: Language, image: string) {
   const packs = settings.content?.packs ?? COMPLEMENTARY_PACKS;
   return packs.map((pack, i) => ({
     '@context': 'https://schema.org',
@@ -144,7 +144,7 @@ function productLd(settings: SiteSettings, url: string, lang: Language) {
     description: pack.description[lang] || '',
     brand: { '@type': 'Brand', name: settings.companyName },
     url: `${url}#packs`,
-    image: DEFAULT_OG_IMAGE,
+    image,
     offers: {
       '@type': 'Offer',
       availability: 'https://schema.org/InStock',
@@ -213,6 +213,8 @@ export function applySeo({ settings, language, view }: SeoInput) {
   const url = `${origin}${path}`;
   const title = TITLES[view][language];
   const description = DESCRIPTIONS[view][language];
+  // Image partagée (OG/Twitter/JSON-LD) : suit le hero éditée depuis l'admin
+  const ogImage = settings.heroImage || DEFAULT_OG_IMAGE;
 
   // Title + description uniques
   document.title = title;
@@ -234,7 +236,7 @@ export function applySeo({ settings, language, view }: SeoInput) {
   upsertMeta('property', 'og:title', title);
   upsertMeta('property', 'og:description', description);
   upsertMeta('property', 'og:url', url);
-  upsertMeta('property', 'og:image', DEFAULT_OG_IMAGE);
+  upsertMeta('property', 'og:image', ogImage);
   upsertMeta('property', 'og:image:alt', 'Vue aérienne du domaine Dun Tni à Sébikhotane, Sénégal');
   upsertMeta('property', 'og:locale', language === 'FR' ? 'fr_FR' : 'en_US');
   upsertMeta('property', 'og:locale:alternate', language === 'FR' ? 'en_US' : 'fr_FR');
@@ -243,11 +245,11 @@ export function applySeo({ settings, language, view }: SeoInput) {
   upsertMeta('name', 'twitter:card', 'summary_large_image');
   upsertMeta('name', 'twitter:title', title);
   upsertMeta('name', 'twitter:description', description);
-  upsertMeta('name', 'twitter:image', DEFAULT_OG_IMAGE);
+  upsertMeta('name', 'twitter:image', ogImage);
 
   // JSON-LD
-  upsertJsonLd('ld-organization', organizationLd(settings, url));
-  productLd(settings, url, language).forEach((block, i) => upsertJsonLd(`ld-product-${i}`, block));
+  upsertJsonLd('ld-organization', organizationLd(settings, url, ogImage));
+  productLd(settings, url, language, ogImage).forEach((block, i) => upsertJsonLd(`ld-product-${i}`, block));
   const faq = faqLd(settings, language);
   if (faq) upsertJsonLd('ld-faq', faq);
   else document.getElementById('ld-faq')?.remove();

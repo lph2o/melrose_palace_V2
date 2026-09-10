@@ -21,6 +21,8 @@ import {
   Hash,
   User,
   Tag,
+  Image,
+  Images,
   ListChecks,
   CalendarDays,
   FileText,
@@ -1053,6 +1055,52 @@ export default function AdminContentTab({
               </div>
             </div>
           </div>
+        </div>
+      </Section>
+
+      {/* Images du site — hero + vue aérienne (téléversées vers le bucket) */}
+      <Section
+        icon={<Images className="w-4 h-4" strokeWidth={1.5} />}
+        title="Images du site"
+        sub="Bannière principale (hero) et vue aérienne de la section Vision"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <FormGroup icon={<Image className="w-3.5 h-3.5" strokeWidth={1.5} />} label="Bannière principale (hero)">
+            <div className="min-w-0 space-y-2">
+              <Field
+                label="URL de l'image hero"
+                value={settings.heroImage ?? ''}
+                onChange={(v) => onChange({ heroImage: v })}
+                max={240}
+                pathCheck
+                hint="Fond du premier écran de la page d'accueil"
+              />
+              <MediaUpload
+                folder="images"
+                label="Image hero"
+                currentUrl={settings.heroImage}
+                onUrl={(url) => onChange({ heroImage: url })}
+              />
+            </div>
+          </FormGroup>
+          <FormGroup icon={<MapPin className="w-3.5 h-3.5" strokeWidth={1.5} />} label="Vue aérienne (section Vision)">
+            <div className="min-w-0 space-y-2">
+              <Field
+                label="URL de la vue aérienne"
+                value={settings.aerialImage ?? ''}
+                onChange={(v) => onChange({ aerialImage: v })}
+                max={240}
+                pathCheck
+                hint="Orthophoto drone des 54 parcelles"
+              />
+              <MediaUpload
+                folder="images"
+                label="Vue aérienne"
+                currentUrl={settings.aerialImage}
+                onUrl={(url) => onChange({ aerialImage: url })}
+              />
+            </div>
+          </FormGroup>
         </div>
       </Section>
 

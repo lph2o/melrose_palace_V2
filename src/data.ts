@@ -22,6 +22,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   promoDesc: 'Avantage exclusif réservé aux 10 premiers acquéreurs (frais de dossier et bornage offerts + priorité d\'attribution).',
   promoPlotsRemaining: 10,
   brochureUrl: `${SITE_MEDIA_BASE_URL}/pdf/Dun-Tni-Brochure-Premium.pdf`,
+  heroImage: `${SITE_MEDIA_BASE_URL}/images/hero.jpg`,
+  aerialImage: `${SITE_MEDIA_BASE_URL}/images/54_parcelles.png`,
 };
 
 export const PAYMENT_SCHEDULE_TIERS = [

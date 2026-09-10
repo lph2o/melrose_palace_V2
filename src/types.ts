@@ -253,6 +253,10 @@ export interface SiteSettings {
   promoPlotsRemaining: number;
   /** URL de la plaquette PDF (Supabase Storage ou chemin local /pdf/…). */
   brochureUrl?: string;
+  /** Image hero (bannière principale) — éditable depuis l'Espace Gérant. */
+  heroImage?: string;
+  /** Vue aérienne de la section Vision — éditable depuis l'Espace Gérant. */
+  aerialImage?: string;
   /** Contenu éditorial pilotable depuis l'Espace Gérant (onglet « Contenu du site »). */
   content?: SiteContent;
 }

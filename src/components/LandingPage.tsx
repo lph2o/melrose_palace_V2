@@ -45,7 +45,8 @@ import {
 } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import VideoShowcase from './VideoShowcase';
-const aerialParcelsImage = `${SITE_MEDIA_BASE_URL}/images/54_parcelles.png`;
+const AERIAL_IMAGE_FALLBACK = `${SITE_MEDIA_BASE_URL}/images/54_parcelles.png`;
+const HERO_IMAGE_FALLBACK = `${SITE_MEDIA_BASE_URL}/images/hero.jpg`;
 import {
   CADASTRAL_BORNES,
   CADASTRAL_ROAD_NETWORK,
@@ -79,6 +80,9 @@ export default function LandingPage({
 }: LandingPageProps) {
   const t = TRANSLATIONS[currentLanguage];
   const ui = t.ui as UITranslations;
+  // Images du site pilotées depuis l'Espace Gérant (onglet Contenu → Images du site)
+  const heroImage = settings.heroImage || HERO_IMAGE_FALLBACK;
+  const aerialImage = settings.aerialImage || AERIAL_IMAGE_FALLBACK;
   const [activeFaq, setActiveFaq] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -239,7 +243,7 @@ export default function LandingPage({
         {/* Background Visual */}
         <div className="absolute inset-0 z-0 bg-[#001c13]">
           <img
-            src={`${SITE_MEDIA_BASE_URL}/images/hero.jpg`}
+            src={heroImage}
             alt={ui.heroImgAlt}
             className="w-full h-full object-cover opacity-35"
             referrerPolicy="no-referrer"
@@ -449,7 +453,7 @@ export default function LandingPage({
             {/* View Mode 1: Authentic Drone Photo with 54 plots embedded on the ground */}
             {visionViewMode === 'overlay' ? (
               <img
-                src={aerialParcelsImage}
+                src={aerialImage}
                 alt={ui.aerialImgAlt}
                 className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
                 referrerPolicy="no-referrer"
