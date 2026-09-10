@@ -40,11 +40,12 @@ import {
   BLOG_ARTICLES,
   COMPLEMENTARY_PACKS,
   PAYMENT_SCHEDULE_TIERS,
-  TESTIMONIALS
+  TESTIMONIALS,
+  SITE_MEDIA_BASE_URL
 } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import VideoShowcase from './VideoShowcase';
-const aerialParcelsImage = '/images/54_parcelles.png';
+const aerialParcelsImage = `${SITE_MEDIA_BASE_URL}/images/54_parcelles.png`;
 import {
   CADASTRAL_BORNES,
   CADASTRAL_ROAD_NETWORK,
@@ -104,16 +105,25 @@ export default function LandingPage({
   const calculatedDuration = simulatorMonthly > 0 ? Math.ceil(calculatedRemaining / simulatorMonthly) : 40;
 
   useEffect(() => {
+    // Throttle via requestAnimationFrame : le scroll ne déclenche qu'un
+    // setState par frame (INP — évite les re-rendus à chaque événement).
+    let raf = 0;
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        const progress = (window.scrollY / totalHeight) * 100;
-        setScrollProgress(progress);
-      }
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (totalHeight > 0) {
+          setScrollProgress((window.scrollY / totalHeight) * 100);
+        }
+      });
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
 
@@ -229,10 +239,12 @@ export default function LandingPage({
         {/* Background Visual */}
         <div className="absolute inset-0 z-0 bg-[#001c13]">
           <img
-            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1800&auto=format&fit=crop"
+            src={`${SITE_MEDIA_BASE_URL}/images/hero.jpg`}
             alt={ui.heroImgAlt}
             className="w-full h-full object-cover opacity-35"
             referrerPolicy="no-referrer"
+            fetchPriority="high"
+            decoding="async"
           />
         </div>
         
@@ -441,6 +453,8 @@ export default function LandingPage({
                 alt={ui.aerialImgAlt}
                 className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                decoding="async"
               />
             ) : (
               /* View Mode 2: Official 2D Surveyor Cadastral Plan */
@@ -673,9 +687,9 @@ export default function LandingPage({
             <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
               {t.location.sectionTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
               {t.location.title}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-on-surface-variant font-light leading-relaxed">
               {t.location.desc}
             </p>
@@ -788,9 +802,9 @@ export default function LandingPage({
                 <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary-fixed">
                   {ui.simulatorTransparencyTag}
                 </span>
-                <h3 className="font-serif text-2xl sm:text-4xl font-bold text-white">
+                <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
                   {t.masterPlan.calculator.title}
-                </h3>
+                </h2>
                 <p className="text-xs sm:text-sm text-white/80 font-light leading-relaxed">
                   {t.masterPlan.calculator.desc}
                 </p>
@@ -968,9 +982,9 @@ export default function LandingPage({
             <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
               {t.packs.sectionTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
               {t.packs.title}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-on-surface-variant font-light leading-relaxed">
               {t.packs.desc}
             </p>
@@ -1071,9 +1085,9 @@ export default function LandingPage({
             <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
               {ui.testimonialsTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
               {ui.testimonialsTitle}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-outline font-light">
               {ui.testimonialsDesc}
             </p>
@@ -1099,8 +1113,12 @@ export default function LandingPage({
                 <div className="pt-4 border-t border-gray-200 flex items-center space-x-3">
                   <img
                     src={test.avatar}
-                    alt={test.name}
+                    alt={`${test.name} — ${test.role[currentLanguage]}`}
                     className="w-10 h-10 rounded-full object-cover border border-secondary/30"
+                    loading="lazy"
+                    decoding="async"
+                    width={40}
+                    height={40}
                   />
                   <div>
                     <h4 className="font-serif font-bold text-xs sm:text-sm text-primary">
@@ -1127,9 +1145,9 @@ export default function LandingPage({
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary block">
               {ui.insightsTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
               {ui.insightsTitle}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-outline font-light">
               {ui.insightsDesc}
             </p>
@@ -1145,8 +1163,12 @@ export default function LandingPage({
                 <div className="h-44 overflow-hidden relative">
                   <img
                     src={article.image}
-                    alt={article.title[currentLanguage]}
+                    alt={`${article.title[currentLanguage]} — ${ui.insightsTag}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    decoding="async"
+                    width={400}
+                    height={300}
                   />
                   <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-mono uppercase font-bold px-2.5 py-0.5 rounded">
                     {article.category[currentLanguage]}
@@ -1180,9 +1202,9 @@ export default function LandingPage({
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary block">
               {ui.faqTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
               {ui.faqTitle}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-outline font-light">
               {ui.faqDesc}
             </p>
@@ -1238,9 +1260,9 @@ export default function LandingPage({
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary-fixed">
               {ui.contactAdvisorTag}
             </span>
-            <h3 className="font-serif text-2xl sm:text-4xl font-bold text-white leading-tight">
+            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white leading-tight">
               {t.contact.title}
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-white/80 font-light leading-relaxed">
               {t.contact.desc}
             </p>

@@ -48,15 +48,20 @@ export default function Navbar({
   }, [isScrolled]);
 
   useEffect(() => {
+    // Throttle via requestAnimationFrame : un setState par frame max (INP).
+    let raf = 0;
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setIsScrolled(window.scrollY > 50);
+      });
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const handleNavLink = (sectionId: string) => {

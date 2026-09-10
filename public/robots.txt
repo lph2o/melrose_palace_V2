@@ -1,0 +1,3 @@
+# robots.txt généré par scripts/generate-seo-files.cjs — environnement NON production.
+User-agent: *
+Disallow: /

@@ -10,6 +10,7 @@ import BrochureModal from './components/BrochureModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
 import { Language, BlogArticle, SiteSettings, Parcel } from './types';
 import { DEFAULT_SITE_SETTINGS, PARCELS } from './data';
+import { applySeo, detectLanguageFromPath, detectViewFromPath, langViewPath } from './lib/seo';
 import {
   fetchRemoteSettings,
   fetchRemoteParcels,
@@ -24,8 +25,14 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>('FR'); // French by default
-  const [activeTab, setActiveTab] = useState<'home' | 'masterplan'>('home');
+  // Langue et vue initialisées depuis l'URL : /fr, /en, /fr/plan, /en/plan,
+  // /plan (FR) — et '/' par défaut (FR). URLs distinctes = SEO multilingue.
+  const [language, setLanguageState] = useState<Language>(() =>
+    detectLanguageFromPath(window.location.pathname)
+  );
+  const [activeTab, setActiveTabState] = useState<'home' | 'masterplan'>(() =>
+    detectViewFromPath(window.location.pathname)
+  );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBrochureOpen, setIsBrochureOpen] = useState(false);
   const [globalSelectedParcelId, setGlobalSelectedParcelId] = useState<number | null>(null);
@@ -184,6 +191,21 @@ export default function App() {
     await Promise.all([clearRemoteSettings(), clearRemoteParcels()]);
   };
 
+  // Langue / vue → URL (History API, sans rechargement)
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    if (!isAdminPath()) {
+      window.history.pushState({}, '', langViewPath(lang, activeTab));
+    }
+  };
+
+  const setActiveTab = (tab: 'home' | 'masterplan') => {
+    setActiveTabState(tab);
+    if (!isAdminPath()) {
+      window.history.pushState({}, '', langViewPath(language, tab));
+    }
+  };
+
   // ------------------------------------------------------------------
   // Page administrateur dédiée : accessible via /admin (ou #/admin)
   // ------------------------------------------------------------------
@@ -195,7 +217,14 @@ export default function App() {
   const [isAdminRoute, setIsAdminRoute] = useState(isAdminPath);
 
   useEffect(() => {
-    const sync = () => setIsAdminRoute(isAdminPath());
+    const sync = () => {
+      setIsAdminRoute(isAdminPath());
+      if (!isAdminPath()) {
+        // Retour / navigation avant-arrière : on resynchronise langue et vue
+        setLanguageState(detectLanguageFromPath(window.location.pathname));
+        setActiveTabState(detectViewFromPath(window.location.pathname));
+      }
+    };
     window.addEventListener('hashchange', sync);
     window.addEventListener('popstate', sync);
     return () => {
@@ -204,13 +233,23 @@ export default function App() {
     };
   }, []);
 
+  // SEO : titre, description, OG, canonical, hreflang et JSON-LD à jour
+  // selon la langue, la vue et le contenu (packs/FAQ pilotés par l'admin).
+  useEffect(() => {
+    applySeo({
+      settings,
+      language,
+      view: isAdminRoute ? 'admin' : activeTab,
+    });
+  }, [settings, language, activeTab, isAdminRoute]);
+
   const navigateToAdmin = () => {
     window.location.hash = '/admin';
   };
 
   const navigateAwayFromAdmin = () => {
     if (window.location.pathname.endsWith('/admin')) {
-      window.history.pushState({}, '', '/');
+      window.history.pushState({}, '', langViewPath(language, activeTab));
     }
     window.location.hash = '';
     setIsAdminRoute(false);
