@@ -2,17 +2,18 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { X, Download, ExternalLink, FileText } from 'lucide-react';
 import { SiteSettings, Language } from '../types';
+import { SITE_MEDIA_BASE_URL } from '../data';
 
 /**
- * Official brochure viewer — renders the real PDF (public/pdf/Dun-Tni-Brochure-Premium.pdf)
- * inside a premium modal shell. The browser's native PDF viewer handles paging,
- * zoom and print; explicit Download / Open actions cover mobile browsers that
- * don't render inline PDFs.
+ * Official brochure viewer — renders the real PDF (hébergé dans Supabase
+ * Storage) inside a premium modal shell. The browser's native PDF viewer
+ * handles paging, zoom and print; explicit Download / Open actions cover
+ * mobile browsers that don't render inline PDFs.
  */
 
 // URL pilotable depuis l'Espace Gérant (onglet Contenu → Plaquette PDF),
-// avec repli sur la plaquette locale du dépôt.
-const BROCHURE_URL_FALLBACK = '/pdf/Dun-Tni-Brochure-Premium.pdf';
+// avec repli sur la plaquette hébergée dans le bucket « site-media ».
+const BROCHURE_URL_FALLBACK = `${SITE_MEDIA_BASE_URL}/pdf/Dun-Tni-Brochure-Premium.pdf`;
 
 interface BrochureModalProps {
   isOpen: boolean;

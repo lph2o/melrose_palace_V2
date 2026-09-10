@@ -1,5 +1,9 @@
 import { ConnectivityItem, AdvantageItem, FAQItem, Parcel, BlogArticle, ComplementaryPack, SiteSettings, Testimonial, VideoContent, SiteContent } from './types';
 
+/** Racine des médias hébergés dans Supabase Storage (bucket « site-media »). */
+export const SITE_MEDIA_BASE_URL =
+  'https://ywvztcdgssbgeawkcphe.supabase.co/storage/v1/object/public/site-media';
+
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   companyName: 'Sénégal Immobilier Consulting',
   projectName: 'Dun Tni • Sébikhotane',
@@ -17,7 +21,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   promoTitle: 'Offre Lancement Diaspora : 10 Premières Parcelles',
   promoDesc: 'Avantage exclusif réservé aux 10 premiers acquéreurs (frais de dossier et bornage offerts + priorité d\'attribution).',
   promoPlotsRemaining: 10,
-  brochureUrl: '/pdf/Dun-Tni-Brochure-Premium.pdf',
+  brochureUrl: `${SITE_MEDIA_BASE_URL}/pdf/Dun-Tni-Brochure-Premium.pdf`,
 };
 
 export const PAYMENT_SCHEDULE_TIERS = [
@@ -1093,7 +1097,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     },
     date: '08 Septembre 2026',
     readTime: '4 min',
-    image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=400&auto=format&fit=crop',
+    image: `${SITE_MEDIA_BASE_URL}/images/blog-1.jpg`,
   },
   {
     id: 'sebikotane-ter-growth',
@@ -1115,7 +1119,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     },
     date: '01 Septembre 2026',
     readTime: '5 min',
-    image: 'https://images.unsplash.com/photo-1590674899484-d5640e854abe?q=80&w=400&auto=format&fit=crop',
+    image: `${SITE_MEDIA_BASE_URL}/images/blog-2.jpg`,
   },
   {
     id: 'villa-construction-remote',
@@ -1137,7 +1141,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     },
     date: '25 Août 2026',
     readTime: '6 min',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=400&auto=format&fit=crop',
+    image: `${SITE_MEDIA_BASE_URL}/images/blog-3.jpg`,
   },
 ];
 
@@ -1160,7 +1164,7 @@ export const TESTIMONIALS: Testimonial[] = [
       FR: 'Vivant à l\'étranger, j\'avais très peur des arnaques et des doubles ventes. Avec Sénégal Immobilier Consulting, j\'ai pu vérifier la délibération et le NICAD avant tout engagement. La mensualité de 300 € est d\'une souplesse incroyable.',
       EN: 'Living abroad, I feared scams and duplicate sales. With Sénégal Immobilier Consulting, I verified the deliberation and NICAD before committing. The €300/mo payment is remarkably accessible.',
     },
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+    avatar: `${SITE_MEDIA_BASE_URL}/images/avatar-1.jpg`,
     duration: '1:45',
     relationship: {
       FR: 'Acquéreur Parcelle #04 (150 m²)',
@@ -1180,7 +1184,7 @@ export const TESTIMONIALS: Testimonial[] = [
       FR: 'La position entre Diamniadio et l\'AIBD est parfaite. J\'ai pris le Pack 2 avec clôture immédiate : mon terrain est protégé et bien délimité. L\'équipe m\'a envoyé des vidéos régulières sur WhatsApp.',
       EN: 'The position between Diamniadio and AIBD is strategic. I picked Pack 2 with perimeter fencing: my plot is secured from day one with video updates via WhatsApp.',
     },
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop',
+    avatar: `${SITE_MEDIA_BASE_URL}/images/avatar-2.jpg`,
     duration: '2:10',
     relationship: {
       FR: 'Acquéreur Parcelle #09 (Pack Clôture)',
@@ -1200,7 +1204,7 @@ export const TESTIMONIALS: Testimonial[] = [
       FR: 'Acheter comptant à 13 500 € pour 150 m² à Sébikhotane est une opportunité en or. Avec la gare TER à 4 km et les grands chantiers publics, la plus-value dans 3 à 5 ans sera remarquable.',
       EN: 'Buying full cash at €13,500 for 150 sqm in Sebikotane is a golden opportunity. With the TER station 4 km away, capital gains in 3 to 5 years will be substantial.',
     },
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+    avatar: `${SITE_MEDIA_BASE_URL}/images/avatar-3.jpg`,
     duration: '1:30',
     relationship: {
       FR: 'Paiement Comptant (13 500 €)',
@@ -1211,8 +1215,8 @@ export const TESTIMONIALS: Testimonial[] = [
 
 export const VIDEO_ITEMS: VideoContent[] = [
   {
-    src: '/videos/video_1.mp4',
-    poster: '/images/video_1_poster.jpg',
+    src: `${SITE_MEDIA_BASE_URL}/videos/video_1.mp4`,
+    poster: `${SITE_MEDIA_BASE_URL}/images/video_1_poster.jpg`,
     badgeLeft: { FR: 'SÉBIKHOTANE • VUE DRONE', EN: 'SÉBIKHOTANE • DRONE VIEW' },
     title: { FR: 'Vue Aérienne Drone — Sébikhotane', EN: 'Drone Aerial View — Sébikhotane' },
     desc: {
@@ -1221,8 +1225,8 @@ export const VIDEO_ITEMS: VideoContent[] = [
     },
   },
   {
-    src: '/videos/video_2.mp4',
-    poster: '/images/video_2_poster.jpg',
+    src: `${SITE_MEDIA_BASE_URL}/videos/video_2.mp4`,
+    poster: `${SITE_MEDIA_BASE_URL}/images/video_2_poster.jpg`,
     badgeLeft: { FR: 'SÉBIKHOTANE • BORNAGE', EN: 'SÉBIKHOTANE • SURVEY' },
     title: { FR: 'Présentation du Site & Bornage', EN: 'Site Overview & Boundary Markers' },
     desc: {

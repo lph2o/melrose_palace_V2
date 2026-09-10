@@ -9,3 +9,6 @@ coverage/
 
 # Artifact généré (public/mobile-audit.html + scripts/build-mobile-audit.cjs)
 public/mobile-audit-standalone.html
+
+# Vidéos sources (.mov) — trop lourdes pour le dépôt, conservées localement
+public/videos/*.mov
