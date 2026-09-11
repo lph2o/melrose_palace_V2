@@ -12,3 +12,4 @@ public/mobile-audit-standalone.html
 
 # Vidéos sources (.mov) — trop lourdes pour le dépôt, conservées localement
 public/videos/*.mov
+.vercel
