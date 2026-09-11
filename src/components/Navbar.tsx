@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, Globe, PhoneCall, Search, Settings, ShieldCheck, Calculator, FileText } from 'lucide-react';
+import { Menu, X, Globe, PhoneCall, Search, ShieldCheck, Calculator, FileText } from 'lucide-react';
 import { Language, SiteSettings, UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { hiddenAnchors } from '../site/sectionsCatalog';
@@ -12,7 +12,6 @@ interface NavbarProps {
   setActiveTab: (tab: 'home' | 'masterplan') => void;
   scrollToSection: (sectionId: string) => void;
   onSearchTrigger?: () => void;
-  onOpenAdmin?: () => void;
   onOpenBrochure?: () => void;
   settings?: SiteSettings;
 }
@@ -24,7 +23,6 @@ export default function Navbar({
   setActiveTab,
   scrollToSection,
   onSearchTrigger,
-  onOpenAdmin,
   onOpenBrochure,
   settings,
 }: NavbarProps) {
@@ -346,16 +344,8 @@ export default function Navbar({
                   </button>
                 )}
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenAdmin?.();
-                  }}
-                  className="w-full py-2.5 border border-white/20 text-white/80 rounded-xl text-xs flex items-center justify-center space-x-2 cursor-pointer hover:bg-white/5"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>{t.adminAccess}</span>
-                </button>
+                {/* Accès gestionnaire retiré du menu public : l'Espace Gérant
+                    n'est plus joignable que par l'URL directe /admin. */}
               </div>
             </div>
           </motion.div>

@@ -1,18 +1,17 @@
 import { useState, FormEvent } from 'react';
 import { Language, SiteSettings } from '../types';
 import { TRANSLATIONS } from '../data';
-import { Mail, ArrowRight, MessageCircle, Phone, MapPin, ShieldCheck, Settings } from 'lucide-react';
+import { Mail, ArrowRight, MessageCircle, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface FooterProps {
   currentLanguage: Language;
   setActiveTab: (tab: 'home' | 'masterplan') => void;
   settings?: SiteSettings;
-  onOpenAdmin?: () => void;
   onOpenBrochure?: () => void;
 }
 
-export default function Footer({ currentLanguage, setActiveTab, settings, onOpenAdmin, onOpenBrochure }: FooterProps) {
+export default function Footer({ currentLanguage, setActiveTab, settings, onOpenBrochure }: FooterProps) {
   const t = TRANSLATIONS[currentLanguage];
   const [email, setEmail] = useState<string>('');
   const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
@@ -207,18 +206,9 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
         <div className="mt-12 text-center md:text-left text-white/50 text-[11px] border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2">
           <div className="flex items-center space-x-3">
             <span>&copy; 2026 {t.allRightsReserved}</span>
-            {onOpenAdmin && (
-              <>
-                <span>•</span>
-                <button
-                  onClick={onOpenAdmin}
-                  className="inline-flex items-center space-x-1.5 text-secondary-fixed hover:text-white transition-colors cursor-pointer bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-md border border-white/15 text-[11px] font-medium"
-                >
-                  <Settings className="w-3 h-3" />
-                  <span>{currentLanguage === 'FR' ? 'Tableau de bord (Espace Gérant)' : 'Manager Dashboard'}</span>
-                </button>
-              </>
-            )}
+            {/* L'accès gestionnaire a été volontairement retiré des pages
+                publiques (footer et menu mobile) : l'Espace Gérant reste joignable
+                uniquement par l'URL directe /admin. */}
           </div>
           <span className="font-mono text-[10px]">Sébikhotane • Région de Dakar • Sénégal</span>
         </div>

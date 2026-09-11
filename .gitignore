@@ -13,3 +13,6 @@ public/mobile-audit-standalone.html
 # Vidéos sources (.mov) — trop lourdes pour le dépôt, conservées localement
 public/videos/*.mov
 .vercel
+
+# État local de l'outillage (run doc, logs de preview, identifiant du worktree)
+.freebuff/

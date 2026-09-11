@@ -263,10 +263,6 @@ export default function App() {
     });
   }, [settings, language, activeTab, route]);
 
-  const navigateToAdmin = () => {
-    window.location.hash = '/admin';
-  };
-
   const navigateToEditor = () => {
     window.location.hash = '/admin/editor';
   };
@@ -375,7 +371,6 @@ export default function App() {
         setActiveTab={setActiveTab}
         scrollToSection={scrollToSection}
         onSearchTrigger={() => setIsSearchOpen(true)}
-        onOpenAdmin={navigateToAdmin}
         onOpenBrochure={() => setIsBrochureOpen(true)}
         settings={settings}
       />
@@ -419,7 +414,6 @@ export default function App() {
         currentLanguage={language}
         setActiveTab={setActiveTab}
         settings={settings}
-        onOpenAdmin={navigateToAdmin}
         onOpenBrochure={() => setIsBrochureOpen(true)}
       />
 
