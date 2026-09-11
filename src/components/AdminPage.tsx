@@ -23,10 +23,12 @@ import {
   Sun,
   Moon,
   FileText,
+  Eye,
 } from 'lucide-react';
 import { Lead, SiteSettings, Parcel } from '../types';
 import { ADMIN_EMAIL } from '../lib/adminAuth';
 import AdminContentTab from './AdminContentTab';
+import AdminSectionsTab from './AdminSectionsTab';
 import {
   signInAdmin,
   signOutAdmin,
@@ -94,13 +96,14 @@ interface AdminPageProps {
   loading?: boolean;
 }
 
-type TabId = 'tarifs' | 'parcelles' | 'contact' | 'leads' | 'content';
+type TabId = 'tarifs' | 'parcelles' | 'contact' | 'leads' | 'sections' | 'content';
 
 const TABS: { id: TabId; label: string; short: string; icon: React.ReactNode }[] = [
   { id: 'tarifs', label: 'Tarifs & Échéancier', short: 'Tarifs', icon: <Calculator className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'parcelles', label: 'Statut des Parcelles', short: 'Parcelles', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'contact', label: 'WhatsApp & Promotions', short: 'WhatsApp', icon: <MessageCircle className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'leads', label: 'Demandes de contact', short: 'Demandes', icon: <Inbox className="w-4 h-4" strokeWidth={1.5} /> },
+  { id: 'sections', label: 'Sections du site', short: 'Sections', icon: <Eye className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'content', label: 'Contenu du site', short: 'Contenu', icon: <FileText className="w-4 h-4" strokeWidth={1.5} /> },
 ];
 
@@ -1171,6 +1174,14 @@ export default function AdminPage({
                                 </div>
                               </div>
                             </div>
+                          )}
+
+                          {activeTab === 'sections' && (
+                            <AdminSectionsTab
+                              settings={formData}
+                              onChange={(patch) => setFormData({ ...formData, ...patch })}
+                              onOpenEditor={onOpenEditor}
+                            />
                           )}
 
                           {activeTab === 'content' && (

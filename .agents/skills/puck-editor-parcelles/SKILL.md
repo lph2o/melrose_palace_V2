@@ -28,7 +28,7 @@ composition Puck** stockée dans Supabase, éditable en drag-and-drop depuis
 | `src/puck/config.tsx` | Config Puck (blocs + champs) **et** `buildDefaultPage()` / `puckPageId()` |
 | `src/puck/usePuckPage.ts` | Charge la composition publiée, s'abonne au temps réel, applique le repli |
 | `src/puck/richText.tsx` | Champ `richtext` enrichi (TipTap : couleurs, polices, tailles, surlignage, lien) + `withRichText()` ; importe `richText.css` |
-| `src/puck/drawerCards.tsx` | Cartes illustrées de la bibliothèque de blocs (override `drawerItem`) : icône + libellé court + description ; exporte `resolveBlockName()` / `blockShortLabel()` |
+| `src/puck/drawerCards.tsx` | Cartes illustrées de la bibliothèque de blocs (override `drawerItem`) : icône + libellé court + description — les métadonnées d'icône/description **dérivent de `SITE_SECTIONS`** ; exporte `resolveBlockName()` / `blockShortLabel()` |
 | `src/puck/uiOverrides.tsx` | Overrides du panneau de props (`fieldLabel`) et des overlays de sélection (`componentOverlay`) — labels premium + badge du bloc au-dessus du canevas |
 | `src/puck/richText.css` | Styles des contrôles de la barre d'outils richtext (chunk éditeur uniquement) |
 | `src/puck/editorTheme.css` | Thème sombre premium de l'éditeur : surcharge des tokens Puck `--puck-*` (chunk éditeur uniquement) |
@@ -39,6 +39,8 @@ composition Puck** stockée dans Supabase, éditable en drag-and-drop depuis
 | `src/sections/icons.tsx` | Registre d'icônes sélectionnables dans Puck (champs `select`) |
 | `src/puck/MediaField.tsx` | Champ `custom` média : `imageField()` / `videoField()` — aperçu + téléversement Supabase Storage + URL |
 | `src/site/SiteContext.tsx` | Dépendances runtime des sections (settings, parcels, navigation) |
+| `src/site/sectionsCatalog.ts` | **Catalogue des sections** (clé Puck + libellé + ancre HTML + icône + description) et helpers de visibilité (`hiddenSectionTypes`, `hiddenAnchors`, `sectionLabel`) — partagé par l'Espace Gérant, la bibliothèque de blocs et la navigation. N'importe **rien** de Puck : ne jamais y ajouter d'import éditeur |
+| `src/components/AdminSectionsTab.tsx` | Onglet « Sections » de l'Espace Gérant : interrupteurs afficher/masquer (`settings.hiddenSections`) |
 | `src/site/whatsapp.ts` | Ouverture WhatsApp partagée par les sections |
 | `src/lib/supabase.ts` | `fetchPuckPage` / `upsertPuckPage` / `clearPuckPage` |
 | `supabase/schema.sql` | Table `puck_pages` + RLS + publication temps réel |
@@ -78,6 +80,31 @@ C'est la clé de l'index interne de l'éditeur : un item sans `id` fait planter
 uuid générés par Puck. `ensureItemIds()` (`src/puck/config.tsx`) complète les
 ids manquants à la lecture d'une composition publiée ancienne. **Ne jamais
 supprimer un `id` en réécrivant un JSON existant.**
+
+### Visibilité des sections (hors composition)
+
+Masquer une section ne touche **pas** la composition : le réglage vit dans
+`site_settings.data.hiddenSections` (tableau de clés de blocs, ex.
+`["Temoignages"]`), piloté depuis **Espace Gérant → onglet « Sections »**
+(`src/components/AdminSectionsTab.tsx`). C'est donc **global aux deux langues**
+et **non destructif** :
+
+- `HomePage` filtre la composition au rendu (`visibleData`) — toutes les
+  instances d'un type masqué disparaissent, la composition stockée reste
+  intacte et reparaît telle quelle à la réactivation (aucune republication
+  dans l'éditeur n'est nécessaire) ;
+- `Navbar` retire les liens et CTA dont l'ancre appartient à une section masquée
+  (`hiddenAnchors(settings)`), pour ne laisser aucun bouton inerte ;
+- l'éditeur Puck **affiche toujours toutes les sections** (il faut pouvoir les
+  éditer) : sa barre d'outils indique le nombre de sections masquées. Un canevas
+  complet n'implique donc pas un site complet — ne pas s'en étonner lors d'un
+  diagnostic « la section est là mais invisible sur le site ».
+
+Chemin de lecture côté données : `fetchRemoteSettings()` (merge
+`DEFAULT_SITE_SETTINGS` + ligne cloud) → `settings.hiddenSections` → helpers de
+`sectionsCatalog.ts`. La liste vide (ou absente, ou après « Réinitialiser »)
+affiche tout : c'est l'état par défaut, rien à migrer dans `schema.sql`
+(`data` est du `jsonb` libre).
 
 ### Règle de repli (à ne jamais casser)
 
@@ -189,10 +216,21 @@ lecture, numéro WhatsApp, e-mail, adresse, prix (`basePrice`, `cashPrice`,
    avec `label`, `fields.content` (type `object` + `objectFields`), un
    `defaultProps: { content: {} }` **vide** (le repli gère le reste) et
    `render: (props) => <MonBlocSection content={props.content as Partial<MonBlocContent>} />`.
-3. **Ajouter la section par défaut** dans `buildDefaultPage()`, à la position
+3. **Ajouter l'entrée au catalogue** `SITE_SECTIONS`
+   (`src/site/sectionsCatalog.ts`) : `type` **identique** à la clé de config,
+   plus `label`, `anchor` (l'`id` HTML de la section, s'il existe), `desc` et
+   `icon`. C'est ce qui fait apparaître le bloc dans l'onglet « Sections » (donc
+   masquable) et qui illustre sa carte dans la bibliothèque de l'éditeur —
+   `DRAWER_BLOCK_META` en dérive, il n'y a plus d'icônes à maintenir en double.
+   Un bloc absent du catalogue reste éditable mais **ne peut pas être masqué**
+   et n'est pas illustré dans la bibliothèque.
+4. **Ajouter la section par défaut** dans `buildDefaultPage()`, à la position
    voulue, avec `{ type: 'MonBloc', props: { content: defaultMonBlocContent(lang, settings) } }`.
-4. Le bloc apparaît immédiatement dans la bibliothèque de `/admin/editor`.
-5. Vérifier : `npm run lint` puis `npm run build`.
+5. Le bloc apparaît immédiatement dans la bibliothèque de `/admin/editor` et
+   dans l'onglet « Sections » de l'Espace Gérant.
+6. Vérifier : `npm run lint` puis `npm run build`, et contrôler dans le build
+   que le chunk d'entrée public ne contient toujours pas de code éditeur
+   (`grep -c 'puck-editor-shell' dist/assets/index-*.js` → `0`).
 
 Aucune migration de schéma n'est nécessaire pour un nouveau bloc : `data` est du
 `jsonb` libre. Le bloc n'existe que pour les pages publiées **après** son ajout ;

@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Cloud,
   Compass,
+  EyeOff,
   Globe,
   Loader2,
   Lock,
@@ -36,6 +37,7 @@ import { withRichText } from '../puck/richText';
 import { DrawerCard } from '../puck/drawerCards';
 import { EditorComponentOverlay, EditorFieldLabel } from '../puck/uiOverrides';
 import { SiteProvider } from '../site/SiteContext';
+import { hiddenSectionCount } from '../site/sectionsCatalog';
 
 interface AdminEditorPageProps {
   settings: SiteSettings;
@@ -313,6 +315,18 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+          {/* Sections masquées dans l'Espace Gérant : elles restent visibles et
+              éditables ici, mais ne sont pas affichées sur le site public. */}
+          {hiddenSectionCount(settings) > 0 && (
+            <span
+              title="Ces sections restent dans la composition et sont modifiables ici, mais l'Espace Gérant les masque sur le site public (onglet « Sections »)."
+              className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-white/45"
+            >
+              <EyeOff className="w-3.5 h-3.5" strokeWidth={1.5} />
+              {hiddenSectionCount(settings)} section(s) masquée(s) sur le site
+            </span>
+          )}
+
           {/* État de publication */}
           {!isSupabaseConfigured && (
             <span className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/10 ring-1 ring-amber-400/30 text-amber-200">

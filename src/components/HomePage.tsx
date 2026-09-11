@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Render } from '@puckeditor/core/rsc';
+import type { Data as PuckData } from '@puckeditor/core';
 import { UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { useSite } from '../site/SiteContext';
+import { hiddenSectionTypes } from '../site/sectionsCatalog';
 import { usePuckPage } from '../puck/usePuckPage';
 import { puckConfig } from '../puck/config';
 
@@ -17,11 +19,26 @@ import { puckConfig } from '../puck/config';
  * Restent hors Puck, car pilotés par les réglages du site (Espace Gérant →
  * WhatsApp & Promotions) : le bandeau promo et la barre de progression de
  * lecture, qui encadrent le contenu quel que soit l'ordre des blocs.
+ *
+ * Visibilité des sections : l'Espace Gérant (onglet « Sections ») peut masquer
+ * un bloc. Le filtrage se fait **au rendu**, sans toucher à la composition
+ * stockée : réactiver une section réaffiche son contenu tel qu'il était.
  */
 export default function HomePage() {
   const { language, settings, setActiveTab } = useSite();
   const ui = TRANSLATIONS[language].ui as UITranslations;
   const { data } = usePuckPage(language, settings);
+
+  // Sections masquées depuis l'Espace Gérant — filtrées bloc par bloc (toutes
+  // les instances d'un même type disparaissent, même si l'admin l'a dupliqué).
+  const visibleData: PuckData = useMemo(() => {
+    const hidden = new Set(hiddenSectionTypes(settings));
+    if (hidden.size === 0) return data;
+    return {
+      ...data,
+      content: (data.content ?? []).filter((item) => !hidden.has(item.type)),
+    };
+  }, [data, settings]);
 
   // Barre de progression de lecture (throttle par requestAnimationFrame).
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -82,7 +99,7 @@ export default function HomePage() {
       )}
 
       {/* Corps de page : blocs éditables depuis /admin/editor */}
-      <Render config={puckConfig} data={data} />
+      <Render config={puckConfig} data={visibleData} />
     </div>
   );
 }

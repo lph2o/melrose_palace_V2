@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X, Globe, PhoneCall, Search, Settings, ShieldCheck, Calculator, FileText } from 'lucide-react';
 import { Language, SiteSettings, UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
+import { hiddenAnchors } from '../site/sectionsCatalog';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -31,6 +32,12 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = TRANSLATIONS[currentLanguage];
   const ui = t.ui as UITranslations;
+
+  // Sections masquées depuis l'Espace Gérant (onglet « Sections ») : les liens
+  // et CTA qui pointent vers une ancre absente du DOM sont retirés, sinon ils
+  // seraient inertes (`scrollToSection` ne trouve aucun élément).
+  const hiddenSectionAnchors = hiddenAnchors(settings);
+  const sectionVisible = (anchorId: string) => !hiddenSectionAnchors.has(anchorId);
 
   useEffect(() => {
     // Keep the --nav-h CSS variable in sync with the real navbar height.
@@ -133,30 +140,36 @@ export default function Navbar({
                 54
               </span>
             </button>
-            <button
-              onClick={() => handleNavLink('location')}
-              className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {t.nav.location}
-            </button>
-            <button
-              onClick={() => handleNavLink('guarantees')}
-              className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {t.nav.guarantees}
-            </button>
-            <button
-              onClick={() => handleNavLink('simulator-section')}
-              className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {t.nav.simulator}
-            </button>
+            {sectionVisible('location') && (
+              <button
+                onClick={() => handleNavLink('location')}
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {t.nav.location}
+              </button>
+            )}
+            {sectionVisible('guarantees') && (
+              <button
+                onClick={() => handleNavLink('guarantees')}
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {t.nav.guarantees}
+              </button>
+            )}
+            {sectionVisible('simulator-section') && (
+              <button
+                onClick={() => handleNavLink('simulator-section')}
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {t.nav.simulator}
+              </button>
+            )}
           </div>
 
           {/* Controls Cluster - Clean, Uncluttered, Breathable */}
@@ -181,13 +194,15 @@ export default function Navbar({
               <span>{currentLanguage === 'FR' ? 'EN' : 'FR'}</span>
             </button>
 
-            {/* Primary CTA */}
-            <button
-              onClick={() => handleNavLink('contact')}
-              className="bg-secondary-container text-on-secondary-fixed px-5 py-2 rounded-full font-sans font-bold text-xs tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all duration-300 cursor-pointer shadow-md"
-            >
-              {t.bookVisit}
-            </button>
+            {/* Primary CTA — masqué si la section Contact est masquée */}
+            {sectionVisible('contact') && (
+              <button
+                onClick={() => handleNavLink('contact')}
+                className="bg-secondary-container text-on-secondary-fixed px-5 py-2 rounded-full font-sans font-bold text-xs tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all duration-300 cursor-pointer shadow-md"
+              >
+                {t.bookVisit}
+              </button>
+            )}
           </div>
 
           {/* Mobile Action Controls */}
@@ -259,42 +274,54 @@ export default function Navbar({
                 <span className="text-[10px] bg-secondary-fixed text-primary px-2 py-0.5 rounded font-mono font-bold">150 m²</span>
               </button>
 
-              <button
-                onClick={() => handleNavLink('vision')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.vision}
-              </button>
-              <button
-                onClick={() => handleNavLink('location')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.location}
-              </button>
-              <button
-                onClick={() => handleNavLink('guarantees')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.guarantees} {ui.guaranteesSuffix}
-              </button>
-              <button
-                onClick={() => handleNavLink('simulator-section')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.simulator} {ui.simulatorSuffix}
-              </button>
-              <button
-                onClick={() => handleNavLink('packs-section')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.packs} {ui.packsSuffix}
-              </button>
-              <button
-                onClick={() => handleNavLink('faqs-section')}
-                className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
-              >
-                {t.nav.faq}
-              </button>
+              {sectionVisible('vision') && (
+                <button
+                  onClick={() => handleNavLink('vision')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.vision}
+                </button>
+              )}
+              {sectionVisible('location') && (
+                <button
+                  onClick={() => handleNavLink('location')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.location}
+                </button>
+              )}
+              {sectionVisible('guarantees') && (
+                <button
+                  onClick={() => handleNavLink('guarantees')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.guarantees} {ui.guaranteesSuffix}
+                </button>
+              )}
+              {sectionVisible('simulator-section') && (
+                <button
+                  onClick={() => handleNavLink('simulator-section')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.simulator} {ui.simulatorSuffix}
+                </button>
+              )}
+              {sectionVisible('packs-section') && (
+                <button
+                  onClick={() => handleNavLink('packs-section')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.packs} {ui.packsSuffix}
+                </button>
+              )}
+              {sectionVisible('faqs-section') && (
+                <button
+                  onClick={() => handleNavLink('faqs-section')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                >
+                  {t.nav.faq}
+                </button>
+              )}
 
               <div className="pt-3 border-t border-white/10 flex flex-col space-y-2.5">
                 {onOpenBrochure && (
@@ -310,12 +337,14 @@ export default function Navbar({
                   </button>
                 )}
 
-                <button
-                  onClick={() => handleNavLink('contact')}
-                  className="bg-secondary-container text-on-secondary-fixed py-3 rounded-xl font-sans font-bold text-xs tracking-widest uppercase hover:bg-secondary-fixed-dim transition-all text-center"
-                >
-                  {t.bookVisit}
-                </button>
+                {sectionVisible('contact') && (
+                  <button
+                    onClick={() => handleNavLink('contact')}
+                    className="bg-secondary-container text-on-secondary-fixed py-3 rounded-xl font-sans font-bold text-xs tracking-widest uppercase hover:bg-secondary-fixed-dim transition-all text-center"
+                  >
+                    {t.bookVisit}
+                  </button>
+                )}
 
                 <button
                   onClick={() => {

@@ -259,6 +259,17 @@ export interface SiteSettings {
   aerialImage?: string;
   /** Contenu éditorial pilotable depuis l'Espace Gérant (onglet « Contenu du site »). */
   content?: SiteContent;
+  /**
+   * Sections de la page d'accueil masquées sur le site public (clés Puck :
+   * `'Temoignages'`, `'Packs'`… — voir `SITE_SECTIONS` dans
+   * `src/site/sectionsCatalog.ts`). Piloté depuis l'Espace Gérant → onglet
+   * « Sections ».
+   *
+   * Masquer est **non destructif** : la composition Puck publiée et le contenu
+   * des sections restent intacts, seul l'affichage est filtré. Une liste vide
+   * (ou absente) affiche toutes les sections.
+   */
+  hiddenSections?: string[];
 }
 
 

@@ -1,19 +1,6 @@
-import {
-  Calculator,
-  Compass,
-  Contact,
-  FileQuestion,
-  GripVertical,
-  Landmark,
-  Layers,
-  Map,
-  MessageSquareQuote,
-  Newspaper,
-  Package,
-  ShieldCheck,
-  Video,
-} from 'lucide-react';
+import { GripVertical, type LucideIcon } from 'lucide-react';
 import { puckConfig } from './config';
+import { SITE_SECTIONS } from '../site/sectionsCatalog';
 
 /**
  * Cartes illustrées de la bibliothèque de blocs (override `drawerItem`).
@@ -36,25 +23,20 @@ import { puckConfig } from './config';
 
 interface BlockMeta {
   /** Icône lucide affichée dans la carte. */
-  icon: typeof Compass;
+  icon: LucideIcon;
   /** Courte description rédactionnelle du bloc. */
   desc: string;
 }
 
-export const DRAWER_BLOCK_META: Record<string, BlockMeta> = {
-  Hero: { icon: Compass, desc: 'Bannière principale, chiffres clés et CTA' },
-  Garanties: { icon: ShieldCheck, desc: 'Points de garantie et engagement' },
-  Vision: { icon: Map, desc: 'Vue aérienne, plan cadastral et piliers' },
-  Videos: { icon: Video, desc: 'Vidéos du domaine avec téléversement' },
-  Localisation: { icon: Layers, desc: 'Localisation stratégique et infrastructures' },
-  Simulateur: { icon: Calculator, desc: 'Simulateur de financement interactif' },
-  Packs: { icon: Package, desc: 'Packs complémentaires du domaine' },
-  Banque: { icon: Landmark, desc: 'Financement bancaire partenaire' },
-  Temoignages: { icon: MessageSquareQuote, desc: 'Témoignages des acquéreurs' },
-  Articles: { icon: Newspaper, desc: 'Articles et guides du blog' },
-  FAQ: { icon: FileQuestion, desc: 'Questions fréquentes' },
-  Contact: { icon: Contact, desc: 'Formulaire de contact et coordonnées' },
-};
+/**
+ * Métadonnées des cartes, **dérivées de `SITE_SECTIONS`** : c'est la source
+ * unique partagée avec l'onglet « Sections » de l'Espace Gérant. Ajouter un
+ * bloc au catalogue (`src/site/sectionsCatalog.ts`) suffit donc à l'illustrer
+ * ici — plus de liste d'icônes à maintenir en double.
+ */
+export const DRAWER_BLOCK_META: Record<string, BlockMeta> = Object.fromEntries(
+  SITE_SECTIONS.map((section) => [section.type, { icon: section.icon, desc: section.desc }])
+);
 
 const COMPONENTS = puckConfig.components as Record<string, { label?: string }>;
 
