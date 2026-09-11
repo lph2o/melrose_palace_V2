@@ -1,0 +1,102 @@
+/**
+ * Barre d'outils du champ `richtext` (ÉDITEUR UNIQUEMENT).
+ *
+ * Ce fichier est importé par `src/puck/richText.tsx`, lui-même importé
+ * uniquement par le chunk lazy de `/admin/editor` : ces styles ne sont donc
+ * jamais chargés sur le site public (même règle que `puck.css`).
+ *
+ * Les contrôles personnalisés (sélecteurs police/taille, nuanciers couleur et
+ * surlignage, sélecteur de couleur libre) s'appuient sur les variables de
+ * thème de Puck (`--puck-color-*`, `--puck-radius-*`, `--puck-font-size-*`)
+ * pour suivre le thème clair/sombre de l'éditeur.
+ */
+
+/* Sélecteurs « Police » et « Taille » : compactes, dans le style des champs Puck. */
+.puck-rt-select {
+  height: 26px;
+  max-width: 110px;
+  padding: 0 6px;
+  border: var(--puck-border-width-regular) solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-m, 4px);
+  background: var(--puck-color-surface, #fff);
+  color: var(--puck-color-text, #000);
+  font-family: var(--puck-font-family);
+  font-size: var(--puck-font-size-xxs, 14px);
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in),
+    background-color var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in);
+}
+
+.puck-rt-select:hover {
+  border-color: var(--puck-color-border-hover, #767676);
+}
+
+.puck-rt-select:focus-visible {
+  border-color: var(--puck-color-focus-ring);
+  box-shadow: 0 0 0 1px var(--puck-color-focus-ring);
+}
+
+/* Nuanciers : une rangée de pastilles + le sélecteur de couleur libre. */
+.puck-rt-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.puck-rt-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-round, 50%);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in),
+    box-shadow var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in);
+}
+
+.puck-rt-swatch:hover {
+  transform: scale(1.15);
+}
+
+.puck-rt-swatch.is-active {
+  box-shadow:
+    0 0 0 1px var(--puck-color-surface, #fff),
+    0 0 0 2.5px var(--puck-color-focus-ring);
+}
+
+/* Sélecteur de couleur libre (type="color") : réduit à la taille d'une pastille. */
+.puck-rt-color-input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--puck-color-border, #dcdcdc);
+  border-radius: var(--puck-radius-round, 50%);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in);
+}
+
+.puck-rt-color-input:hover {
+  transform: scale(1.15);
+}
+
+.puck-rt-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.puck-rt-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--puck-radius-round, 50%);
+}
+
+.puck-rt-color-input::-moz-color-swatch {
+  border: none;
+  border-radius: var(--puck-radius-round, 50%);
+}

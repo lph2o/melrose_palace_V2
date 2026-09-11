@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import LandingPage from './components/LandingPage';
+import HomePage from './components/HomePage';
 import MasterPlanPage from './components/MasterPlanPage';
 import Footer from './components/Footer';
 import SearchModal from './components/SearchModal';
 import BlogModal from './components/BlogModal';
 import AdminPage from './components/AdminPage';
+import { SiteProvider } from './site/SiteContext';
 import BrochureModal from './components/BrochureModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
 import { Language, BlogArticle, SiteSettings, Parcel } from './types';
@@ -23,6 +24,10 @@ import {
   SyncResult,
 } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+
+// L'éditeur Puck n'est chargé que sur /admin/editor : le site public ne paie
+// pas son poids (ni ses feuilles de style) au premier chargement.
+const AdminEditorPage = lazy(() => import('./components/AdminEditorPage'));
 
 export default function App() {
   // Langue et vue initialisées depuis l'URL : /fr, /en, /fr/plan, /en/plan,
@@ -192,34 +197,49 @@ export default function App() {
   };
 
   // Langue / vue → URL (History API, sans rechargement)
+  // En admin/éditeur, on ne réécrit pas l'URL publique (elle appartient à la
+  // route d'administration) : seul le state React est mis à jour.
+  const onAdminRoute = () => isAdminPath() || isEditorPath();
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    if (!isAdminPath()) {
+    if (!onAdminRoute()) {
       window.history.pushState({}, '', langViewPath(lang, activeTab));
     }
   };
 
   const setActiveTab = (tab: 'home' | 'masterplan') => {
     setActiveTabState(tab);
-    if (!isAdminPath()) {
+    if (!onAdminRoute()) {
       window.history.pushState({}, '', langViewPath(language, tab));
     }
   };
 
   // ------------------------------------------------------------------
-  // Page administrateur dédiée : accessible via /admin (ou #/admin)
+  // Routes d'administration : /admin (Espace Gérant) et /admin/editor
+  // (éditeur visuel Puck). Accessibles via le chemin ou le hash, absentes
+  // de la navigation publique, en noindex et hors sitemap.
   // ------------------------------------------------------------------
   const isAdminPath = () =>
     window.location.hash === '#/admin' ||
     window.location.pathname.endsWith('/admin') ||
     window.location.pathname.endsWith('/admin/');
 
-  const [isAdminRoute, setIsAdminRoute] = useState(isAdminPath);
+  const isEditorPath = () =>
+    window.location.hash === '#/admin/editor' ||
+    /\/admin\/editor\/?$/.test(window.location.pathname);
+
+  type AppRoute = 'site' | 'admin' | 'editor';
+
+  const detectRoute = (): AppRoute => (isEditorPath() ? 'editor' : isAdminPath() ? 'admin' : 'site');
+
+  const [route, setRoute] = useState<AppRoute>(detectRoute);
 
   useEffect(() => {
     const sync = () => {
-      setIsAdminRoute(isAdminPath());
-      if (!isAdminPath()) {
+      const nextRoute = detectRoute();
+      setRoute(nextRoute);
+      if (nextRoute === 'site') {
         // Retour / navigation avant-arrière : on resynchronise langue et vue
         setLanguageState(detectLanguageFromPath(window.location.pathname));
         setActiveTabState(detectViewFromPath(window.location.pathname));
@@ -239,20 +259,24 @@ export default function App() {
     applySeo({
       settings,
       language,
-      view: isAdminRoute ? 'admin' : activeTab,
+      view: route === 'site' ? activeTab : 'admin',
     });
-  }, [settings, language, activeTab, isAdminRoute]);
+  }, [settings, language, activeTab, route]);
 
   const navigateToAdmin = () => {
     window.location.hash = '/admin';
   };
 
+  const navigateToEditor = () => {
+    window.location.hash = '/admin/editor';
+  };
+
   const navigateAwayFromAdmin = () => {
-    if (window.location.pathname.endsWith('/admin')) {
+    if (window.location.pathname.endsWith('/admin') || /\/admin\/editor\/?$/.test(window.location.pathname)) {
       window.history.pushState({}, '', langViewPath(language, activeTab));
     }
     window.location.hash = '';
-    setIsAdminRoute(false);
+    setRoute('site');
   };
 
   useEffect(() => {
@@ -290,8 +314,29 @@ export default function App() {
     setGlobalActiveFaqId(id);
   };
 
+  // Éditeur visuel dédié : remplace toute l'interface publique
+  if (route === 'editor') {
+    return (
+      <Suspense
+        fallback={
+          <div className="admin-theme min-h-screen bg-[#0B0B0C] text-white/60 flex items-center justify-center text-xs font-mono uppercase tracking-[0.25em]">
+            Chargement de l’éditeur…
+          </div>
+        }
+      >
+        <AdminEditorPage
+          settings={settings}
+          parcels={parcels}
+          onBack={() => {
+            window.location.hash = '/admin';
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   // Page admin dédiée : remplace toute l'interface publique
-  if (isAdminRoute) {
+  if (route === 'admin') {
     return (
       <AdminPage
         settings={settings}
@@ -300,12 +345,26 @@ export default function App() {
         onUpdateParcelStatus={handleUpdateParcelStatus}
         onResetDefaults={handleResetDefaults}
         onBack={navigateAwayFromAdmin}
+        onOpenEditor={navigateToEditor}
         loading={!initialSyncDone}
       />
     );
   }
 
   return (
+    <SiteProvider
+      value={{
+        language,
+        settings,
+        parcels,
+        setActiveTab,
+        scrollToSection,
+        onOpenBrochure: () => setIsBrochureOpen(true),
+        onSelectArticle: (article) => setGlobalActiveArticle(article),
+        openFaqId: globalActiveFaqId,
+        onClearOpenFaqId: () => setGlobalActiveFaqId(null),
+      }}
+    >
     <div className="bg-[#FAF9F5] text-primary min-h-screen flex flex-col justify-between selection:bg-secondary-fixed/50 selection:text-primary overflow-x-clip">
       
       {/* Dynamic Floating Navbar */}
@@ -332,18 +391,7 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
             >
-              <LandingPage
-                currentLanguage={language}
-                setActiveTab={setActiveTab}
-                scrollToSection={scrollToSection}
-                globalActiveFaqId={globalActiveFaqId}
-                onClearGlobalActiveFaqId={() => setGlobalActiveFaqId(null)}
-                onSelectArticle={(article) => setGlobalActiveArticle(article)}
-                onOpenBrochure={() => setIsBrochureOpen(true)}
-                settings={settings}
-                parcels={parcels}
-                onSelectParcel={handleSelectParcel}
-              />
+              <HomePage />
             </motion.div>
           ) : (
             <motion.div
@@ -414,7 +462,8 @@ export default function App() {
         settings={settings}
         currentLanguage={language}
       />
-      
+
     </div>
+    </SiteProvider>
   );
 }

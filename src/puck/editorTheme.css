@@ -1,0 +1,451 @@
+/**
+ * Thème de l'éditeur visuel `/admin/editor` — ÉDITEUR UNIQUEMENT.
+ *
+ * Importé par `AdminEditorPage.tsx` (chunk lazy) : ces styles ne sont jamais
+ * chargés sur le site public.
+ *
+ * Puck 0.22+ expose un theming global par variables CSS (voir
+ * https://puckeditor.com/docs/api-reference/theming/global) : en surchargeant
+ * les tokens `--puck-color-*` sur le shell de l'éditeur, toute l'UI de Puck
+ * (header, sidebars, bibliothèque de blocs, panneaux de props, champs, menus,
+ * overlays) adopte le nouveau thème sans toucher au moteur.
+ *
+ * Direction : éditeur sombre premium, cohérent avec l'identité du site
+ * (vert profond #00261a + or #FED65B) et avec l'Espace Gérant (thème sombre).
+ * Le canvas reste clair : il montre la page telle qu'elle sera publiée.
+ */
+
+.puck-editor-shell {
+  /* ------------------------------------------------------------------ */
+  /* Surfaces & chrome                                                   */
+  /* ------------------------------------------------------------------ */
+  --puck-color-surface: #17191c; /* panneaux, champs, menus */
+  --puck-color-surface-muted: #131517; /* fonds de canvas de repli */
+  --puck-color-surface-subtle: #0d0f11; /* layout, sidebars, toolbar */
+  --puck-color-surface-inverse: #1f2327; /* action bar (inverse) */
+  --puck-color-border: rgba(255, 255, 255, 0.09);
+  --puck-color-border-hover: rgba(255, 255, 255, 0.2);
+  --puck-color-border-muted: rgba(255, 255, 255, 0.05);
+  --puck-color-border-inverse: rgba(255, 255, 255, 0.16);
+
+  /* ------------------------------------------------------------------ */
+  /* Texte                                                               */
+  /* ------------------------------------------------------------------ */
+  --puck-color-text: #f0eee9;
+  --puck-color-text-secondary: #a8aaa4;
+  --puck-color-text-muted: #7c7e78;
+  --puck-color-text-subtle: #5a5d59;
+  --puck-color-text-inverse: #f0eee9;
+  --puck-opacity-text-inverse: 0.75;
+
+  /* ------------------------------------------------------------------ */
+  /* Accent : l'or de la marque remplace le bleu azure par défaut        */
+  /* ------------------------------------------------------------------ */
+  --puck-color-interactive: #fed65b;
+  --puck-color-interactive-hover: #ffe37d;
+  --puck-color-interactive-active: #e9c349;
+  --puck-color-interactive-subtle: rgba(254, 214, 91, 0.14);
+  --puck-color-interactive-soft: rgba(254, 214, 91, 0.09);
+  --puck-color-interactive-soft-hover: rgba(254, 214, 91, 0.16);
+  --puck-color-interactive-neutral-hover: rgba(255, 255, 255, 0.07);
+  --puck-color-interactive-inverse-hover: #ffe37d;
+  --puck-color-interactive-inverse-active: #e9c349;
+  --puck-color-focus-ring: #fed65b;
+
+  --puck-color-selection-bg: rgba(254, 214, 91, 0.18);
+  --puck-color-selection-border: rgba(254, 214, 91, 0.6);
+  --puck-color-line-placeholder: #fed65b;
+  --puck-color-highlight: #fed65b;
+  --puck-color-bg-disabled: rgba(255, 255, 255, 0.08);
+  --puck-color-text-disabled: #5a5d59;
+  --puck-color-overlay-backdrop: rgba(5, 6, 7, 0.72);
+
+  /* ------------------------------------------------------------------ */
+  /* Typographie                                                         */
+  /* ------------------------------------------------------------------ */
+  --puck-font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica Neue, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+  --puck-font-family-monospaced: "JetBrains Mono", ui-monospace, SFMono-Regular,
+    Menlo, Consolas, monospace;
+
+  /* ------------------------------------------------------------------ */
+  /* Rayons un peu plus doux                                             */
+  /* ------------------------------------------------------------------ */
+  --puck-radius-m: 6px;
+  --puck-radius-l: 10px;
+  --puck-radius-pill: 999px;
+
+  /* ------------------------------------------------------------------ */
+  /* Header de l'éditeur                                                 */
+  /* ------------------------------------------------------------------ */
+  --puck-header-color-bg: #0d0f11;
+  --puck-header-color-text: #f0eee9;
+
+  /* ------------------------------------------------------------------ */
+  /* Canvas : clair, montre la vraie page                                */
+  /* ------------------------------------------------------------------ */
+  --puck-canvas-color-bg: #e9e6e0;
+  --puck-canvas-color-text: #1c1b1b;
+  --puck-canvas-preview-color-bg: #fcfaf6;
+
+  /* ------------------------------------------------------------------ */
+  /* Bibliothèque de blocs (drawer)                                      */
+  /* ------------------------------------------------------------------ */
+  --puck-drawer-item-color-bg: #17191c;
+  --puck-drawer-item-color-bg-hover: #1d2024;
+  --puck-drawer-item-color-text: #f0eee9;
+  --puck-drawer-item-color-border: rgba(255, 255, 255, 0.09);
+  --puck-drawer-item-radius: 10px;
+
+  /* ------------------------------------------------------------------ */
+  /* Panneau de props : tokens des champs (labels, inputs, groupes)      */
+  /* ------------------------------------------------------------------ */
+  --puck-field-label-color-text: #c9ccc6;
+  --puck-field-label-color-icon: #8a8d87;
+  --puck-field-label-font-size: 11px;
+  --puck-field-label-font-weight: 600;
+  --puck-field-label-space-y: 8px;
+  --puck-field-radius: 8px;
+  --puck-field-color-surface: #17191c;
+  --puck-field-color-bg: #141619;
+  --puck-field-color-bg-hover: #1a1d20;
+  --puck-field-color-bg-active: rgba(254, 214, 91, 0.07);
+  --puck-field-color-border: rgba(255, 255, 255, 0.09);
+  --puck-field-color-border-hover: rgba(255, 255, 255, 0.18);
+  --puck-field-color-border-focus: #fed65b;
+  --puck-field-color-text: #f0eee9;
+  --puck-field-color-text-hover: #ffffff;
+  --puck-field-color-text-active: #fed65b;
+  --puck-field-color-text-secondary: #a8aaa4;
+  --puck-field-space-y: 9px;
+  --puck-field-space-x: 12px;
+  --puck-field-space-surface-y: 14px;
+  --puck-field-space-surface-x: 14px;
+  --puck-field-font-size: 13px;
+  --puck-field-array-add-color-icon: #fed65b;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ */
+/* Finitions : scrollbars, sélection, header Puck natif                */
+/* ------------------------------------------------------------------ */
+
+/* Scrollbars sombres et fines, dans tout le chrome de l'éditeur. */
+.puck-editor-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.puck-editor-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.puck-editor-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.puck-editor-shell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+  background-clip: content-box;
+}
+
+/* Sélection de texte dans les panneaux. */
+.puck-editor-shell ::selection {
+  background: rgba(254, 214, 91, 0.28);
+}
+
+/* Header natif de Puck : on l'amincit pour qu'il se fonde dans la
+   barre d'outils du site (pas de double barre massive). */
+.puck-editor-shell header {
+  border-bottom-color: var(--puck-color-border-muted);
+}
+
+.puck-editor-shell header [class*="Header-inner"] {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Les boutons d'action (undo/redo/publish) respirent un peu plus. */
+.puck-editor-shell header button {
+  transition:
+    background-color var(--puck-duration-fast) var(--puck-ease-exit),
+    color var(--puck-duration-fast) var(--puck-ease-exit);
+}
+
+/* ------------------------------------------------------------------ */
+/* Bibliothèque de blocs : cartes illustrées (override drawerItem)     */
+/* ------------------------------------------------------------------ */
+
+.puck-drawer-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--puck-color-border);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.01)
+  );
+  cursor: grab;
+  transition:
+    border-color var(--puck-duration-fast) var(--puck-ease-exit),
+    background-color var(--puck-duration-fast) var(--puck-ease-exit),
+    transform var(--puck-duration-medium) var(--puck-ease-exit),
+    box-shadow var(--puck-duration-medium) var(--puck-ease-exit);
+}
+
+.puck-drawer-card:hover {
+  border-color: rgba(254, 214, 91, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(254, 214, 91, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.puck-drawer-card:active {
+  cursor: grabbing;
+  transform: translateY(0) scale(0.99);
+}
+
+.puck-drawer-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(254, 214, 91, 0.16), rgba(254, 214, 91, 0.05));
+  border: 1px solid rgba(254, 214, 91, 0.18);
+  color: #fed65b;
+}
+
+.puck-drawer-card-icon-svg {
+  width: 17px;
+  height: 17px;
+}
+
+.puck-drawer-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.puck-drawer-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--puck-color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puck-drawer-card-desc {
+  font-size: 11px;
+  color: var(--puck-color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puck-drawer-card-grip {
+  color: var(--puck-color-text-subtle);
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity var(--puck-duration-fast) var(--puck-ease-exit);
+}
+
+.puck-drawer-card:hover .puck-drawer-card-grip {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Panneau de props : structure & en-tête                              */
+/* ------------------------------------------------------------------ */
+
+/* En-tête du panneau : fond subtil + breadcrumbs dorés + titre. */
+.puck-editor-shell [class*="FieldsPlugin-header"] {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0)
+  );
+  border-bottom: 1px solid var(--puck-color-border-muted);
+  padding: 14px 16px;
+}
+
+/* Fil d'Ariane (Page → bloc) : doré, discret. */
+.puck-editor-shell [class*="FieldsPlugin-header"] [class*="Breadcrumbs"] {
+  gap: 2px;
+}
+
+.puck-editor-shell [class*="FieldsPlugin-header"] [class*="breadcrumbLabel"] {
+  color: var(--puck-color-interactive);
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.85;
+  transition: opacity var(--puck-duration-fast) var(--puck-ease-exit);
+}
+
+.puck-editor-shell [class*="FieldsPlugin-header"] [class*="breadcrumbLabel"]:hover {
+  opacity: 1;
+}
+
+/* Titre courant (le bloc édité) : serif, cohérent avec le site. */
+.puck-editor-shell [class*="FieldsPlugin-header"] h2 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f0eee9;
+  margin-top: 2px;
+}
+
+/* Corps du panneau : les champs respirent, séparations douces. */
+.puck-editor-shell [class*="PuckFields-field"] {
+  padding: 14px 16px;
+}
+
+.puck-editor-shell [class*="PuckFields-field"] + [class*="PuckFields-field"] {
+  border-top-color: var(--puck-color-border-muted);
+  margin-top: 0;
+}
+
+/* Groupe « Contenu » (champ objet `content`) : carte intérieure. */
+.puck-editor-shell [class*="ObjectField"] {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.puck-editor-shell [class*="ObjectField-fieldset"] {
+  padding: 10px 12px 14px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Panneau de props : labels premium (override fieldLabel)             */
+/* ------------------------------------------------------------------ */
+
+.puck-field-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px;
+  color: var(--puck-field-label-color-text, var(--puck-color-text-secondary));
+  font-size: var(--puck-field-label-font-size, 11px);
+  font-weight: var(--puck-field-label-font-weight, 600);
+  letter-spacing: 0.01em;
+}
+
+/* Groupe « Contenu » : titre de section avec poignée + séparateur. */
+.puck-field-label.is-group {
+  margin: 0 -2px 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #f0eee9;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.puck-field-label-grip {
+  color: rgba(254, 214, 91, 0.55);
+  flex-shrink: 0;
+}
+
+/* Pastille dorée devant chaque label de champ. */
+.puck-field-label-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fed65b;
+  box-shadow: 0 0 6px rgba(254, 214, 91, 0.5);
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.puck-field-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.puck-field-label-icon {
+  margin-left: auto;
+  color: var(--puck-color-text-subtle);
+  display: flex;
+}
+
+.puck-field-label-readonly {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--puck-color-text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Overlay de sélection des blocs dans le canevas (componentOverlay)   */
+/* ------------------------------------------------------------------ */
+
+.puck-overlay-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none !important;
+}
+
+.puck-overlay-badge {
+  position: absolute;
+  top: -1px;
+  left: 10px;
+  transform: translateY(-100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 7px 7px 0 0;
+  background: #17191c;
+  border: 1px solid rgba(254, 214, 91, 0.5);
+  border-bottom: none;
+  color: #f0eee9;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in);
+  z-index: 3;
+  /* Le portal Puck force `pointer-events: auto !important` : on contre pour
+     que le badge ne capture pas les clics destinés au bloc. */
+  pointer-events: none !important;
+}
+
+.puck-overlay-badge.is-visible {
+  opacity: 1;
+}
+
+.puck-overlay-badge.is-selected {
+  background: linear-gradient(135deg, rgba(254, 214, 91, 0.18), rgba(254, 214, 91, 0.08));
+  border-color: #fed65b;
+}
+
+.puck-overlay-badge-icon {
+  color: #fed65b;
+}
+
+/* Le cadre de sélection fourni par Puck : on le laisse visible tel quel,
+   ses couleurs sont déjà pilotées par --puck-color-selection-*. */
+.puck-overlay-root [class*="overlay"] {
+  position: absolute;
+  inset: 0;
+}

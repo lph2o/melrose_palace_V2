@@ -27,6 +27,32 @@ create table if not exists public.parcels (
 );
 
 -- ---------------------------------------------------------------------
+-- 1bis. Pages de l'éditeur visuel Puck (une ligne par page et par langue)
+--   id  : « home-fr » ou « home-en »
+--   data: la composition Puck complète ({ root, content, zones })
+--   AUCUNE ligne n'est nécessaire au premier déploiement : le site retombe
+--   sur son contenu par défaut tant que l'admin n'a rien publié.
+-- ---------------------------------------------------------------------
+create table if not exists public.puck_pages (
+  id         text primary key,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.puck_pages enable row level security;
+
+drop policy if exists "puck_pages public read" on public.puck_pages;
+create policy "puck_pages public read"
+  on public.puck_pages for select
+  using (true);
+
+drop policy if exists "puck_pages authenticated write" on public.puck_pages;
+create policy "puck_pages authenticated write"
+  on public.puck_pages for all
+  to authenticated
+  using (true) with check (true);
+
+-- ---------------------------------------------------------------------
 -- 2. Demandes de contact (formulaire du site → Espace Gérant)
 -- ---------------------------------------------------------------------
 create table if not exists public.leads (
@@ -91,6 +117,13 @@ $$;
 do $$
 begin
   alter publication supabase_realtime add table public.leads;
+exception when duplicate_object then null;
+end
+$$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.puck_pages;
 exception when duplicate_object then null;
 end
 $$;

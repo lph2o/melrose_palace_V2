@@ -25,6 +25,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Lead, SiteSettings, Parcel } from '../types';
+import { ADMIN_EMAIL } from '../lib/adminAuth';
 import AdminContentTab from './AdminContentTab';
 import {
   signInAdmin,
@@ -41,9 +42,6 @@ import {
   SyncResult,
   SyncFailureReason,
 } from '../lib/supabase';
-
-/** Seul cet email a le droit d'accéder à l'Espace Gérant (jamais affiché dans l'UI). */
-const ADMIN_EMAIL = 'thiamabda@gmail.com';
 
 /** Signature de mouvement du site : mass / spring, jamais linear. */
 const EASE = [0.32, 0.72, 0, 1] as const;
@@ -90,6 +88,8 @@ interface AdminPageProps {
   onUpdateParcelStatus: (id: number, status: 'Available' | 'Reserved' | 'Sold') => Promise<SyncResult>;
   onResetDefaults: () => Promise<void>;
   onBack: () => void;
+  /** Ouvre l'éditeur visuel Puck (/admin/editor). Absent = bouton masqué. */
+  onOpenEditor?: () => void;
   /** Vrai tant que la première synchronisation cloud n'est pas terminée (skeletons KPI). */
   loading?: boolean;
 }
@@ -157,6 +157,7 @@ export default function AdminPage({
   onUpdateParcelStatus,
   onResetDefaults,
   onBack,
+  onOpenEditor,
   loading = false,
 }: AdminPageProps) {
   const [formData, setFormData] = useState<SiteSettings>({ ...settings });
@@ -487,6 +488,15 @@ export default function AdminPage({
                 Connecté
               </span>
             )}
+            {onOpenEditor && authState === 'signedIn' && (
+              <button
+                onClick={onOpenEditor}
+                title="Ouvrir l'éditeur visuel"
+                className="p-2.5 rounded-full bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) text-(--admin-text-2) hover:text-(--admin-accent) hover:ring-(--admin-accent)/40 active:scale-[0.95] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+              >
+                <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            )}
             <button
               onClick={onBack}
               className="group inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) text-xs font-bold uppercase tracking-widest text-(--admin-text) hover:bg-(--admin-shell-hover) active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
@@ -619,6 +629,18 @@ export default function AdminPage({
               )}
               {!sidebarCollapsed && <span>Thème {theme === 'dark' ? 'clair' : 'sombre'}</span>}
             </button>
+            {onOpenEditor && (
+              <button
+                onClick={onOpenEditor}
+                title="Éditeur visuel"
+                className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-3 rounded-full bg-(--admin-shell-strong) ring-1 ring-(--admin-accent)/40 text-[11px] font-mono uppercase tracking-widest text-(--admin-accent) hover:bg-(--admin-shell-hover) active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+                  sidebarCollapsed ? 'px-0' : ''
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
+                {!sidebarCollapsed && <span>Éditeur visuel</span>}
+              </button>
+            )}
             <button
               onClick={onBack}
               title="Retour au site"

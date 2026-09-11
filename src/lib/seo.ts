@@ -199,12 +199,16 @@ export function applySeo({ settings, language, view }: SeoInput) {
   // <html lang> correct selon la langue active
   document.documentElement.setAttribute('lang', lang);
 
-  // Route admin : interdiction d'indexation, pas de hreflang ni JSON-LD public
+  // Routes d'administration (/admin et /admin/editor) : interdiction
+  // d'indexation, pas de hreflang ni de JSON-LD public. Elles sont aussi
+  // exclues du sitemap et bloquées dans robots.txt (prebuild).
   if (view === 'admin') {
+    const isEditor =
+      window.location.hash === '#/admin/editor' || /\/admin\/editor\/?$/.test(window.location.pathname);
     document.title = TITLES.admin[language];
     upsertMeta('name', 'description', DESCRIPTIONS.admin[language]);
     upsertMeta('name', 'robots', 'noindex, nofollow');
-    upsertLink('canonical', `${origin}/admin`);
+    upsertLink('canonical', `${origin}${isEditor ? '/admin/editor' : '/admin'}`);
     return;
   }
   upsertMeta('name', 'robots', 'index, follow');

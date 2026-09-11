@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Data as PuckData } from '@puckeditor/core';
 import { Lead, Parcel, SiteSettings } from '../types';
 import { DEFAULT_SITE_SETTINGS, DEFAULT_SITE_CONTENT, PARCELS } from '../data';
 
@@ -132,6 +133,42 @@ export async function clearRemoteParcels(): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Pages de l'éditeur visuel (table puck_pages, une ligne par page et  */
+/* par langue : « home-fr », « home-en »)                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Lit la composition Puck d'une page. Retourne null si la table n'existe pas
+ * encore, si aucune édition n'a été enregistrée, ou hors-ligne : l'appelant
+ * doit alors retomber sur `buildDefaultPage()` (contenu actuel du site).
+ */
+export async function fetchPuckPage(id: string): Promise<PuckData | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('puck_pages').select('data').eq('id', id).maybeSingle();
+  if (error || !data?.data) return null;
+  const page = data.data as PuckData;
+  if (!Array.isArray(page.content)) return null;
+  return page;
+}
+
+/** Enregistre (ou remplace) la composition Puck d'une page. */
+export async function upsertPuckPage(id: string, page: PuckData): Promise<SyncResult> {
+  return runUpsert(() =>
+    supabase!.from('puck_pages').upsert(
+      { id, data: page, updated_at: new Date().toISOString() },
+      { onConflict: 'id' }
+    )
+  );
+}
+
+/** Supprime la composition d'une page : le site repasse au contenu par défaut. */
+export async function clearPuckPage(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from('puck_pages').delete().eq('id', id);
+  return !error;
+}
+
+/* ------------------------------------------------------------------ */
 /* Demandes de contact (formulaire du site → Espace Gérant)            */
 /* ------------------------------------------------------------------ */
 
@@ -180,7 +217,7 @@ export async function deleteLead(id: number): Promise<boolean> {
  * la publication supabase_realtime (voir supabase/schema.sql).
  */
 export function subscribeToTableChanges(
-  table: 'parcels' | 'site_settings' | 'leads',
+  table: 'parcels' | 'site_settings' | 'leads' | 'puck_pages',
   onEvent: () => void
 ): () => void {
   if (!supabase) return () => {};

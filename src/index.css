@@ -52,6 +52,13 @@
   }
 }
 
+/* Spinner des champs personnalisés de l'éditeur Puck (MediaField). */
+@keyframes puck-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---------------------------------------------------------------------
    Espace Gérant — thème sombre (défaut) & thème clair
    Toutes les couleurs de l'admin passent par ces variables : le thème
