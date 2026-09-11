@@ -3,6 +3,15 @@ import { Language, SiteSettings } from '../types';
 import { TRANSLATIONS } from '../data';
 import { Mail, ArrowRight, MessageCircle, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { insertLead } from '../lib/supabase';
+
+/**
+ * Marqueurs lisibles par le gérant dans l'onglet « Demandes de contact » :
+ * l'inscription à la veille foncière est enregistrée comme une demande (il
+ * n'existe pas de table dédiée aux abonnés).
+ */
+const NEWSLETTER_LEAD_NAME = 'Abonné veille foncière';
+const NEWSLETTER_LEAD_INTEREST = 'Veille foncière & opportunités';
 
 interface FooterProps {
   currentLanguage: Language;
@@ -14,19 +23,27 @@ interface FooterProps {
 export default function Footer({ currentLanguage, setActiveTab, settings, onOpenBrochure }: FooterProps) {
   const t = TRANSLATIONS[currentLanguage];
   const [email, setEmail] = useState<string>('');
-  const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
-  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
+  const [subscribeState, setSubscribeState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
 
-  const handleSubscribe = (e: FormEvent) => {
+  // L'inscription est réellement enregistrée : la confirmation n'apparaît que
+  // si Supabase a accepté la demande (sinon l'adresse était perdue).
+  const handleSubscribe = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setIsSubscribing(true);
-    setTimeout(() => {
-      setIsSubscribing(false);
-      setIsSubscribed(true);
-      setEmail('');
-    }, 1000);
+    const address = email.trim();
+    if (!address) return;
+    setSubscribeState('sending');
+    const saved = await insertLead({
+      name: NEWSLETTER_LEAD_NAME,
+      phone: '',
+      email: address,
+      interest: NEWSLETTER_LEAD_INTEREST,
+      message: '',
+    });
+    setSubscribeState(saved ? 'done' : 'error');
+    if (saved) setEmail('');
   };
+
+  const newsletterEmail = settings?.contactEmail || 'globalequalite@gmail.com';
 
   const whatsappClean = settings?.whatsappCleanNumber || '33761235509';
 
@@ -55,30 +72,45 @@ export default function Footer({ currentLanguage, setActiveTab, settings, onOpen
             </div>
 
             <div className="w-full max-w-md lg:ml-auto">
-              {!isSubscribed ? (
-                <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-stretch gap-2.5">
-                  <div className="relative flex-1">
-                    <input
-                      type="email"
-                      required
-                      placeholder={currentLanguage === 'FR' ? 'Votre adresse email...' : 'Enter your email...'}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/15 text-xs text-white placeholder:text-white/40 bg-white/5 focus:outline-none focus:ring-1 focus:ring-secondary-fixed focus:border-secondary-fixed transition-all"
-                    />
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40">
-                      <Mail className="w-4 h-4" />
+              {subscribeState !== 'done' ? (
+                <div className="space-y-2">
+                  <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                    <div className="relative flex-1">
+                      <input
+                        type="email"
+                        required
+                        placeholder={currentLanguage === 'FR' ? 'Votre adresse email...' : 'Enter your email...'}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/15 text-xs text-white placeholder:text-white/40 bg-white/5 focus:outline-none focus:ring-1 focus:ring-secondary-fixed focus:border-secondary-fixed transition-all"
+                      />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40">
+                        <Mail className="w-4 h-4" />
+                      </div>
                     </div>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubscribing}
-                    className="bg-secondary-fixed hover:bg-secondary-fixed/90 text-primary text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 shrink-0 shadow-sm"
-                  >
-                    <span>{isSubscribing ? (currentLanguage === 'FR' ? 'Envoi...' : 'Sending...') : (currentLanguage === 'FR' ? "S'inscrire" : 'Join')}</span>
-                    {!isSubscribing && <ArrowRight className="w-4 h-4" />}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={subscribeState === 'sending'}
+                      className="bg-secondary-fixed hover:bg-secondary-fixed/90 text-primary text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 shrink-0 shadow-sm"
+                    >
+                      <span>{subscribeState === 'sending' ? (currentLanguage === 'FR' ? 'Envoi...' : 'Sending...') : (currentLanguage === 'FR' ? "S'inscrire" : 'Join')}</span>
+                      {subscribeState !== 'sending' && <ArrowRight className="w-4 h-4" />}
+                    </button>
+                  </form>
+                  {subscribeState === 'error' && (
+                    <p className="text-[11px] text-rose-300 leading-relaxed" role="alert">
+                      {currentLanguage === 'FR'
+                        ? "Inscription impossible pour l'instant — écrivez-nous à "
+                        : 'Sign-up failed right now — please email us at '}
+                      <a href={`mailto:${newsletterEmail}`} className="underline">
+                        {newsletterEmail}
+                      </a>
+                      {currentLanguage === 'FR'
+                        ? ' pour être ajouté à la liste.'
+                        : ' to be added to the list.'}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.98 }}

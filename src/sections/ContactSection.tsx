@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpen,
   CheckCircle,
@@ -99,14 +100,21 @@ export function ContactSection({ content }: { content?: Partial<ContactContent> 
     interestOptions: content?.interestOptions?.length ? content.interestOptions : base.interestOptions,
   };
 
-  const [formData, setFormData] = useState({
+  // La formule proposée par défaut doit être une option réelle du menu : la
+  // valeur historique « Parcelle 150 m² … » n'existait dans aucune <option>,
+  // donc le visiteur voyait « Paiement échelonné » pendant que la demande
+  // enregistrée (et le message WhatsApp) portait l'autre texte.
+  const defaultInterest = c.interestOptions[0]?.value ?? '';
+
+  const [formData, setFormData] = useState(() => ({
     name: '',
     email: '',
     phone: '',
-    interest: 'Parcelle 150 m² (Paiement échelonné 300 €/mois)',
+    interest: defaultInterest,
     message: '',
-  });
+  }));
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [leadSaved, setLeadSaved] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
 
   const handleInputChange = (
@@ -116,32 +124,37 @@ export function ContactSection({ content }: { content?: Partial<ContactContent> 
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone) return;
+    const payload = {
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      email: formData.email.trim(),
+      interest: formData.interest,
+      message: formData.message.trim(),
+    };
+    if (!payload.name || !payload.phone) return;
 
     setFormLoading(true);
-    setTimeout(() => {
-      setFormLoading(false);
-      setIsSubmitted(true);
-      // Enregistre la demande dans Supabase (Espace Gérant → onglet Demandes de contact)
-      insertLead({
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        interest: formData.interest,
-        message: formData.message,
-      });
-      // Ouvre WhatsApp avec la demande pré-remplie
-      const msg = ui.contactWaMsg
-        .replace('{name}', formData.name)
-        .replace('{interest}', formData.interest)
-        .replace('{phone}', formData.phone)
-        .replace('{email}', formData.email)
-        .replace('{message}', formData.message);
-      openWhatsApp(settings, msg);
-      setFormData({ name: '', email: '', phone: '', interest: 'Parcelle 150 m²', message: '' });
-    }, 1000);
+
+    // WhatsApp d'abord : la fenêtre doit s'ouvrir pendant le geste de
+    // l'utilisateur, sinon le navigateur la bloque (l'enregistrement peut être lent).
+    const msg = ui.contactWaMsg
+      .replace('{name}', payload.name)
+      .replace('{interest}', payload.interest)
+      .replace('{phone}', payload.phone)
+      .replace('{email}', payload.email)
+      .replace('{message}', payload.message);
+    openWhatsApp(settings, msg);
+
+    // Puis la demande dans Supabase (Espace Gérant → onglet Demandes de contact).
+    // Le résultat est affiché : le visiteur ne doit pas croire à un
+    // enregistrement qui n'a pas eu lieu.
+    const saved = await insertLead(payload);
+    setLeadSaved(saved);
+    setFormLoading(false);
+    setIsSubmitted(true);
+    setFormData({ name: '', email: '', phone: '', interest: defaultInterest, message: '' });
   };
 
   const inputCls =
@@ -240,13 +253,27 @@ export function ContactSection({ content }: { content?: Partial<ContactContent> 
           <p className="text-xs text-on-surface-variant mb-6 font-light">{c.formDesc}</p>
 
           {isSubmitted ? (
-            <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
-              <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto" />
-              <h5 className="font-serif font-bold text-base text-emerald-900">{c.successTitle}</h5>
-              <p className="text-xs text-emerald-800 leading-relaxed">{c.successMessage}</p>
+            <div
+              className={`p-6 rounded-2xl text-center space-y-2 border ${
+                leadSaved ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'
+              }`}
+            >
+              {leadSaved ? (
+                <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto" />
+              ) : (
+                <AlertTriangle className="w-10 h-10 text-amber-600 mx-auto" />
+              )}
+              <h5
+                className={`font-serif font-bold text-base ${leadSaved ? 'text-emerald-900' : 'text-amber-900'}`}
+              >
+                {leadSaved ? c.successTitle : ui.contactFormNotSavedTitle}
+              </h5>
+              <p className={`text-xs leading-relaxed ${leadSaved ? 'text-emerald-800' : 'text-amber-800'}`}>
+                {leadSaved ? c.successMessage : ui.contactFormNotSavedMessage}
+              </p>
               <button
                 onClick={() => setIsSubmitted(false)}
-                className="mt-3 text-xs font-bold text-emerald-700 underline"
+                className={`mt-3 text-xs font-bold underline ${leadSaved ? 'text-emerald-700' : 'text-amber-700'}`}
               >
                 {c.formReset}
               </button>

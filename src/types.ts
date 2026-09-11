@@ -68,6 +68,9 @@ export interface UITranslations {
   contactFormDesc: string;
   contactFormSubmitLoading: string;
   contactFormReset: string;
+  /** Affiché quand la demande part bien sur WhatsApp mais n'a pas pu être enregistrée. */
+  contactFormNotSavedTitle: string;
+  contactFormNotSavedMessage: string;
   contactFormPlaceholderName: string;
   contactFormPlaceholderPhone: string;
   contactFormPlaceholderEmail: string;
