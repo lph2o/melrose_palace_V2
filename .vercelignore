@@ -1,0 +1,12 @@
+# Fichiers présents en local mais inutiles au build (déploiement CLI).
+# Le build Git, lui, ne voit déjà que ce qui est commité.
+dist/
+.DS_Store
+*.log
+
+# Audit mobile local (gitignoré — voir .gitignore)
+public/mobile-audit.html
+public/mobile-audit-standalone.html
+
+# Sources vidéo .mov trop lourdes (conservées localement)
+public/videos/*.mov
