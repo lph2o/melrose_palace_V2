@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, MouseEvent } from 'react';
+import { useState, useRef, useEffect, MouseEvent, TouchEvent } from 'react';
 import {
   ChevronRight,
   Info,
@@ -39,6 +39,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import VirtualTourModal from './VirtualTourModal';
 import ShareParcelModal from './ShareParcelModal';
+import { downloadParcelSheet } from '../lib/parcelSheet';
 
 interface MasterPlanPageProps {
   currentLanguage: Language;
@@ -129,15 +130,49 @@ export default function MasterPlanPage({
     };
   };
 
-  // Zoom controls
-  const zoomIn = () => setZoom(prev => Math.min(prev + 0.25, 2.5));
-  const zoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.75));
+  // Bornage du déplacement : le plan (1000 × 680 px) ne peut plus être tiré
+  // entièrement hors du cadre, ce qui laissait un canevas vide. Le repère est le
+  // centre du plan, identique au `transformOrigin` du conteneur transformé.
+  const clampPan = (next: { x: number; y: number }, scale: number) => {
+    const viewport = mapViewportRef.current;
+    if (!viewport) return next;
+    const clampAxis = (value: number, center: number, half: number, viewportSize: number) => {
+      const size = half * 2 * scale;
+      if (size >= viewportSize) {
+        const min = viewportSize - center - half * scale;
+        const max = center * (scale - 1);
+        return Math.min(Math.max(value, min), max);
+      }
+      return viewportSize / 2 - center;
+    };
+    return {
+      x: clampAxis(next.x, 500, 500, viewport.clientWidth || 1000),
+      y: clampAxis(next.y, 340, 340, viewport.clientHeight || 530),
+    };
+  };
+
+  // Zoom controls — forme fonctionnelle obligatoire : deux clics rapides doivent
+  // s'additionner (une valeur de `zoom` capturée resterait bloquée).
+  const zoomBy = (delta: number) => {
+    setZoom(prev => Math.min(Math.max(prev + delta, 0.75), 2.5));
+  };
+  const zoomIn = () => zoomBy(0.25);
+  const zoomOut = () => zoomBy(-0.25);
   const resetZoom = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
-  // Handle Dragging
+  // Chaque changement de zoom re-borne le déplacement : un plan zoomé ne doit
+  // jamais pouvoir être tiré hors du cadre.
+  useEffect(() => {
+    setPan(prev => {
+      const next = clampPan(prev, zoom);
+      return next.x === prev.x && next.y === prev.y ? prev : next;
+    });
+  }, [zoom]);
+
+  // Handle Dragging (souris)
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     setIsDragging(true);
@@ -146,13 +181,69 @@ export default function MasterPlanPage({
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!isDragging) return;
-    setPan({
+    setPan(clampPan({
       x: e.clientX - dragStart.x,
       y: e.clientY - dragStart.y
-    });
+    }, zoom));
   };
 
   const handleMouseUp = () => setIsDragging(false);
+
+  // Pan tactile : sur mobile, aucun geste ne permettait d'explorer un plan de
+  // 1000 px de large. Un glissé horizontal déplace la carte ; un glissé vertical
+  // fait défiler la page tant que le plan n'est pas zoomé (voir `touchAction`).
+  const touchDragRef = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    startPan: { x: number; y: number };
+    mode: 'pending' | 'pan' | 'scroll';
+  } | null>(null);
+
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length !== 1) {
+      touchDragRef.current = null;
+      setIsDragging(false);
+      return;
+    }
+    const touch = e.touches[0];
+    touchDragRef.current = {
+      id: touch.identifier,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startPan: pan,
+      mode: 'pending',
+    };
+    if (zoom !== 1) setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    const drag = touchDragRef.current;
+    if (!drag) return;
+    const touch = Array.from(e.touches).find(t => t.identifier === drag.id);
+    if (!touch) return;
+    const dx = touch.clientX - drag.startX;
+    const dy = touch.clientY - drag.startY;
+
+    if (drag.mode === 'pending') {
+      // Laisse la direction du geste décider : vertical = défilement de la page.
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (zoom === 1 && Math.abs(dy) > Math.abs(dx)) {
+        drag.mode = 'scroll';
+        setIsDragging(false);
+        return;
+      }
+      drag.mode = 'pan';
+      setIsDragging(true);
+    }
+    if (drag.mode !== 'pan') return;
+    setPan(clampPan({ x: drag.startPan.x + dx, y: drag.startPan.y + dy }, zoom));
+  };
+
+  const handleTouchEnd = () => {
+    touchDragRef.current = null;
+    setIsDragging(false);
+  };
 
   // Filtre par zone (Tranche / Promo / zones cadastrales) puis par statut commercial
   const zoneFilteredParcels = allParcels.filter(p => {
@@ -197,13 +288,25 @@ export default function MasterPlanPage({
     });
   };
 
-  const triggerDownload = (parcelId: number) => {
-    setDownloadingId(parcelId);
-    setTimeout(() => {
-      setDownloadingId(null);
-      setToastMessage(`Fiche technique certifiée de la parcelle n°${parcelId} téléchargée avec succès.`);
-      setTimeout(() => setToastMessage(null), 4000);
-    }, 1200);
+  /**
+   * Génère puis télécharge la vraie fiche cadastrale (src/lib/parcelSheet.ts).
+   * On passe la parcelle complète : si la sélection change pendant la
+   * génération, le fichier reste celui affiché au moment du clic.
+   */
+  const triggerDownload = (parcel: Parcel) => {
+    setDownloadingId(parcel.id);
+    window.setTimeout(() => {
+      try {
+        downloadParcelSheet(parcel, { language: currentLanguage, settings });
+        setToastMessage(`Fiche cadastrale du lot n°${parcel.id} téléchargée (PDF).`);
+      } catch (error) {
+        console.error('[fiche-cadastrale] génération impossible', error);
+        setToastMessage('Génération de la fiche impossible. Réessayez ou écrivez-nous sur WhatsApp.');
+      } finally {
+        setDownloadingId(null);
+        window.setTimeout(() => setToastMessage(null), 4000);
+      }
+    }, 150);
   };
 
   const whatsappClean = settings?.whatsappCleanNumber || '33761235509';
@@ -512,6 +615,11 @@ export default function MasterPlanPage({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              style={{ touchAction: zoom === 1 ? 'pan-y pinch-zoom' : 'none' }}
               className={`relative h-[530px] ${
                 cadastreViewMode === 'blueprint' ? 'bg-[#06182E]' : 'bg-[#EFECE6]'
               } overflow-hidden select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -1153,7 +1261,7 @@ export default function MasterPlanPage({
 
                   {/* Download Spec Sheet */}
                   <button
-                    onClick={() => triggerDownload(selectedParcel.id)}
+                    onClick={() => triggerDownload(selectedParcel)}
                     disabled={downloadingId !== null}
                     className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-primary py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                   >
