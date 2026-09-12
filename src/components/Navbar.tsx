@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, Globe, PhoneCall, Search, ShieldCheck, Calculator, FileText } from 'lucide-react';
+import { Globe, PhoneCall, Search, ShieldCheck, Calculator, FileText, Share2 } from 'lucide-react';
 import { Language, SiteSettings, UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { hiddenAnchors } from '../site/sectionsCatalog';
@@ -13,6 +13,7 @@ interface NavbarProps {
   scrollToSection: (sectionId: string) => void;
   onSearchTrigger?: () => void;
   onOpenBrochure?: () => void;
+  onOpenShare?: () => void;
   settings?: SiteSettings;
 }
 
@@ -24,6 +25,7 @@ export default function Navbar({
   scrollToSection,
   onSearchTrigger,
   onOpenBrochure,
+  onOpenShare,
   settings,
 }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,14 +44,21 @@ export default function Navbar({
     // The navbar has two heights (resting vs scrolled); keying this effect
     // on isScrolled guarantees the variable is written AFTER React commits
     // the matching padding class, so the measured height is always final.
+    //
+    // Mesure observée plutôt qu'écoutée : la barre grandit aussi sans
+    // redimensionnement de fenêtre — c'est le cas quand la marge de sécurité
+    // iOS change (rotation) ou quand la police web finit de charger. Un simple
+    // écouteur `resize` laissait alors `--nav-h` en retard, et le menu mobile
+    // se glissait sous la barre.
     const nav = document.getElementById('navbar');
     if (!nav) return;
     const syncNavHeight = () => {
       document.documentElement.style.setProperty('--nav-h', `${nav.offsetHeight}px`);
     };
     syncNavHeight();
-    window.addEventListener('resize', syncNavHeight);
-    return () => window.removeEventListener('resize', syncNavHeight);
+    const observer = new ResizeObserver(syncNavHeight);
+    observer.observe(nav, { box: 'border-box' });
+    return () => observer.disconnect();
   }, [isScrolled]);
 
   useEffect(() => {
@@ -85,17 +94,42 @@ export default function Navbar({
     setLanguage(currentLanguage === 'FR' ? 'EN' : 'FR');
   };
 
+  // Menu mobile : fermeture au clavier (Échap), verrouillage du défilement de
+  // la page derrière l'overlay, et fermeture automatique si on repasse en
+  // largeur bureau (sinon l'overlay resterait monté, invisible).
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onResize);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <header className="relative">
       <nav
         id="navbar"
-        className={`fixed top-0 left-0 right-0 z-50 transition-[background-color,box-shadow,border-color] duration-300 px-4 md:px-12 border-b ${
+        className={`fixed top-0 left-0 right-0 z-[var(--z-nav)] transition-[background-color,box-shadow,border-color] duration-400 px-5 md:px-12 border-b ${
           isScrolled || activeTab === 'masterplan'
-            ? 'bg-[#00261a]/98 backdrop-blur-md shadow-lg py-2.5 border-white/10'
-            : 'bg-[#00261a]/95 backdrop-blur-md shadow-sm py-3 border-white/10'
+            ? 'bg-[#00261a]/98 backdrop-blur-md shadow-elev-2 py-2.5 border-white/10'
+            : 'bg-[#00261a]/95 backdrop-blur-md shadow-elev-1 py-3 border-white/10'
         }`}
       >
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        {/* Enveloppe interne : c'est ici que se réservent les marges de sécurité
+            (l'encoche en haut, les bords arrondis en paysage). Le fond sombre de
+            la barre, lui, reste plein format jusqu'aux bords de l'écran. */}
+        <div className="max-w-7xl mx-auto flex justify-between items-center safe-t safe-x">
           {/* Logo with Company Name */}
           <button
             onClick={() => {
@@ -103,16 +137,18 @@ export default function Navbar({
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             id="nav-logo"
-            className="flex items-center space-x-2.5 text-left cursor-pointer group"
+            className="flex items-center gap-2.5 text-left cursor-pointer group min-w-0 tap-44"
           >
-            <div className="w-8 h-8 rounded-lg bg-secondary-fixed text-primary flex items-center justify-center font-bold font-serif text-sm shadow-sm group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-9 h-9 rounded-micro bg-secondary-fixed text-primary flex items-center justify-center font-bold font-serif text-sm shadow-elev-1 group-hover:scale-105 transition-transform duration-400 ease-spring shrink-0">
               SIC
             </div>
-            <div>
-              <span className="font-serif text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-secondary-fixed transition-colors block leading-tight">
+            {/* `min-w-0` + `truncate` : le nom complet ne doit pas passer sur deux
+                lignes en 375px, sinon la navbar grandit et décale tout le chrome. */}
+            <div className="min-w-0">
+              <span className="font-serif text-sm sm:text-lg font-bold tracking-tight text-white group-hover:text-secondary-fixed transition-colors block leading-tight truncate max-w-[38vw] sm:max-w-none">
                 {settings.companyName || 'Sénégal Immobilier Consulting'}
               </span>
-              <span className="text-[9px] font-mono tracking-widest uppercase text-secondary-fixed/80 font-medium hidden sm:block">
+              <span className="text-micro font-mono tracking-widest uppercase text-secondary-fixed/80 font-medium hidden sm:block">
                 Sébikhotane
               </span>
             </div>
@@ -125,14 +161,14 @@ export default function Navbar({
                 setActiveTab('masterplan');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`font-sans font-bold text-xs uppercase tracking-wider cursor-pointer transition-all px-3 py-1.5 rounded-full flex items-center space-x-1.5 ${
+              className={`font-sans font-bold text-xs uppercase tracking-wider cursor-pointer transition-all duration-400 ease-spring px-3 py-2.5 rounded-full flex items-center space-x-1.5 tap-44 ${
                 activeTab === 'masterplan'
-                  ? 'bg-secondary-fixed text-primary shadow-xs'
+                  ? 'bg-secondary-fixed text-primary shadow-elev-1'
                   : 'text-secondary-fixed hover:bg-white/10'
               }`}
             >
               <span>{currentLanguage === 'FR' ? 'Plan Cadastral' : 'Cadastral Plan'}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+              <span className={`text-micro px-1.5 py-0.2 rounded-full font-mono font-bold ${
                 activeTab === 'masterplan' ? 'bg-primary text-secondary-fixed' : 'bg-secondary-fixed/20 text-secondary-fixed'
               }`}>
                 54
@@ -141,8 +177,8 @@ export default function Navbar({
             {sectionVisible('location') && (
               <button
                 onClick={() => handleNavLink('location')}
-                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors py-2.5 px-1 tap-44 ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/70 hover:text-white'
                 }`}
               >
                 {t.nav.location}
@@ -151,8 +187,8 @@ export default function Navbar({
             {sectionVisible('guarantees') && (
               <button
                 onClick={() => handleNavLink('guarantees')}
-                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors py-2.5 px-1 tap-44 ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/70 hover:text-white'
                 }`}
               >
                 {t.nav.guarantees}
@@ -161,8 +197,8 @@ export default function Navbar({
             {sectionVisible('simulator-section') && (
               <button
                 onClick={() => handleNavLink('simulator-section')}
-                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors ${
-                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/60 hover:text-white'
+                className={`font-sans font-medium text-xs uppercase tracking-wider cursor-pointer transition-colors py-2.5 px-1 tap-44 ${
+                  activeTab === 'home' ? 'text-white/85 hover:text-secondary-fixed' : 'text-white/70 hover:text-white'
                 }`}
               >
                 {t.nav.simulator}
@@ -175,17 +211,29 @@ export default function Navbar({
             {/* Quick Search Button (Compact icon) */}
             <button
               onClick={onSearchTrigger}
-              className="p-2 rounded-full border border-white/15 text-white/90 hover:text-white hover:bg-white/10 transition-all cursor-pointer bg-white/5"
+              className="p-3 rounded-full border border-white/15 text-white/90 hover:text-white hover:bg-white/10 transition-all duration-400 ease-spring cursor-pointer bg-white/5 tap-44"
               title={ui.navSearchTitle}
               aria-label={ui.navSearchAria}
             >
               <Search className="w-4 h-4 text-secondary-fixed" />
             </button>
 
+            {/* Partage du projet sur les réseaux sociaux */}
+            {onOpenShare && (
+              <button
+                onClick={onOpenShare}
+                className="p-3 rounded-full border border-white/15 text-white/90 hover:text-white hover:bg-white/10 transition-all duration-400 ease-spring cursor-pointer bg-white/5 tap-44"
+                title={currentLanguage === 'FR' ? 'Partager le projet' : 'Share this project'}
+                aria-label={currentLanguage === 'FR' ? 'Partager le projet' : 'Share this project'}
+              >
+                <Share2 className="w-4 h-4 text-secondary-fixed" />
+              </button>
+            )}
+
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center space-x-1 px-3 py-1.5 rounded-full border border-white/15 text-white hover:bg-white/10 transition-all text-xs font-semibold cursor-pointer bg-white/5"
+              className="flex items-center space-x-1 px-3 py-2.5 rounded-full border border-white/15 text-white hover:bg-white/10 transition-all duration-400 cursor-pointer bg-white/5 tap-44 text-xs font-semibold"
               title={ui.navLangTitle}
             >
               <Globe className="w-3.5 h-3.5 text-secondary-fixed" />
@@ -196,38 +244,70 @@ export default function Navbar({
             {sectionVisible('contact') && (
               <button
                 onClick={() => handleNavLink('contact')}
-                className="bg-secondary-container text-on-secondary-fixed px-5 py-2 rounded-full font-sans font-bold text-xs tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all duration-300 cursor-pointer shadow-md"
+                className="bg-secondary-container text-on-secondary-fixed px-5 py-3 rounded-full font-sans font-bold text-xs tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all duration-400 cursor-pointer shadow-elev-2"
               >
                 {t.bookVisit}
               </button>
             )}
           </div>
 
-          {/* Mobile Action Controls */}
-          <div className="md:hidden flex items-center space-x-1.5">
+          {/* Mobile Action Controls — chaque contrôle fait au moins 44px de
+              zone tactile (`tap-44` étend la cible sans grossir le glyphe). */}
+          <div className="md:hidden flex items-center gap-2">
             <button
               onClick={onSearchTrigger}
-              className="p-2 text-white/80 hover:text-white"
+              className="p-3 text-white/85 hover:text-white tap-44"
               title={ui.navMobileSearchTitle}
               aria-label={ui.navMobileSearchTitle}
             >
               <Search className="w-4 h-4 text-secondary-fixed" />
             </button>
 
+            {onOpenShare && (
+              <button
+                onClick={onOpenShare}
+                className="p-3 text-white/85 hover:text-white tap-44"
+                title={currentLanguage === 'FR' ? 'Partager' : 'Share'}
+                aria-label={currentLanguage === 'FR' ? 'Partager' : 'Share'}
+              >
+                <Share2 className="w-4 h-4 text-secondary-fixed" />
+              </button>
+            )}
+
             <button
               onClick={toggleLanguage}
-              className="flex items-center px-2 py-1 rounded-md border border-white/15 text-white text-xs font-semibold"
+              className="flex items-center px-2.5 py-2.5 rounded-micro border border-white/15 text-white text-xs font-semibold tap-44"
+              title={ui.navLangTitle}
             >
-              <Globe className="w-3 h-3 text-secondary-fixed mr-1" />
+              <Globe className="w-3.5 h-3.5 text-secondary-fixed mr-1" />
               <span>{currentLanguage === 'FR' ? 'EN' : 'FR'}</span>
             </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-white p-2 hover:bg-white/5 rounded-full transition-colors cursor-pointer"
-              aria-label="Menu"
+              className="text-white p-3 rounded-full hover:bg-white/5 transition-colors duration-400 cursor-pointer tap-44"
+              aria-label={currentLanguage === 'FR' ? 'Menu' : 'Menu'}
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {/* Morphing hamburger → croix : les trois barres pivotent, elles
+                  ne disparaissent pas. */}
+              <span className="relative block w-5 h-4">
+                <span
+                  className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition-all duration-400 ease-spring ${
+                    mobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-current transition-all duration-400 ease-spring ${
+                    mobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100'
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 bottom-0 h-0.5 w-5 rounded-full bg-current transition-all duration-400 ease-spring ${
+                    mobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''
+                  }`}
+                />
+              </span>
             </button>
           </div>
         </div>
@@ -236,28 +316,52 @@ export default function Navbar({
       {/* Mobile Drawer Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
+          /* Le calque couvre tout l'écran, mais seul le panneau est peint : la
+             page reste visible en dessous. Deux conséquences voulues — le tap
+             hors du panneau referme le menu (le pouce n'a pas à chercher la
+             croix en haut à droite), et la page derrière ne défile plus tant
+             que le menu est ouvert.
+
+             `--z-menu` et non un calque haut : le menu doit rester **sous** la
+             navbar, qui porte la croix de fermeture. Au-dessus, il la
+             recouvrirait et le menu deviendrait impossible à refermer au doigt. */
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            data-menu-scrim=""
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-x-0 top-[56px] bg-[#00261a] z-40 border-b border-white/10 shadow-2xl md:hidden px-6 py-6 max-h-[85vh] overflow-y-auto"
+            className="fixed inset-0 z-[var(--z-menu)] md:hidden"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setMobileMenuOpen(false);
+            }}
           >
-            <div className="flex flex-col space-y-4">
+            <motion.div
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+              exit={{ y: -20 }}
+              transition={{ duration: 0.3 }}
+              // Positionnement dérivé de la hauteur réelle de la navbar
+              // (`--nav-h`) : plus de décalage codé en dur qui laissait 25px du
+              // menu passer sous la barre.
+              className="pt-[var(--nav-h)] bg-[#00261a] safe-x safe-b"
+            >
+            <div className="border-b border-white/10 shadow-elev-3 px-5 py-6 max-h-[calc(100dvh-var(--nav-h)-var(--safe-bottom))] overflow-y-auto">
+              <div className="flex flex-col space-y-4 menu-stagger">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onSearchTrigger?.();
                 }}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 flex items-center justify-between text-left"
+                className="w-full min-h-[44px] bg-white/5 border border-white/10 rounded-inner py-2.5 px-4 flex items-center justify-between text-left"
               >
-                <div className="flex items-center space-x-2 text-white/60">
+                <div className="flex items-center space-x-2 text-white/70">
                   <Search className="w-4 h-4 text-secondary-fixed" />
                   <span className="text-xs font-light">
                     {ui.mobileSearchPlaceholder}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono font-bold text-secondary-fixed">OK</span>
+                <span className="text-caption font-mono font-bold text-secondary-fixed">OK</span>
               </button>
 
               <button
@@ -266,16 +370,18 @@ export default function Navbar({
                   setActiveTab('masterplan');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="text-left font-serif text-base font-bold text-secondary-fixed py-2 border-b border-white/10 flex items-center justify-between"
+                className="text-left font-serif text-base font-bold text-secondary-fixed min-h-[44px] py-2 border-b border-white/10 flex items-center justify-between"
               >
-                <span>{t.nav.masterPlan} {ui.mobileAvailableSuffix}</span>
-                <span className="text-[10px] bg-secondary-fixed text-primary px-2 py-0.5 rounded font-mono font-bold">150 m²</span>
+                <span>
+                  {t.nav.masterPlan} {ui.mobileAvailableSuffix}
+                </span>
+                <span className="text-caption bg-secondary-fixed text-primary px-2 py-0.5 rounded-micro font-mono font-bold">150 m²</span>
               </button>
 
               {sectionVisible('vision') && (
                 <button
                   onClick={() => handleNavLink('vision')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.vision}
                 </button>
@@ -283,7 +389,7 @@ export default function Navbar({
               {sectionVisible('location') && (
                 <button
                   onClick={() => handleNavLink('location')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.location}
                 </button>
@@ -291,7 +397,7 @@ export default function Navbar({
               {sectionVisible('guarantees') && (
                 <button
                   onClick={() => handleNavLink('guarantees')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.guarantees} {ui.guaranteesSuffix}
                 </button>
@@ -299,7 +405,7 @@ export default function Navbar({
               {sectionVisible('simulator-section') && (
                 <button
                   onClick={() => handleNavLink('simulator-section')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.simulator} {ui.simulatorSuffix}
                 </button>
@@ -307,7 +413,7 @@ export default function Navbar({
               {sectionVisible('packs-section') && (
                 <button
                   onClick={() => handleNavLink('packs-section')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.packs} {ui.packsSuffix}
                 </button>
@@ -315,7 +421,7 @@ export default function Navbar({
               {sectionVisible('faqs-section') && (
                 <button
                   onClick={() => handleNavLink('faqs-section')}
-                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed py-1"
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.faq}
                 </button>
@@ -328,17 +434,34 @@ export default function Navbar({
                       setMobileMenuOpen(false);
                       onOpenBrochure();
                     }}
-                    className="w-full py-2.5 px-4 bg-amber-400/15 border border-amber-400/40 text-amber-300 rounded-xl text-xs flex items-center justify-center space-x-2 font-semibold cursor-pointer"
+                    className="w-full min-h-[44px] py-2.5 px-4 bg-secondary-fixed/15 border border-gold-line/40 text-secondary-fixed rounded-inner text-caption flex items-center justify-center space-x-2 font-semibold cursor-pointer"
                   >
-                    <FileText className="w-4 h-4 text-amber-300" />
+                    <FileText className="w-4 h-4 text-secondary-fixed" />
                     <span>{ui.mobileBrochureBtn}</span>
+                  </button>
+                )}
+
+                {onOpenShare && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenShare();
+                    }}
+                    className="w-full min-h-[44px] py-2.5 px-4 bg-white/10 border border-white/20 text-white rounded-inner text-caption flex items-center justify-center space-x-2 font-semibold cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4 text-secondary-fixed" />
+                    <span>
+                      {currentLanguage === 'FR'
+                        ? 'Partager le projet (WhatsApp, Facebook…)'
+                        : 'Share the project (WhatsApp, Facebook…)'}
+                    </span>
                   </button>
                 )}
 
                 {sectionVisible('contact') && (
                   <button
                     onClick={() => handleNavLink('contact')}
-                    className="bg-secondary-container text-on-secondary-fixed py-3 rounded-xl font-sans font-bold text-xs tracking-widest uppercase hover:bg-secondary-fixed-dim transition-all text-center"
+                    className="bg-secondary-container text-on-secondary-fixed min-h-[48px] flex items-center justify-center rounded-inner font-sans font-bold text-caption tracking-widest uppercase hover:bg-secondary-fixed-dim transition-all duration-400 text-center"
                   >
                     {t.bookVisit}
                   </button>
@@ -346,8 +469,10 @@ export default function Navbar({
 
                 {/* Accès gestionnaire retiré du menu public : l'Espace Gérant
                     n'est plus joignable que par l'URL directe /admin. */}
+                </div>
               </div>
             </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Calendar, Landmark, HelpCircle, FileText, ArrowRight } from 'lucide-react';
 import { Parcel, BlogArticle, FAQItem, Language } from '../types';
 import { PARCELS, BLOG_ARTICLES, FAQ_ITEMS } from '../data';
-import { motion, AnimatePresence } from 'motion/react';
+import { formatEditorialDate } from '../lib/date';
+import { ModalShell, useModalClose } from '../ui';
 
 interface SearchModalProps {
   onClose: () => void;
@@ -26,16 +27,10 @@ export default function SearchModal({
   const isFR = currentLanguage === 'FR';
 
   useEffect(() => {
-    // Focus search input on mount
+    // Focus search input on mount. Échap et le piège de focus sont gérés par
+    // `ModalShell`, qui porte désormais la modale.
     inputRef.current?.focus();
-
-    // Escape listener to close
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   // Search logic
   const normalizedQuery = query.trim().toLowerCase();
@@ -103,26 +98,24 @@ export default function SearchModal({
   };
 
   const results = getFilteredResults();
+  const { close, closeRef } = useModalClose();
   const hasResults = results.parcels.length > 0 || results.articles.length > 0 || results.faqs.length > 0;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-12 bg-primary/95 backdrop-blur-md overflow-y-auto">
-      {/* Click outside backdrop close */}
-      <div className="absolute inset-0 cursor-pointer" onClick={onClose} />
-
-      <motion.div
-        initial={{ opacity: 0, y: -20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.98 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="bg-[#FAF9F5] border border-[#8C7A53]/35 rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 overflow-hidden mt-6"
-      >
+    <ModalShell
+      onClose={onClose}
+      closeRef={closeRef}
+      label={isFR ? 'Recherche sur le site' : 'Site search'}
+      panelClassName="max-w-2xl bg-surface border border-gold-line/35"
+    >
         {/* Search Input Bar Holder */}
-        <div className="p-5 md:p-6 border-b border-gray-200 flex items-center bg-white space-x-4">
+        <div className="p-5 md:p-6 border-b border-line flex items-center bg-white space-x-4 shrink-0">
           <Search className="w-5 h-5 text-secondary shrink-0" />
           <input
+            id="search-modal-title"
             ref={inputRef}
             type="text"
+            aria-label={isFR ? 'Rechercher' : 'Search'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
@@ -133,8 +126,8 @@ export default function SearchModal({
             className="w-full bg-transparent border-none outline-none font-sans text-base md:text-lg text-primary placeholder-outline focus:ring-0"
           />
           <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-black/5 rounded-full transition-colors cursor-pointer text-primary"
+            onClick={close}
+            className="p-2.5 tap-44 hover:bg-black/5 rounded-full transition-colors duration-400 cursor-pointer text-primary"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -142,7 +135,7 @@ export default function SearchModal({
         </div>
 
         {/* Scrollable Results Area */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto space-y-6">
           {!normalizedQuery ? (
             /* Blank state helpful tips */
             <div className="text-center py-8 space-y-3">
@@ -158,12 +151,12 @@ export default function SearchModal({
                   : 'Enter keywords to immediately look up geolocalized plots, expert diaspora investor reports, or state-registered compliance policies.'}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                <span className="text-[10px] font-mono font-bold text-[#8C7A53] uppercase">{isFR ? 'suggestions :' : 'suggestions:'}</span>
+                <span className="text-caption font-mono font-bold text-[#8C7A53] uppercase">{isFR ? 'suggestions :' : 'suggestions:'}</span>
                 {['#24', 'disponible', 'notaire', 'diaspora', 'tax'].map((term) => (
                   <button
                     key={term}
                     onClick={() => setQuery(term)}
-                    className="text-[10px] font-mono tracking-wide bg-white border border-gray-300 hover:border-primary text-primary px-2.5 py-1 rounded-md transition-all cursor-pointer shadow-2xs"
+                    className="text-caption font-mono tracking-wide bg-white border border-gray-300 hover:border-primary text-primary px-2.5 py-1 rounded-micro transition-all cursor-pointer shadow-2xs"
                   >
                     {term}
                   </button>
@@ -188,10 +181,10 @@ export default function SearchModal({
               {/* Category 1: Parcels */}
               {results.parcels.length > 0 && (
                 <div id="search-cat-parcels" className="space-y-3">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
+                  <span className="text-micro font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
                     <Landmark className="w-3.5 h-3.5" />
                     <span>{isFR ? 'PARCELLES ET EMBLACEMENTS' : 'LAND PARCELS & PLOTS'}</span>
-                    <span className="text-outline-variant/55 font-normal">({results.parcels.length})</span>
+                    <span className="text-ink-3 font-normal">({results.parcels.length})</span>
                   </span>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -201,7 +194,7 @@ export default function SearchModal({
                       const statusColor = isAvailable 
                         ? 'bg-[#0F6B4F]/10 text-[#0F6B4F]' 
                         : isReserved 
-                          ? 'bg-[#D4AF37]/15 text-[#D4AF37]' 
+                          ? 'bg-[#FED65B]/15 text-[#FED65B]' 
                           : 'bg-outline/10 text-outline';
                       const statusLabel = isFR 
                         ? (isAvailable ? 'Disponible' : isReserved ? 'Réservé' : 'Vendu') 
@@ -211,28 +204,28 @@ export default function SearchModal({
                         <div
                           key={parcel.id}
                           onClick={() => onSelectParcel(parcel.id)}
-                          className="bg-white border border-gray-300 p-3.5 rounded-xl hover:border-primary hover:shadow-xs transition-all duration-300 cursor-pointer flex items-center justify-between group"
+                          className="bg-white border border-gray-300 p-3.5 rounded-inner hover:border-primary hover:shadow-elev-1 transition-all duration-400 cursor-pointer flex items-center justify-between group"
                         >
                           <div className="space-y-1">
                             <div className="flex items-center space-x-2">
                               <span className="font-serif text-sm font-black text-primary group-hover:text-[#8C7A53] transition-colors">
                                 #{parcel.id < 10 ? `0${parcel.id}` : parcel.id}
                               </span>
-                              <span className="font-mono text-[10px] font-medium text-outline">
+                              <span className="font-mono text-caption font-medium text-outline">
                                 {parcel.area} m²
                               </span>
                             </div>
-                            <p className="text-[11px] font-sans text-outline leading-tight mt-0.5 max-w-[180px] truncate">
+                            <p className="text-caption font-sans text-outline leading-tight mt-0.5 max-w-[180px] truncate">
                               📍 {parcel.orientation[currentLanguage]}
                             </p>
                           </div>
 
                           <div className="text-right flex flex-col items-end space-y-1.5">
-                            <span className={`text-[8px] font-mono font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase ${statusColor}`}>
+                            <span className={`text-micro font-mono font-bold tracking-widest px-2 py-0.5 rounded-micro uppercase ${statusColor}`}>
                               {statusLabel}
                             </span>
                             <span className="font-mono text-xs font-bold text-primary">
-                              15 000 € <span className="text-[10px] text-[#0F6B4F] font-semibold">(300 €/m)</span>
+                              15 000 € <span className="text-caption text-[#0F6B4F] font-semibold">(300 €/m)</span>
                             </span>
                           </div>
                         </div>
@@ -245,10 +238,10 @@ export default function SearchModal({
               {/* Category 2: Blog Insights */}
               {results.articles.length > 0 && (
                 <div id="search-cat-blogs" className="space-y-3 pt-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
+                  <span className="text-micro font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
                     <FileText className="w-3.5 h-3.5" />
                     <span>{isFR ? 'GUIDES ET INVESTISSEMENTS' : 'DIASPORA INSIGHT & GUIDES'}</span>
-                    <span className="text-outline-variant/55 font-normal">( {results.articles.length} )</span>
+                    <span className="text-ink-3 font-normal">( {results.articles.length} )</span>
                   </span>
 
                   <div className="space-y-2.5">
@@ -256,26 +249,26 @@ export default function SearchModal({
                       <div
                         key={article.id}
                         onClick={() => onSelectArticle(article)}
-                        className="bg-white border border-gray-300 p-4 rounded-xl hover:border-primary hover:shadow-xs transition-all duration-300 cursor-pointer flex items-start space-x-4 group"
+                        className="bg-white border border-gray-300 p-4 rounded-inner hover:border-primary hover:shadow-elev-1 transition-all duration-400 cursor-pointer flex items-start space-x-4 group"
                       >
                         <img
                           src={article.image}
                           alt={article.title[currentLanguage]}
-                          className="w-14 h-14 rounded-lg object-cover border border-gray-200 shrink-0"
+                          className="w-14 h-14 rounded-micro object-cover border border-gray-200 shrink-0"
                         />
                         <div className="space-y-1 flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 text-[9px] font-mono font-bold text-[#8C7A53] uppercase tracking-wide">
+                          <div className="flex items-center space-x-2 text-micro font-mono font-bold text-[#8C7A53] uppercase tracking-wide">
                             <span>{article.category[currentLanguage]}</span>
                             <span>•</span>
                             <span className="flex items-center space-x-0.5">
                               <Calendar className="w-2.5 h-2.5" />
-                              <span>{article.date}</span>
+                              <span>{formatEditorialDate(article.date, currentLanguage)}</span>
                             </span>
                           </div>
                           <h4 className="font-serif text-sm font-bold text-primary group-hover:text-[#8C7A53] transition-colors leading-snug truncate">
                             {article.title[currentLanguage]}
                           </h4>
-                          <p className="text-[11px] font-sans text-outline leading-tight font-light truncate">
+                          <p className="text-caption font-sans text-outline leading-tight font-light truncate">
                             {article.summary[currentLanguage]}
                           </p>
                         </div>
@@ -289,10 +282,10 @@ export default function SearchModal({
               {/* Category 3: FAQ Topics */}
               {results.faqs.length > 0 && (
                 <div id="search-cat-faqs" className="space-y-3 pt-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
+                  <span className="text-micro font-mono font-bold uppercase tracking-widest text-[#8C7A53] flex items-center space-x-1.5">
                     <HelpCircle className="w-3.5 h-3.5" />
                     <span>{isFR ? 'QUESTIONS JURIDIQUES & NOTAIRES' : 'LEGAL & NOTARY FAQS'}</span>
-                    <span className="text-outline-variant/55 font-normal">( {results.faqs.length} )</span>
+                    <span className="text-ink-3 font-normal">( {results.faqs.length} )</span>
                   </span>
 
                   <div className="space-y-2.5">
@@ -300,13 +293,13 @@ export default function SearchModal({
                       <div
                         key={faq.id}
                         onClick={() => onSelectFaq(faq.id)}
-                        className="bg-white border border-gray-300 p-4 rounded-xl hover:border-primary hover:shadow-xs transition-all duration-300 cursor-pointer flex items-start justify-between group"
+                        className="bg-white border border-gray-300 p-4 rounded-inner hover:border-primary hover:shadow-elev-1 transition-all duration-400 cursor-pointer flex items-start justify-between group"
                       >
                         <div className="space-y-1 flex-1 pr-4">
                           <h4 className="font-serif text-sm font-bold text-primary group-hover:text-[#8C7A53] transition-colors leading-snug">
                             {faq.question[currentLanguage]}
                           </h4>
-                          <p className="text-[11px] font-sans text-outline leading-relaxed font-light line-clamp-2">
+                          <p className="text-caption font-sans text-outline leading-relaxed font-light line-clamp-2">
                             {faq.answer[currentLanguage]}
                           </p>
                         </div>
@@ -321,11 +314,10 @@ export default function SearchModal({
         </div>
 
         {/* Modal Footer helper */}
-        <div className="p-4 bg-white border-t border-gray-200 text-center font-mono text-[9px] text-outline uppercase shrink-0 flex justify-between items-center px-6">
+        <div className="p-4 bg-white border-t border-gray-200 text-center font-mono text-micro text-outline uppercase shrink-0 flex justify-between items-center px-6">
           <span>{isFR ? 'melrose place recherche' : 'melrose place finder'}</span>
           <span>ESC {isFR ? 'pour fermer' : 'to close'}</span>
         </div>
-      </motion.div>
-    </div>
+    </ModalShell>
   );
 }

@@ -30,12 +30,12 @@ export default function VideoShowcase({
   return (
     <section
       id="videos"
-      className="relative bg-[#0B0B0C] py-24 px-4 md:px-12 scroll-mt-20 overflow-x-clip"
+      className="relative bg-[#0B0B0C] py-24 px-5 md:px-12 scroll-mt-20 overflow-x-clip"
     >
       {/* Subtle gold ambient glow, purely decorative */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[720px] h-[420px] rounded-full bg-[#D4AF37]/10 blur-3xl"
+        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[720px] h-[420px] rounded-full bg-[#FED65B]/10 blur-3xl"
       />
 
       <div className="relative max-w-7xl mx-auto space-y-12">
@@ -47,13 +47,13 @@ export default function VideoShowcase({
           transition={{ duration: 0.7, ease: EASE }}
           className="text-center max-w-3xl mx-auto space-y-3"
         >
-          <span className="inline-flex items-center rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/5 text-[#E5C860] ring-1 ring-[#D4AF37]/35">
+          <span className="inline-flex items-center rounded-full px-3 py-1 text-micro uppercase tracking-[0.2em] font-medium bg-white/5 text-[#FED65B] ring-1 ring-[#FED65B]/35">
             {sectionTag}
           </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
+          <h2 className="reveal font-serif text-h2 font-bold text-white">
             <RichText as="span" html={title} />
           </h2>
-          <p className="text-xs sm:text-sm text-white/65 font-light leading-relaxed">
+          <p className="text-xs sm:text-sm text-white/70 font-light leading-relaxed">
             <RichText as="span" html={description} />
           </p>
         </motion.div>
@@ -70,7 +70,7 @@ export default function VideoShowcase({
               className="group"
             >
               {/* Gold hairline shell — machined plate look */}
-              <div className="rounded-2xl bg-white/[0.03] p-1.5 ring-1 ring-[#D4AF37]/25 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
+              <div className="rounded-card bg-white/[0.03] p-1.5 ring-1 ring-[#FED65B]/25 shadow-elev-3">
                 <PremiumVideoPlayer
                   src={video.src}
                   poster={video.poster}
@@ -83,7 +83,7 @@ export default function VideoShowcase({
                   <h3 className="font-serif text-base sm:text-lg font-bold text-white leading-snug">
                     <RichText as="span" html={video.title} />
                   </h3>
-                  <p className="text-xs text-white/60 font-light leading-relaxed">
+                  <p className="text-xs text-white/70 font-light leading-relaxed">
                     <RichText as="span" html={video.desc} />
                   </p>
                 </div>

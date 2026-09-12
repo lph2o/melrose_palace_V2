@@ -1,0 +1,61 @@
+{
+  "defaultLanguage": "FR",
+  "routes": {
+    "home": {
+      "path": { "FR": "/fr", "EN": "/en" },
+      "meta": {
+        "FR": {
+          "title": "Acheter un terrain au Sénégal | Sébikhotane dès 300 €/mois",
+          "description": "Parcelles de 150 m² à Sébikhotane, délibération + NICAD, à 20 min de l'AIBD et 4 km du TER. Acompte 3 000 € puis 300 €/mois, sécurisé diaspora.",
+          "ogImage": "/og/og-home-fr.jpg",
+          "imageAlt": "Vue aérienne des 54 parcelles du domaine Dun Tni à Sébikhotane, Sénégal",
+          "shareTitle": "Votre terrain à Sébikhotane dès 300 €/mois",
+          "shareFooter": "54 PARCELLES  •  BORNAGE B1-B17  •  MUTATION ACCOMPAGNÉE",
+          "kicker": "Sébikhotane • Sénégal"
+        },
+        "EN": {
+          "title": "Buy Land in Senegal | Sebikhotane plots from €300/mo",
+          "description": "150 m² plots in Sebikhotane, deliberation + NICAD title, 20 min from AIBD, 4 km from the TER. €3,000 down then €300/month — diaspora-safe.",
+          "ogImage": "/og/og-home-en.jpg",
+          "imageAlt": "Aerial view of the 54 plots of the Dun Tni estate in Sebikhotane, Senegal",
+          "shareTitle": "Your plot in Sebikhotane from €300/month",
+          "shareFooter": "54 PLOTS  •  B1-B17 MARKERS  •  GUIDED TITLE TRANSFER",
+          "kicker": "Sebikhotane • Senegal"
+        }
+      }
+    },
+    "masterplan": {
+      "path": { "FR": "/fr/plan", "EN": "/en/plan" },
+      "meta": {
+        "FR": {
+          "title": "Plan du domaine Sébikhotane | 54 parcelles avec NICAD",
+          "description": "Plan du domaine Dun Tni : 54 parcelles de 150 m², bornage B1-B17, statut en temps réel et simulateur de financement 300 €/mois.",
+          "ogImage": "/og/og-plan-fr.jpg",
+          "imageAlt": "Plan cadastral officiel des 54 parcelles du domaine Dun Tni à Sébikhotane",
+          "shareTitle": "Plan cadastral : les 54 parcelles en détail",
+          "shareFooter": "PLAN OFFICIEL  •  DISPONIBILITÉS EN TEMPS RÉEL  •  BORNAGE B1-B17",
+          "kicker": "Plan cadastral • Sébikhotane"
+        },
+        "EN": {
+          "title": "Domain Map Sebikhotane | 54 plots with NICAD title",
+          "description": "Dun Tni domain map: 54 plots of 150 m², B1-B17 boundary markers, real-time availability and a €300/month financing simulator.",
+          "ogImage": "/og/og-plan-en.jpg",
+          "imageAlt": "Official cadastral map of the 54 plots of the Dun Tni estate in Sebikhotane",
+          "shareTitle": "Cadastral map: all 54 plots in detail",
+          "shareFooter": "OFFICIAL MAP  •  REAL-TIME AVAILABILITY  •  B1-B17 MARKERS",
+          "kicker": "Cadastral map • Sebikhotane"
+        }
+      }
+    }
+  },
+  "admin": {
+    "FR": {
+      "title": "Espace Gérant | Sénégal Immobilier Consulting",
+      "description": "Espace de gestion privé — réservé à l'administrateur."
+    },
+    "EN": {
+      "title": "Admin | Sénégal Immobilier Consulting",
+      "description": "Private management area — reserved for the administrator."
+    }
+  }
+}

@@ -22,43 +22,15 @@
  */
 const fs = require('fs');
 const path = require('path');
-
-const ROOT = path.join(__dirname, '..');
-
-/** URL du domaine public : SITE_URL, puis les variables Vercel, puis un placeholder. */
-function resolveSiteUrl() {
-  const explicit = process.env.SITE_URL;
-  const fromPlatform =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || '';
-  const raw = explicit || fromPlatform;
-  if (!raw) return { url: 'https://votre-domaine.com', explicit: false, fromPlatform: false };
-  const withScheme = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
-  return {
-    url: withScheme.replace(/\/+$/, ''),
-    explicit: Boolean(explicit),
-    fromPlatform: !explicit && Boolean(fromPlatform),
-  };
-}
+const { ROOT, resolveSiteUrl, isProdBuild, siteUrlWarning } = require('./lib/site-url.cjs');
 
 const site = resolveSiteUrl();
 const SITE_URL = site.url;
-
-// Sur Vercel, VERCEL_ENV vaut 'production' | 'preview' | 'development' :
-// seuls les déploiements de production sont indexables (les previews sont
-// des URL temporaires qui ne doivent pas être crawlées).
-const isProd = process.env.VERCEL_ENV
-  ? process.env.VERCEL_ENV === 'production'
-  : process.env.NODE_ENV === 'production';
+const isProd = isProdBuild();
 const today = new Date().toISOString().slice(0, 10);
 
-if (!site.explicit) {
-  const message = site.fromPlatform
-    ? `ℹ  SITE_URL non définie — URL Vercel utilisée (${SITE_URL}). ` +
-      "Définissez SITE_URL (ex. https://www.duntni-sebikhotane.com) pour figer le domaine public."
-    : "⚠  SITE_URL non définie — placeholder utilisé dans robots.txt / sitemap.xml. " +
-      "Définissez SITE_URL (ex. https://www.duntni-sebikhotane.com) avant la mise en production.";
-  console.warn(message);
-}
+const warning = siteUrlWarning(site);
+if (warning) console.warn(warning);
 
 /* ------------------------------------------------------------------ */
 /* robots.txt                                                          */

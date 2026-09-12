@@ -101,7 +101,7 @@ export default function MediaUpload({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer border border-dashed ${
+        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-inner text-sm transition-all duration-400 ease-spring cursor-pointer border border-dashed ${
           error
             ? 'border-[#fb7185]/60 bg-[#fb7185]/5 text-[#fb7185]'
             : justUploaded
@@ -133,12 +133,12 @@ export default function MediaUpload({
       </button>
 
       {/* Erreur */}
-      {error && <p className="mt-1.5 text-[9px] text-[#fb7185] font-mono leading-relaxed">{error}</p>}
+      {error && <p className="mt-1.5 text-micro text-[#fb7185] font-mono leading-relaxed">{error}</p>}
 
       {/* Fichier actuel */}
       {currentUrl && !justUploaded && (
         <div className="mt-1.5 flex items-center gap-2 min-w-0">
-          <span className="text-[9px] font-mono text-(--admin-muted-2) truncate flex-1" title={currentUrl}>
+          <span className="text-micro font-mono text-(--admin-muted-2) truncate flex-1" title={currentUrl}>
             {currentUrl}
           </span>
           {isCloudUrl && (
@@ -149,7 +149,7 @@ export default function MediaUpload({
                 await deleteSiteMedia(currentUrl);
                 onUrl('');
               }}
-              className="shrink-0 flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-[#fb7185] hover:text-[#fda4af] transition-colors cursor-pointer"
+              className="shrink-0 flex items-center gap-1 text-micro font-mono uppercase tracking-wider text-[#fb7185] hover:text-[#fda4af] transition-colors cursor-pointer"
               title="Supprimer ce média du stockage"
             >
               <X className="w-3 h-3" strokeWidth={2} />

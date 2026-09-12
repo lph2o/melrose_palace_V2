@@ -34,14 +34,14 @@ function VisibilitySwitch({
       title={visible ? `Masquer « ${label} » sur le site` : `Afficher « ${label} » sur le site`}
       aria-label={visible ? `Masquer ${label}` : `Afficher ${label}`}
       onClick={onToggle}
-      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full ring-1 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full ring-1 transition-colors duration-400 ease-spring cursor-pointer ${
         visible
           ? 'bg-(--admin-accent)/25 ring-(--admin-accent)/45 hover:bg-(--admin-accent)/35'
           : 'bg-(--admin-shell-strong) ring-(--admin-ring) hover:bg-(--admin-ring)'
       }`}
     >
       <span
-        className={`absolute left-1 w-5 h-5 rounded-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`absolute left-1 w-5 h-5 rounded-full transition-transform duration-400 ease-spring ${
           visible
             ? 'translate-x-5 bg-(--admin-accent) shadow-[0_0_12px_rgba(254,214,91,0.45)]'
             : 'translate-x-0 bg-(--admin-muted)'
@@ -79,10 +79,10 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3 pb-2 border-b border-(--admin-hairline)">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-(--admin-accent)/70">
+          <p className="font-mono text-caption uppercase tracking-[0.3em] text-(--admin-accent)/70">
             Sections du site
           </p>
-          <p className="text-[11px] text-(--admin-muted) mt-1">
+          <p className="text-caption text-(--admin-muted) mt-1">
             Affichez ou masquez chaque section de la page d'accueil. Les sections
             masquées ne sont pas supprimées : leur contenu reste éditable dans
             l'éditeur visuel et réapparaît tel quel à la réactivation.
@@ -90,7 +90,7 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
         </div>
 
         <div className="flex items-center gap-2.5">
-          <span className="px-3 py-1.5 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-[10px] uppercase tracking-[0.2em] text-(--admin-muted)">
+          <span className="px-3 py-1.5 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-caption uppercase tracking-[0.2em] text-(--admin-muted)">
             {hidden.length === 0
               ? `${visibleCount} affichées`
               : `${visibleCount} / ${SITE_SECTIONS.length} affichées`}
@@ -99,7 +99,7 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
             <button
               type="button"
               onClick={showAll}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-[10px] uppercase tracking-widest text-(--admin-text-2) hover:text-(--admin-accent) hover:ring-(--admin-accent)/40 active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-caption uppercase tracking-widest text-(--admin-text-2) hover:text-(--admin-accent) hover:ring-(--admin-accent)/40 active:scale-[0.98] transition-all duration-400 ease-spring cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" strokeWidth={1.5} />
               Tout afficher
@@ -109,7 +109,7 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
             <button
               type="button"
               onClick={onOpenEditor}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-[10px] uppercase tracking-widest text-(--admin-text-2) hover:text-(--admin-accent) hover:ring-(--admin-accent)/40 active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-(--admin-shell) ring-1 ring-(--admin-ring) font-mono text-caption uppercase tracking-widest text-(--admin-text-2) hover:text-(--admin-accent) hover:ring-(--admin-accent)/40 active:scale-[0.98] transition-all duration-400 ease-spring cursor-pointer"
             >
               <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
               Éditeur visuel
@@ -129,19 +129,19 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
               whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               viewport={{ once: true, margin: '-30px' }}
               transition={{ duration: 0.5, delay: Math.min(index * 0.03, 0.24), ease: EASE }}
-              className={`p-1.5 rounded-[1.75rem] ring-1 transition-colors duration-500 ${
+              className={`p-1.5 rounded-card ring-1 transition-colors duration-400 ${
                 visible
                   ? 'bg-(--admin-shell) ring-(--admin-ring) hover:bg-(--admin-shell-strong)'
                   : 'bg-(--admin-shell)/40 ring-(--admin-ring)/60'
               }`}
             >
               <div
-                className={`flex h-full items-start gap-3.5 rounded-[calc(1.75rem-0.375rem)] p-4 transition-colors duration-500 ${
+                className={`flex h-full items-start gap-3.5 rounded-inner p-4 transition-colors duration-400 ${
                   visible ? 'bg-(--admin-card)' : 'bg-(--admin-card)/50'
                 }`}
               >
                 <div
-                  className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ring-1 transition-colors duration-500 ${
+                  className={`w-10 h-10 shrink-0 rounded-inner flex items-center justify-center ring-1 transition-colors duration-400 ${
                     visible
                       ? 'bg-(--admin-accent)/12 ring-(--admin-accent)/25 text-(--admin-accent)'
                       : 'bg-(--admin-shell-strong) ring-(--admin-ring) text-(--admin-muted)'
@@ -153,22 +153,22 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p
-                      className={`font-serif text-base font-bold leading-tight truncate transition-colors duration-500 ${
+                      className={`font-serif text-base font-bold leading-tight truncate transition-colors duration-400 ${
                         visible ? 'text-(--admin-text)' : 'text-(--admin-muted)'
                       }`}
                     >
                       {section.label}
                     </p>
                     {!visible && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) font-mono text-[9px] uppercase tracking-[0.2em] text-(--admin-muted)">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) font-mono text-micro uppercase tracking-[0.2em] text-(--admin-muted)">
                         <EyeOff className="w-2.5 h-2.5" strokeWidth={1.5} />
                         Masquée
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-(--admin-muted) mt-1 leading-relaxed">{section.desc}</p>
+                  <p className="text-caption text-(--admin-muted) mt-1 leading-relaxed">{section.desc}</p>
                   {section.anchor && (
-                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-(--admin-muted-2) mt-2">
+                    <p className="font-mono text-micro uppercase tracking-[0.2em] text-(--admin-muted-2) mt-2">
                       lien #{section.anchor}
                     </p>
                   )}
@@ -180,7 +180,7 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
                     label={section.label}
                     onToggle={() => toggle(section.type)}
                   />
-                  <span className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.2em] text-(--admin-muted-2)">
+                  <span className="inline-flex items-center gap-1 font-mono text-micro uppercase tracking-[0.2em] text-(--admin-muted-2)">
                     {visible ? (
                       <>
                         <Eye className="w-3 h-3" strokeWidth={1.5} /> Affichée
@@ -198,8 +198,8 @@ export default function AdminSectionsTab({ settings, onChange, onOpenEditor }: A
         })}
       </div>
 
-      <div className="p-4 rounded-2xl bg-(--admin-shell) ring-1 ring-(--admin-ring)">
-        <p className="text-[11px] text-(--admin-muted) leading-relaxed">
+      <div className="p-4 rounded-card bg-(--admin-shell) ring-1 ring-(--admin-ring)">
+        <p className="text-caption text-(--admin-muted) leading-relaxed">
           <span className="text-(--admin-text-2) font-semibold">Bon à savoir :</span> masquer
           s'applique aux deux langues et à tous les appareils. Un lien de navigation ou un bouton
           qui pointe vers une section masquée est retiré automatiquement (ex. masquer « Contact »

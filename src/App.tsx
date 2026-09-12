@@ -8,6 +8,7 @@ import BlogModal from './components/BlogModal';
 import AdminPage from './components/AdminPage';
 import { SiteProvider } from './site/SiteContext';
 import BrochureModal from './components/BrochureModal';
+import ShareSiteModal from './components/ShareSiteModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
 import { Language, BlogArticle, SiteSettings, Parcel } from './types';
 import { DEFAULT_SITE_SETTINGS, PARCELS } from './data';
@@ -24,6 +25,7 @@ import {
   SyncResult,
 } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import { initScrollReveal } from './lib/reveal';
 
 // L'éditeur Puck n'est chargé que sur /admin/editor : le site public ne paie
 // pas son poids (ni ses feuilles de style) au premier chargement.
@@ -40,6 +42,7 @@ export default function App() {
   );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBrochureOpen, setIsBrochureOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [globalSelectedParcelId, setGlobalSelectedParcelId] = useState<number | null>(null);
   const [globalActiveArticle, setGlobalActiveArticle] = useState<BlogArticle | null>(null);
   const [globalActiveFaqId, setGlobalActiveFaqId] = useState<string | null>(null);
@@ -84,6 +87,10 @@ export default function App() {
 
   // Indique si la première synchronisation cloud est terminée (skeletons KPI de l'admin)
   const [initialSyncDone, setInitialSyncDone] = useState(false);
+
+  // Apparition au scroll pour tout le site : un seul IntersectionObserver, qui
+  // reprend aussi les blocs ajoutés après coup (rendu Puck, changement de langue).
+  useEffect(() => initScrollReveal(), []);
 
   // Synchronisation initiale avec Supabase (source de vérité cloud)
   useEffect(() => {
@@ -315,7 +322,7 @@ export default function App() {
     return (
       <Suspense
         fallback={
-          <div className="admin-theme min-h-screen bg-[#0B0B0C] text-white/60 flex items-center justify-center text-xs font-mono uppercase tracking-[0.25em]">
+          <div className="admin-theme min-h-screen bg-[#0B0B0C] text-white/70 flex items-center justify-center text-micro font-mono uppercase tracking-[0.25em]">
             Chargement de l’éditeur…
           </div>
         }
@@ -372,6 +379,7 @@ export default function App() {
         scrollToSection={scrollToSection}
         onSearchTrigger={() => setIsSearchOpen(true)}
         onOpenBrochure={() => setIsBrochureOpen(true)}
+        onOpenShare={() => setIsShareOpen(true)}
         settings={settings}
       />
 
@@ -415,6 +423,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         settings={settings}
         onOpenBrochure={() => setIsBrochureOpen(true)}
+        onOpenShare={() => setIsShareOpen(true)}
       />
 
       {/* WhatsApp Floating Contact Widget */}
@@ -456,6 +465,18 @@ export default function App() {
         settings={settings}
         currentLanguage={language}
       />
+
+      {/* Social Sharing Modal (WhatsApp, Facebook, X, LinkedIn, Telegram, e-mail) */}
+      <AnimatePresence>
+        {isShareOpen && (
+          <ShareSiteModal
+            isOpen={isShareOpen}
+            onClose={() => setIsShareOpen(false)}
+            currentLanguage={language}
+            settings={settings}
+          />
+        )}
+      </AnimatePresence>
 
     </div>
     </SiteProvider>

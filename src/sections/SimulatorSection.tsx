@@ -98,26 +98,32 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
   const tiers: PaymentTier[] = settings.content?.paymentTiers ?? PAYMENT_SCHEDULE_TIERS;
 
   const openWhatsAppSimulator = () => {
-    const msg = `${ui.simWaMsgPrefix}\n- Apport : ${simulatorDeposit.toLocaleString()} €\n- Reste : ${calculatedRemaining.toLocaleString()} €\n- Mensualité : ${simulatorMonthly} €/mois\n- Durée : ${calculatedDuration} mois.\n${ui.simWaMsgSuffix}`;
+    // Récapitulatif bilingue : les valeurs sont neutres, seuls les libellés
+    // changent (un visiteur anglophone ne doit pas recevoir de français).
+    const short =
+      language === 'FR'
+        ? { deposit: 'Apport', remaining: 'Reste', monthly: 'Mensualité', duration: 'Durée' }
+        : { deposit: 'Deposit', remaining: 'Remaining', monthly: 'Monthly', duration: 'Term' };
+    const msg = `${ui.simWaMsgPrefix}\n- ${short.deposit} : ${simulatorDeposit.toLocaleString()} €\n- ${short.remaining} : ${calculatedRemaining.toLocaleString()} €\n- ${short.monthly} : ${simulatorMonthly} €${c.perMonthUnit}\n- ${short.duration} : ${calculatedDuration} ${c.monthsUnit}.\n${ui.simWaMsgSuffix}`;
     openWhatsApp(settings, msg);
   };
 
   return (
-    <section id="simulator-section" className="py-20 px-4 md:px-12 max-w-7xl mx-auto scroll-mt-20">
-      <div className="bg-gradient-to-br from-primary to-[#003826] text-white rounded-3xl p-6 sm:p-10 md:p-12 shadow-2xl border border-secondary-fixed/20 relative overflow-hidden">
+    <section id="simulator-section" className="py-section px-5 md:px-12 max-w-7xl mx-auto scroll-mt-20">
+      <div className="bg-gradient-to-br from-primary to-[#003826] text-white rounded-card p-6 sm:p-10 md:p-12 shadow-elev-3 border border-secondary-fixed/20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-secondary-fixed/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
           {/* Left Description & Inputs */}
           <div className="lg:col-span-7 space-y-6">
             <div className="space-y-2">
-              <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary-fixed">
+              <span className="font-mono text-micro font-bold uppercase tracking-widest text-secondary-fixed">
                 {c.transparencyTag}
               </span>
-              <h2 className="font-serif text-2xl sm:text-4xl font-bold text-white">
+              <h2 className="reveal font-serif text-h2 font-bold text-white">
                 <RichText as="span" html={c.title} />
               </h2>
-              <p className="text-xs sm:text-sm text-white/80 font-light leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/85 font-light leading-relaxed">
                 <RichText as="span" html={c.description} />
               </p>
             </div>
@@ -137,14 +143,14 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                   <button
                     key={amount}
                     onClick={() => setSimulatorDeposit(amount)}
-                    className={`py-3 px-2 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer text-center ${
+                    className={`py-3 px-2 rounded-inner text-xs font-bold font-mono transition-all cursor-pointer text-center ${
                       simulatorDeposit === amount
-                        ? 'bg-secondary-fixed text-primary shadow-lg ring-2 ring-white/50'
+                        ? 'bg-secondary-fixed text-primary shadow-elev-2 ring-2 ring-white/50'
                         : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
                     }`}
                   >
                     {amount.toLocaleString()} €
-                    <span className="block text-[10px] font-normal opacity-80 mt-0.5">
+                    <span className="block text-caption font-normal opacity-80 mt-0.5">
                       {idx === 0 ? c.depositBaseTag : c.depositFlexTag}
                     </span>
                   </button>
@@ -156,7 +162,7 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
             <div className="space-y-3 pt-2">
               <div className="flex justify-between items-center text-xs">
                 <label className="font-bold uppercase tracking-wider text-secondary-fixed">{c.monthlyLabel}</label>
-                <span className="font-mono font-bold text-secondary-fixed bg-white/10 px-2.5 py-1 rounded">
+                <span className="font-mono font-bold text-secondary-fixed bg-white/10 px-2.5 py-1 rounded-micro">
                   {simulatorMonthly} € {c.perMonthUnit}
                 </span>
               </div>
@@ -167,22 +173,24 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                 step="50"
                 value={simulatorMonthly}
                 onChange={(e) => setSimulatorMonthly(Number(e.target.value))}
-                className="w-full accent-secondary-fixed cursor-pointer h-2 bg-white/20 rounded-lg"
+                className="w-full tap-44 accent-secondary-fixed cursor-pointer h-2 bg-white/20 rounded-micro"
               />
-              <div className="flex justify-between text-[10px] font-mono text-white/60">
-                <span>250 €/mois</span>
-                <span className="text-secondary-fixed font-bold">300 €/mois {c.recommendedTag}</span>
-                <span>600 €/mois</span>
+              <div className="flex justify-between text-caption font-mono text-white/70">
+                <span>250 € {c.perMonthUnit}</span>
+                <span className="text-secondary-fixed font-bold">
+                  300 € {c.perMonthUnit} {c.recommendedTag}
+                </span>
+                <span>600 € {c.perMonthUnit}</span>
               </div>
             </div>
 
             {/* Table of precalculated official options */}
             <div className="pt-2 border-t border-white/10">
-              <span className="text-[11px] text-white/70 block mb-2 font-mono">{c.gridLabel}</span>
+              <span className="text-caption text-white/70 block mb-2 font-mono">{c.gridLabel}</span>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-white/90">
                   <thead>
-                    <tr className="border-b border-white/15 text-[10px] uppercase font-mono text-secondary-fixed">
+                    <tr className="border-b border-white/15 text-caption uppercase font-mono text-secondary-fixed">
                       <th className="pb-1.5">{c.colDepositLabel}</th>
                       <th className="pb-1.5">{c.colRemainingLabel}</th>
                       <th className="pb-1.5">{c.colMonthlyLabel}</th>
@@ -191,6 +199,10 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                   </thead>
                   <tbody className="divide-y divide-white/10 text-xs font-mono">
                     {tiers.map((tier, idx) => (
+                      /* Raccourci souris : la même sélection est déjà offerte au
+                         clavier par les quatre boutons d'acompte ci-dessus. La
+                         ligne ne prend donc pas `role="button"` (28px de haut,
+                         sous le plancher tactile de 44px). */
                       <tr
                         key={idx}
                         onClick={() => setSimulatorDeposit(tier.deposit)}
@@ -213,12 +225,12 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
           </div>
 
           {/* Right Calculation Result Card */}
-          <div className="lg:col-span-5 bg-white text-primary rounded-2xl p-6 sm:p-8 shadow-xl border border-gray-200 space-y-6">
+          <div className="lg:col-span-5 bg-white text-primary rounded-card p-6 sm:p-8 shadow-elev-3 border border-gray-200 space-y-6">
             <div className="border-b border-gray-200 pb-4">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-secondary">
+              <span className="text-micro font-mono font-bold uppercase tracking-wider text-secondary">
                 {c.resultTag}
               </span>
-              <h4 className="font-serif text-2xl font-bold text-primary mt-1">{c.resultTitle}</h4>
+              <h4 className="font-serif text-h3 font-bold text-primary mt-1">{c.resultTitle}</h4>
               <p className="text-xs text-on-surface-variant mt-0.5">{c.resultSubtitle}</p>
             </div>
 
@@ -244,22 +256,26 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-2 bg-surface-container-low px-3 rounded-lg">
+              <div className="flex justify-between items-center py-2 bg-surface-container-low px-3 rounded-micro">
                 <span className="font-bold text-primary">{c.monthlyRowLabel}</span>
-                <span className="font-mono font-bold text-base text-secondary">{simulatorMonthly} € / mois</span>
+                <span className="font-mono font-bold text-base text-secondary">
+                  {simulatorMonthly} € {c.perMonthUnit}
+                </span>
               </div>
 
-              <div className="flex justify-between items-center py-2 bg-secondary/10 px-3 rounded-lg text-secondary">
+              <div className="flex justify-between items-center py-2 bg-secondary/10 px-3 rounded-micro text-secondary">
                 <span className="font-bold">{c.durationRowLabel}</span>
-                <span className="font-mono font-bold text-base">{calculatedDuration} mois</span>
+                <span className="font-mono font-bold text-base">
+                  {calculatedDuration} {c.monthsUnit}
+                </span>
               </div>
             </div>
 
             {/* Cash payment alternative pill */}
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+            <div className="p-3 rounded-inner bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
               <span className="font-bold block">{c.cashTitle}</span>
               <p
-                className="text-[11px] text-amber-800 leading-relaxed"
+                className="text-caption text-amber-800 leading-relaxed"
                 dangerouslySetInnerHTML={{
                   __html: c.cashDesc
                     .replace('{cash}', `<strong>${settings.cashPrice.toLocaleString()} €</strong>`)
@@ -272,7 +288,7 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
             {/* Action Button: WhatsApp Study */}
             <button
               onClick={openWhatsAppSimulator}
-              className="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full py-4 bg-whatsapp hover:bg-[#128c4a] text-white font-bold text-xs sm:text-sm rounded-inner shadow-elev-2 transition-colors flex items-center justify-center space-x-2 cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 fill-white" />
               <span>{c.studyCta}</span>

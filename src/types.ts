@@ -120,6 +120,12 @@ export interface ConnectivityItem {
   id: string;
   icon: string;
   time: string;
+  /**
+   * Temps/distance en anglais (« IMMEDIATE », « NEARBY »…). La plupart des
+   * valeurs sont neutres (« 10 MIN », « ~4 KM ») et n'ont pas besoin d'être
+   * traduites ; `timeEn` sert uniquement à celles qui sont des mots français.
+   */
+  timeEn?: string;
   title: {
     FR: string;
     EN: string;
@@ -253,6 +259,13 @@ export interface SiteSettings {
   promoActive: boolean;
   promoTitle: string;
   promoDesc: string;
+  /**
+   * Version anglaise du bandeau promo. Si elle est vide, le site retombe sur
+   * les libellés i18n (`ui.promoBadge` / `ui.promoText`), jamais sur le texte
+   * français : un visiteur anglophone ne doit jamais lire de français.
+   */
+  promoTitleEn?: string;
+  promoDescEn?: string;
   promoPlotsRemaining: number;
   /** URL de la plaquette PDF (Supabase Storage ou chemin local /pdf/…). */
   brochureUrl?: string;

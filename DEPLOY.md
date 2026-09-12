@@ -64,6 +64,33 @@ Importer le dépôt `lph2o/melrose_palace_V2` sur [vercel.com/new](https://verce
 - Déploiements **preview** et build local ⇒ `Disallow: /` (aucune URL temporaire indexée).
 - En-tête `X-Robots-Tag: noindex` sur `/admin*` en complément du `<meta robots>` posé par `src/lib/seo.ts`.
 
+### Balises de partage par route (Open Graph / Twitter Card)
+
+WhatsApp, Facebook, LinkedIn et X **n'exécutent pas le JavaScript** : ils ne voient que le HTML servi.
+Le build écrit donc un vrai fichier par route, avec ses propres balises :
+
+| Fichier généré | Route servie |
+| --- | --- |
+| `dist/index.html` | `/` (repli SPA, carte FR) |
+| `dist/fr/index.html`, `dist/en/index.html` | `/fr`, `/en` |
+| `dist/fr/plan/index.html`, `dist/en/plan/index.html` | `/fr/plan`, `/en/plan` |
+| `dist/admin/index.html`, `dist/admin/editor/index.html` | `/admin`, `/admin/editor` (`noindex`) |
+
+Vercel sert un fichier existant **avant** d'appliquer la réécriture SPA de `vercel.json` : ces pages
+prennent donc le pas sans changer le comportement de l'app (mêmes bundles, le client réapplique les
+mêmes balises via `src/lib/seo.ts`).
+
+- Textes : **`src/seo/routeMeta.json`** — source unique, utilisée à la fois par le build
+  (`scripts/prerender-routes.cjs`, postbuild) et par le client (`src/lib/seo.ts`). Modifier une
+  accroche de partage se fait donc **dans ce JSON**, jamais dans les balises de `index.html`.
+- Images : `public/og/og-{home,plan}-{fr,en}.jpg` (1200×630), générées par
+  `swift scripts/make-og-image.swift` (voir l'en-tête du script pour la commande exacte), puis
+  déployées depuis notre domaine. Régénérer si le visuel ou l'accroche changent.
+- Origine des URLs absolues : `SITE_URL`, sinon l'URL Vercel détectée automatiquement. En local,
+  l'origine est le placeholder `https://votre-domaine.com`.
+- Contrôle rapide après déploiement : le `<title>` et l'`og:image` doivent **différer** entre
+  `/fr/plan` et `/en/plan` (voir les commandes ci-dessous).
+
 ## Domaine personnalisé
 
 **Vercel → Project → Settings → Domains** : ajouter le domaine, puis chez le registrar un `A` vers `76.76.21.21`
@@ -77,6 +104,13 @@ curl -sI https://<domaine>/fr/plan | head -1     # 200 (fallback SPA, pas 404)
 curl -s  https://<domaine>/robots.txt            # Allow: / + Sitemap, pas Disallow: /
 curl -s  https://<domaine>/sitemap.xml | head    # URLs sur le bon domaine
 curl -sI https://<domaine>/admin/editor | grep -i x-robots-tag
+
+# Carte de partage propre à chaque route (doivent tous différer)
+for p in /fr /en /fr/plan /en/plan; do
+  echo "$p  $(curl -s https://<domaine>$p | grep -o '<title>[^<]*')"
+  curl -s https://<domaine>$p | grep -o 'og:image" content="[^"]*"'
+done
+curl -sI https://<domaine>/og/og-plan-en.jpg | head -1   # 200 (image servie par le domaine)
 ```
 
 Puis, dans le navigateur : `/fr` (contenu publié ou repli), `/admin` (connexion), `/admin/editor` (publication Puck).

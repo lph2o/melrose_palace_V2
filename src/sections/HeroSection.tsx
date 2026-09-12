@@ -97,7 +97,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
   return (
     <section
       id="hero"
-      className={`relative min-h-[92vh] flex items-center justify-center overflow-x-clip ${
+      className={`relative min-h-[92dvh] flex items-center justify-center overflow-x-clip ${
         settings.promoActive ? 'pt-12 sm:pt-16' : 'pt-20 sm:pt-24'
       } pb-16`}
     >
@@ -117,7 +117,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
       <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-background to-transparent z-1" />
 
       {/* Hero Interactive Typography & CTA */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 text-center py-12 md:py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 text-center py-12 md:py-section">
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -126,7 +126,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
         >
           {/* Project Badge */}
           <div
-            className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-secondary-fixed/40 shadow-sm text-secondary-fixed text-xs font-bold tracking-widest uppercase"
+            className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-secondary-fixed/40 shadow-elev-1 text-secondary-fixed text-micro font-bold tracking-widest uppercase"
             style={accent}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -134,7 +134,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
           </div>
 
           {/* Central Main Headline */}
-          <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]">
+          <h1 className="font-serif text-h1 font-bold tracking-tight text-white max-w-5xl mx-auto">
             <RichText as="span" html={c.title} />
             <RichText
               as="span"
@@ -145,7 +145,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
           </h1>
 
           {/* Sub Message / Key Selling Point */}
-          <p className="font-serif text-lg sm:text-2xl text-amber-200/90 font-medium max-w-3xl mx-auto">
+          <p className="font-serif text-lead sm:text-2xl text-secondary-fixed font-medium max-w-3xl mx-auto">
             « <RichText as="span" html={c.subMessage} /> »
           </p>
 
@@ -173,7 +173,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
                 setActiveTab('masterplan');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto bg-secondary-container text-on-secondary-fixed px-7 py-4 rounded-xl font-sans font-bold text-xs sm:text-sm tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all shadow-xl cursor-pointer flex items-center justify-center space-x-2"
+              className="w-full sm:w-auto bg-secondary-container text-on-secondary-fixed px-7 py-4 rounded-inner font-sans font-bold text-xs sm:text-sm tracking-wider uppercase hover:bg-secondary-fixed-dim transition-all shadow-elev-3 cursor-pointer flex items-center justify-center space-x-2"
             >
               <span>{c.exploreCta}</span>
               <ChevronRight className="w-4 h-4" />
@@ -181,7 +181,7 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
 
             <button
               onClick={() => scrollToSection('simulator-section')}
-              className="w-full sm:w-auto border-2 border-secondary-fixed/60 text-secondary-fixed bg-white/5 hover:bg-secondary-fixed hover:text-primary px-7 py-4 rounded-xl font-sans font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2"
+              className="w-full sm:w-auto border-2 border-secondary-fixed/60 text-secondary-fixed bg-white/5 hover:bg-secondary-fixed hover:text-primary px-7 py-4 min-h-[44px] rounded-inner font-sans font-bold text-caption sm:text-sm tracking-wider uppercase transition-all duration-400 ease-spring cursor-pointer flex items-center justify-center space-x-2"
             >
               <Calculator className="w-4 h-4" />
               <span>{c.simulateCta}</span>
@@ -190,9 +190,9 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
             {onOpenBrochure && (
               <button
                 onClick={onOpenBrochure}
-                className="w-full sm:w-auto bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/50 px-6 py-4 rounded-xl font-sans font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg"
+                className="w-full sm:w-auto bg-secondary-fixed/15 hover:bg-secondary-fixed/25 text-secondary-fixed border border-secondary-fixed/40 px-6 py-4 min-h-[44px] rounded-inner font-sans font-bold text-caption sm:text-sm tracking-wider uppercase transition-all duration-400 ease-spring cursor-pointer flex items-center justify-center space-x-2 shadow-elev-2"
               >
-                <BookOpen className="w-4 h-4 text-amber-300" />
+                <BookOpen className="w-4 h-4 text-secondary-fixed" />
                 <span>{c.brochureCta}</span>
               </button>
             )}
@@ -205,16 +205,16 @@ export function HeroSection({ content }: { content?: Partial<HeroContent> }) {
         {c.stats.map((stat, idx) => (
           <div
             key={idx}
-            className="bg-[#002217]/95 backdrop-blur-md border-2 border-secondary-fixed/50 p-4 rounded-xl flex items-center space-x-3.5 shadow-2xl pointer-events-auto flex-1 hover:border-secondary-fixed transition-all"
+            className="bg-[#002217]/95 backdrop-blur-md border-2 border-secondary-fixed/50 p-4 rounded-inner flex items-center space-x-3.5 shadow-elev-3 pointer-events-auto flex-1 hover:border-secondary-fixed transition-all"
           >
-            <div className="w-12 h-12 bg-secondary-fixed text-primary rounded-xl flex flex-col items-center justify-center font-mono font-bold shadow-md shrink-0">
+            <div className="w-12 h-12 bg-secondary-fixed text-primary rounded-inner flex flex-col items-center justify-center font-mono font-bold shadow-elev-2 shrink-0">
               <span className="text-base font-bold leading-none">{stat.value}</span>
-              <span className="text-[9px] font-bold uppercase tracking-tight text-primary/80">
+              <span className="text-micro font-bold uppercase tracking-tight text-primary/80">
                 {stat.unit}
               </span>
             </div>
             <div className="min-w-0">
-              <p className="font-sans text-xs font-bold text-secondary-fixed uppercase tracking-wider mb-0.5">
+              <p className="font-sans text-micro font-bold text-secondary-fixed uppercase tracking-wider mb-0.5">
                 {stat.title}
               </p>
               <p className="font-serif text-sm font-bold text-white tracking-tight leading-snug">

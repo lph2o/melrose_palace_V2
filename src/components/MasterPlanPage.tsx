@@ -59,6 +59,280 @@ export default function MasterPlanPage({
   parcels = PARCELS
 }: MasterPlanPageProps) {
   const t = TRANSLATIONS[currentLanguage];
+  const isFR = currentLanguage === 'FR';
+  // Libellés de la page. Elle est très dense en texte statique (plan SVG,
+  // cartes, répertoire) : un dictionnaire local évite d'éparpiller des
+  // ternaires FR/EN dans 1 500 lignes de JSX.
+  const L = isFR
+    ? {
+        home: 'Accueil',
+        breadcrumb: 'Plan Cadastral & Disponibilités',
+        headerBadge: 'Domaine de Sébikhotane • Tranche 1 (20 Parcelles)',
+        headerTitle: 'Plan Directeur & Choix de Parcelle',
+        headerIntro:
+          "Découvrez nos 20 parcelles viabilisées de 150 m² chacune. Bénéficiez de la formule échelonnée à 300 €/mois ou d'un tarif préférentiel au comptant.",
+        kpiDomain: 'Domaine Sébikhotane',
+        kpiLots: 'lots certifiés (150 m²)',
+        kpiPhase: 'Tranche 1 Active',
+        kpiPhaseSub: 'lots en commercialisation',
+        kpiPromo: 'Offre 10 Premiers',
+        kpiPromoLots: 'Lots 1 à 10',
+        kpiPromoSub: 'frais de notaire offerts',
+        kpiFinancing: 'Financement',
+        kpiFinancingSub: '/ mois (40 mois)',
+        filterLabel: 'Filtrer :',
+        fPhase1: 'Tranche 1 (20 lots)',
+        fAll: 'Tous (54 lots)',
+        fPromo: 'Offre 10 Premiers ⭐',
+        fGreen: 'Zone Ouest (14)',
+        fYellow: 'Zone Centrale (18)',
+        fRed: 'Zone Centre-Est (15)',
+        fSalmon: 'Zone Est (6)',
+        statusLabel: 'Statut :',
+        searchPlaceholder: 'Rechercher lot (ex: 4 ou 25)...',
+        mapTitle: 'Plan Cadastral Officiel Géomètre • Sébikhotane',
+        mapSub: '54 Lots • Bornage certifié B1 à B17 • Voirie 12m',
+        viewOfficial: 'Plan Officiel',
+        viewStatus: 'Disponibilités',
+        viewBlueprint: 'Plan CAD',
+        zoomIn: 'Zoomer',
+        zoomOut: 'Dézoomer',
+        reset: 'Réinitialiser',
+        svgNorthRoad: "VOIE D'ACCÈS NORD",
+        svgCentralAvenue: 'AVENUE CENTRALE AMÉNAGÉE (VOIRIE 12M)',
+        t1Sold: 'T1 VENDUE',
+        t1Reserved: 'T1 RÉSERVÉE',
+        t1Available: 'T1 DISPO',
+        svgTitleBadge: 'DOMAINE DE SÉBIKHOTANE',
+        svgTitleSub: '54 Parcelles de 150 m² • Tranche 1 (Lots 1-20)',
+        svgTitleLine3: '✓ Bornage B1 à B17 • Délibération & NICAD',
+        mapHelper:
+          "Cliquez sur l'un des 54 lots pour consulter ses dimensions et le réserver",
+        legendWest: 'Zone Ouest (Lots 1-14)',
+        legendCentral: 'Zone Centrale (Lots 15-32)',
+        legendCenterEast: 'Zone Centre-Est (Lots 33-47)',
+        legendEast: 'Zone Est (Lots 48-54)',
+        legendMarkers: 'Bornes B1-B17',
+        legendNote: 'Conforme au plan officiel de lotissement',
+        zoneFallback: 'Zone Cadastrale',
+        statusSoldT1: 'Tranche 1 • Vendue',
+        statusSold: 'Vendue',
+        statusReservedT1: 'Tranche 1 • Réservée',
+        statusReserved: 'Réservée',
+        statusAvailT1: 'Tranche 1 • Disponible',
+        statusReservable2: 'Tranche 2 • Réservable',
+        promoBadge: 'Promo 10 Premiers ⭐',
+        surfaceTotal: 'Surface Totale',
+        dimensionsExact: 'Dimensions Exactes',
+        securityTitle: 'Délibération Communale + NICAD',
+        securitySub: 'Bornage officiel géomètre B1 à B17 avec PV de bornage',
+        finTitle: 'Modalités de Financement',
+        finInstallments: 'Option Échelonnée :',
+        finOver40: 'Sur 40 mois (coût total : 15 000 € sans intérêts bancaires)',
+        finCash: 'Option Paiement Comptant :',
+        finCashNote: 'Remise immédiate de 1 500 € pour paiement comptant',
+        trust1: 'Propriété directe garantie avec mutation accompagnée',
+        trust2: 'Remboursement intégral si engagements non respectés',
+        trust3: 'Clôture et viabilisation incluses',
+        waReserve: 'Réserver ce Lot sur WhatsApp',
+        tour3d: 'Visite 3D',
+        share: 'Partager',
+        downloadSheet: 'Télécharger Fiche Cadastrale PDF',
+        selectParcel: 'Sélectionnez une parcelle sur le plan.',
+        simTag: 'Échéancier Officiel Sébikhotane',
+        simTitle: 'Simulateur de Paiement Échelonné (150 m²)',
+        simDesc:
+          'Choisissez votre apport initial pour adapter la durée de vos mensualités à 300 €/mois.',
+        simNoFees: 'Sans Frais de Dossier Bancaire',
+        simOption: 'Option',
+        simPopular: 'Populaire',
+        simDeposit: 'Acompte Initial',
+        simRemaining: 'Reste à payer :',
+        simMonthly: 'Mensualité :',
+        simDuration: 'Durée :',
+        perMonth: '€ / mois',
+        months: 'mois',
+        dirTitle: 'Répertoire Cadastral des Parcelles (150 m²)',
+        dirDesc:
+          'Sélectionnez une parcelle pour la situer sur le plan cadastral et lancer votre demande.',
+        dirPhase1: 'Tranche 1 (Lots 1 à 20)',
+        dirAll: 'Tous les 54 Lots',
+        sold: 'Vendue',
+        reserved: 'Réservée',
+        t1Avail: 'T1 Disponible',
+        t2: 'T2',
+        toastMaxCompare: "Vous pouvez comparer jusqu'à 3 parcelles au maximum.",
+        toastDownloaded: (id: number) => `Fiche cadastrale du lot n°${id} téléchargée (PDF).`,
+        toastError:
+          'Génération de la fiche impossible. Réessayez ou écrivez-nous sur WhatsApp.',
+        waReserveMessage: (id: number, dims: string, zone: string) =>
+          `Bonjour ${settings.companyName || 'Sénégal Immobilier Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${id} (${dims} - ${zone}).`,
+      }
+    : {
+        home: 'Home',
+        breadcrumb: 'Cadastral Plan & Availability',
+        headerBadge: 'Sébikhotane Estate • Phase 1 (20 Plots)',
+        headerTitle: 'Master Plan & Plot Selection',
+        headerIntro:
+          'Discover our 20 serviced plots of 150 sqm each. Choose the installment plan at €300/month or the preferential cash price.',
+        kpiDomain: 'Sébikhotane Estate',
+        kpiLots: 'certified plots (150 sqm)',
+        kpiPhase: 'Phase 1 Active',
+        kpiPhaseSub: 'plots on sale',
+        kpiPromo: 'First 10 Offer',
+        kpiPromoLots: 'Plots 1 to 10',
+        kpiPromoSub: 'notary fees included',
+        kpiFinancing: 'Financing',
+        kpiFinancingSub: '/ month (40 months)',
+        filterLabel: 'Filter:',
+        fPhase1: 'Phase 1 (20 plots)',
+        fAll: 'All (54 plots)',
+        fPromo: 'First 10 Offer ⭐',
+        fGreen: 'West Zone (14)',
+        fYellow: 'Central Zone (18)',
+        fRed: 'Center-East Zone (15)',
+        fSalmon: 'East Zone (6)',
+        statusLabel: 'Status:',
+        searchPlaceholder: 'Search plot (e.g. 4 or 25)...',
+        mapTitle: 'Official Surveyor Cadastral Plan • Sébikhotane',
+        mapSub: '54 Plots • Certified markers B1 to B17 • 12m Roads',
+        viewOfficial: 'Official Plan',
+        viewStatus: 'Availability',
+        viewBlueprint: 'CAD Plan',
+        zoomIn: 'Zoom in',
+        zoomOut: 'Zoom out',
+        reset: 'Reset',
+        svgNorthRoad: 'NORTH ACCESS ROAD',
+        svgCentralAvenue: 'CENTRAL SERVICED AVENUE (12M ROAD)',
+        t1Sold: 'P1 SOLD',
+        t1Reserved: 'P1 RESERVED',
+        t1Available: 'P1 AVAILABLE',
+        svgTitleBadge: 'SÉBIKHOTANE ESTATE',
+        svgTitleSub: '54 Plots of 150 sqm • Phase 1 (Plots 1-20)',
+        svgTitleLine3: '✓ Boundary markers B1 to B17 • Deliberation & NICAD',
+        mapHelper: 'Click any of the 54 plots to view its dimensions and reserve it',
+        legendWest: 'West Zone (Plots 1-14)',
+        legendCentral: 'Central Zone (Plots 15-32)',
+        legendCenterEast: 'Center-East Zone (Plots 33-47)',
+        legendEast: 'East Zone (Plots 48-54)',
+        legendMarkers: 'Markers B1-B17',
+        legendNote: 'Compliant with the official subdivision plan',
+        zoneFallback: 'Cadastral Zone',
+        statusSoldT1: 'Phase 1 • Sold',
+        statusSold: 'Sold',
+        statusReservedT1: 'Phase 1 • Reserved',
+        statusReserved: 'Reserved',
+        statusAvailT1: 'Phase 1 • Available',
+        statusReservable2: 'Phase 2 • Available soon',
+        promoBadge: 'First 10 Promo ⭐',
+        surfaceTotal: 'Total Area',
+        dimensionsExact: 'Exact Dimensions',
+        securityTitle: 'Municipal Deliberation + NICAD',
+        securitySub: 'Official surveyor boundary markers B1 to B17 with survey report',
+        finTitle: 'Financing Terms',
+        finInstallments: 'Installment plan:',
+        finOver40: 'Over 40 months (total cost: €15,000 with no bank interest)',
+        finCash: 'Cash payment option:',
+        finCashNote: '€1,500 immediate discount for cash payment',
+        trust1: 'Direct ownership guaranteed with guided title transfer',
+        trust2: 'Full refund if commitments are not met',
+        trust3: 'Fencing and site servicing included',
+        waReserve: 'Reserve this Plot on WhatsApp',
+        tour3d: '3D Tour',
+        share: 'Share',
+        downloadSheet: 'Download Cadastral Sheet (PDF)',
+        selectParcel: 'Select a plot on the plan.',
+        simTag: 'Official Sébikhotane Payment Schedule',
+        simTitle: 'Installment Payment Simulator (150 sqm)',
+        simDesc:
+          'Choose your down payment to adjust how long your €300/month installments run.',
+        simNoFees: 'No Bank Application Fees',
+        simOption: 'Option',
+        simPopular: 'Popular',
+        simDeposit: 'Initial Deposit',
+        simRemaining: 'Remaining:',
+        simMonthly: 'Monthly:',
+        simDuration: 'Term:',
+        perMonth: '€ / month',
+        months: 'months',
+        dirTitle: 'Plot Cadastral Directory (150 sqm)',
+        dirDesc: 'Select a plot to locate it on the cadastral plan and start your request.',
+        dirPhase1: 'Phase 1 (Plots 1 to 20)',
+        dirAll: 'All 54 Plots',
+        sold: 'Sold',
+        reserved: 'Reserved',
+        t1Avail: 'P1 Available',
+        t2: 'P2',
+        toastMaxCompare: 'You can compare up to 3 plots at most.',
+        toastDownloaded: (id: number) => `Cadastral sheet for plot #${id} downloaded (PDF).`,
+        toastError: 'Could not generate the sheet. Try again or message us on WhatsApp.',
+        waReserveMessage: (id: number, dims: string, zone: string) =>
+          `Hello ${settings.companyName || 'Senegal Real Estate Consulting'}, I would like to reserve or receive detailed information about Plot #${id} (${dims} - ${zone}).`,
+      };
+
+  /* Les libellés de zone (nombre de lots et plages) étaient écrits à la main dans
+     `L` et avaient dérivé du plan qu'ils décrivent : la légende annonçait une
+     zone centrale de 18 lots là où le plan en dessine 19, les filtres totalisaient
+     53 lots à côté d'un bouton « Tous (54 lots) », et chaque plage était décalée.
+     Un plan juste à côté d'un libellé faux ne vaut pas mieux qu'un libellé absent :
+     ces huit chaînes se recalculent donc depuis `CADASTRAL_PARCELS_GEO`, seule
+     source de vérité de ce qui est réellement dessiné. */
+  const zoneLots = (zone: 'green' | 'yellow' | 'red' | 'salmon') =>
+    Object.values(CADASTRAL_PARCELS_GEO)
+      .filter((p) => p.zone === zone)
+      .map((p) => p.id)
+      .sort((a, b) => a - b);
+
+  /** « 1-13, 53 » — les suites de plus de deux lots sont abrégées, sinon la
+   *  légende devient un mur de chiffres. */
+  const lotRanges = (ids: number[]) => {
+    const parts: string[] = [];
+    let start = ids[0];
+    let prev = ids[0];
+    for (let i = 1; i <= ids.length; i++) {
+      const id = ids[i];
+      if (id === prev + 1) {
+        prev = id;
+        continue;
+      }
+      parts.push(start === prev ? `${start}` : `${start}-${prev}`);
+      start = id;
+      prev = id;
+    }
+    return parts.join(', ');
+  };
+
+  const zoneNames = isFR
+    ? { green: 'Zone Ouest', yellow: 'Zone Centrale', red: 'Zone Centre-Est', salmon: 'Zone Est' }
+    : { green: 'West Zone', yellow: 'Central Zone', red: 'Center-East Zone', salmon: 'East Zone' };
+
+  const zoneChip = (z: 'green' | 'yellow' | 'red' | 'salmon') =>
+    `${zoneNames[z]} (${zoneLots(z).length})`;
+  const zoneLegend = (z: 'green' | 'yellow' | 'red' | 'salmon') =>
+    `${zoneNames[z]} (${isFR ? 'Lots' : 'Plots'} ${lotRanges(zoneLots(z))})`;
+  const totalLots = Object.keys(CADASTRAL_PARCELS_GEO).length;
+
+  L.fGreen = zoneChip('green');
+  L.fYellow = zoneChip('yellow');
+  L.fRed = zoneChip('red');
+  L.fSalmon = zoneChip('salmon');
+  L.legendWest = zoneLegend('green');
+  L.legendCentral = zoneLegend('yellow');
+  L.legendCenterEast = zoneLegend('red');
+  L.legendEast = zoneLegend('salmon');
+  L.fAll = isFR ? `Tous (${totalLots} lots)` : `All (${totalLots} plots)`;
+
+  // `cadastreGeometry` ne porte que le libellé français de zone ; l'anglais est
+  // dérivé de la clé de zone (les parcelles, elles, ont déjà `zoneName.EN`).
+  const zoneLabelEn: Record<string, string> = {
+    green: 'West Zone (Green)',
+    yellow: 'Central Zone (Yellow)',
+    red: 'Center-East Zone (Red)',
+    salmon: 'East Zone (Salmon)',
+  };
+  const zoneLabel = (zone: string, frLabel: string) =>
+    isFR ? frLabel : zoneLabelEn[zone] || frLabel;
+
   // Parcelles live : mises à jour de l'Espace Gérant (cloud/localStorage) visibles ici
   const allParcels = parcels;
 
@@ -279,7 +553,7 @@ export default function MasterPlanPage({
         return prev.filter(id => id !== parcelId);
       } else {
         if (prev.length >= 3) {
-          setToastMessage('Vous pouvez comparer jusqu\'à 3 parcelles au maximum.');
+          setToastMessage(L.toastMaxCompare);
           setTimeout(() => setToastMessage(null), 3000);
           return prev;
         }
@@ -298,10 +572,10 @@ export default function MasterPlanPage({
     window.setTimeout(() => {
       try {
         downloadParcelSheet(parcel, { language: currentLanguage, settings });
-        setToastMessage(`Fiche cadastrale du lot n°${parcel.id} téléchargée (PDF).`);
+        setToastMessage(L.toastDownloaded(parcel.id));
       } catch (error) {
         console.error('[fiche-cadastrale] génération impossible', error);
-        setToastMessage('Génération de la fiche impossible. Réessayez ou écrivez-nous sur WhatsApp.');
+        setToastMessage(L.toastError);
       } finally {
         setDownloadingId(null);
         window.setTimeout(() => setToastMessage(null), 4000);
@@ -312,145 +586,149 @@ export default function MasterPlanPage({
   const whatsappClean = settings?.whatsappCleanNumber || '33761235509';
 
   return (
-    <div className="bg-[#FBF9F4] text-primary min-h-screen pt-24 pb-20 px-4 md:px-10 lg:px-14">
+    <div className="bg-[#FAF9F5] text-primary min-h-screen pt-24 pb-20 px-4 md:px-10 lg:px-14">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-outline-variant text-[11px] font-bold uppercase tracking-wider">
+        <nav className="flex items-center space-x-2 text-ink-3 text-micro font-bold uppercase tracking-wider">
           <button
             onClick={() => setActiveTab('home')}
-            className="hover:text-primary transition-colors cursor-pointer py-1.5 px-1 -ml-1"
+            className="hover:text-primary transition-colors cursor-pointer py-1.5 px-1 -ml-1 min-h-[44px] inline-flex items-center"
           >
-            Accueil
+            {L.home}
           </button>
-          <ChevronRight className="w-3.5 h-3.5 text-outline-variant" />
-          <span className="text-secondary-fixed-dim">Plan Cadastral & Disponibilités</span>
+          <ChevronRight className="w-3.5 h-3.5 text-ink-3" />
+          <span className="text-gold-ink">{L.breadcrumb}</span>
         </nav>
 
         {/* Header */}
         <header className="space-y-3 max-w-3xl">
-          <div className="inline-flex items-center space-x-2 bg-[#004D40]/10 border border-[#004D40]/20 px-3 py-1 rounded-full text-[#004D40] text-[11px] font-bold tracking-widest uppercase">
+          <div className="inline-flex items-center space-x-2 bg-[#004D40]/10 border border-[#004D40]/20 px-3 py-1 rounded-full text-[#004D40] text-micro font-bold tracking-widest uppercase">
             <Compass className="w-3.5 h-3.5" />
-            <span>Domaine de Sébikhotane • Tranche 1 (20 Parcelles)</span>
+            <span>{L.headerBadge}</span>
           </div>
-          <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-primary leading-tight">
-            Plan Directeur & Choix de Parcelle
+          <h1 className="font-serif text-h1 font-bold tracking-tight text-primary">
+            {L.headerTitle}
           </h1>
           <p className="font-sans text-sm md:text-base text-outline leading-relaxed font-light">
-            Découvrez nos 20 parcelles viabilisées de 150 m² chacune. Bénéficiez de la formule échelonnée à 300 €/mois ou d'un tarif préférentiel au comptant.
+            {L.headerIntro}
           </p>
         </header>
 
         {/* Key Indicators Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-gray-300 shadow-xs">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-4 sm:p-5 rounded-card border border-gray-300 shadow-elev-1">
           <div className="border-r border-gray-200 last:border-0 pr-3">
-            <span className="text-[10px] uppercase font-bold text-outline tracking-wider block">Domaine Sébikhotane</span>
+            <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.kpiDomain}</span>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
               <span className="font-serif text-2xl font-bold text-primary">54</span>
-              <span className="text-xs text-outline font-sans">lots certifiés (150 m²)</span>
+              <span className="text-xs text-outline font-sans">{L.kpiLots}</span>
             </div>
           </div>
 
           <div className="border-r border-gray-200 last:border-0 px-3">
             <div className="flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#25D366]" />
-              <span className="text-[10px] uppercase font-bold text-outline tracking-wider block">Tranche 1 Active</span>
+              <span className="w-2 h-2 rounded-full bg-whatsapp" />
+              <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.kpiPhase}</span>
             </div>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
               <span className="font-serif text-2xl font-bold text-[#0F6B4F]">20</span>
-              <span className="text-xs text-outline font-sans">lots en commercialisation</span>
+              <span className="text-xs text-outline font-sans">{L.kpiPhaseSub}</span>
             </div>
           </div>
 
           <div className="border-r border-gray-200 last:border-0 px-3">
             <div className="flex items-center space-x-1.5">
               <span className="w-2 h-2 rounded-full bg-secondary-fixed" />
-              <span className="text-[10px] uppercase font-bold text-outline tracking-wider block">Offre 10 Premiers</span>
+              <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.kpiPromo}</span>
             </div>
-            <div className="flex items-baseline space-x-1.5 mt-0.5">
-              <span className="font-serif text-2xl font-bold text-[#8C7A53]">Lots 1 à 10</span>
-              <span className="text-xs text-outline font-sans">frais de notaire offerts</span>
+            {/* `flex-wrap` : la valeur reste sur une ligne, le complément passe
+                dessous si la colonne est étroite (libellé long en français). */}
+            <div className="flex flex-wrap items-baseline gap-x-1.5 mt-0.5">
+              <span className="font-serif text-xl font-bold text-gold-ink">
+                {L.kpiPromoLots}
+              </span>
+              <span className="text-caption text-ink-3 font-sans">{L.kpiPromoSub}</span>
             </div>
           </div>
 
           <div className="pl-3">
-            <span className="text-[10px] uppercase font-bold text-outline tracking-wider block">Financement</span>
+            <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.kpiFinancing}</span>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
               <span className="font-serif text-2xl font-bold text-primary">300 €</span>
-              <span className="text-xs text-outline font-sans">/ mois (40 mois)</span>
+              <span className="text-xs text-outline font-sans">{L.kpiFinancingSub}</span>
             </div>
           </div>
         </div>
 
         {/* Filter and Search controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-300 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-card border border-gray-300 shadow-elev-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase text-outline mr-1">Filtrer :</span>
+            <span className="text-xs font-bold uppercase text-outline mr-1">{L.filterLabel}</span>
             <button
               onClick={() => setActiveFilter('Phase1')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'Phase1' ? 'bg-primary text-white shadow-xs' : 'bg-gray-100 text-outline hover:text-primary'
+              className={`px-3.5 min-h-[44px] inline-flex items-center rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer ${
+                activeFilter === 'Phase1' ? 'bg-primary text-white shadow-elev-1' : 'bg-gray-100 text-outline hover:text-primary'
               }`}
             >
-              Tranche 1 (20 lots)
+              {L.fPhase1}
             </button>
             <button
               onClick={() => setActiveFilter('All')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'All' ? 'bg-primary text-white shadow-xs' : 'bg-gray-100 text-outline hover:text-primary'
+              className={`px-3.5 min-h-[44px] inline-flex items-center rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer ${
+                activeFilter === 'All' ? 'bg-primary text-white shadow-elev-1' : 'bg-gray-100 text-outline hover:text-primary'
               }`}
             >
-              Tous (54 lots)
+              {L.fAll}
             </button>
             <button
               onClick={() => setActiveFilter('Promo')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'Promo' ? 'bg-secondary-fixed text-primary shadow-xs' : 'bg-gray-100 text-outline hover:text-primary'
+              className={`px-3.5 min-h-[44px] inline-flex items-center rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer ${
+                activeFilter === 'Promo' ? 'bg-secondary-fixed text-primary shadow-elev-1' : 'bg-gray-100 text-outline hover:text-primary'
               }`}
             >
-              Offre 10 Premiers ⭐
+              {L.fPromo}
             </button>
             <button
               onClick={() => setActiveFilter('Green')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1 ${
-                activeFilter === 'Green' ? 'bg-[#7BA877] text-white shadow-xs' : 'bg-emerald-50 text-[#2B5A27] hover:bg-emerald-100'
+              className={`px-3 min-h-[44px] rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer flex items-center space-x-1 ${
+                activeFilter === 'Green' ? 'bg-[#7BA877] text-white shadow-elev-1' : 'bg-emerald-50 text-[#2B5A27] hover:bg-emerald-100'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#7BA877]" />
-              <span>Zone Ouest (14)</span>
+              <span>{L.fGreen}</span>
             </button>
             <button
               onClick={() => setActiveFilter('Yellow')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1 ${
-                activeFilter === 'Yellow' ? 'bg-[#D8B826] text-white shadow-xs' : 'bg-amber-50 text-[#8C6D05] hover:bg-amber-100'
+              className={`px-3 min-h-[44px] rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer flex items-center space-x-1 ${
+                activeFilter === 'Yellow' ? 'bg-[#D8B826] text-white shadow-elev-1' : 'bg-amber-50 text-[#8C6D05] hover:bg-amber-100'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#FDE792] border border-amber-400" />
-              <span>Zone Centrale (18)</span>
+              <span>{L.fYellow}</span>
             </button>
             <button
               onClick={() => setActiveFilter('Red')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1 ${
-                activeFilter === 'Red' ? 'bg-[#EE7558] text-white shadow-xs' : 'bg-rose-50 text-[#B53F24] hover:bg-rose-100'
+              className={`px-3 min-h-[44px] rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer flex items-center space-x-1 ${
+                activeFilter === 'Red' ? 'bg-[#EE7558] text-white shadow-elev-1' : 'bg-rose-50 text-[#B53F24] hover:bg-rose-100'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#EE7558]" />
-              <span>Zone Centre-Est (15)</span>
+              <span>{L.fRed}</span>
             </button>
             <button
               onClick={() => setActiveFilter('Salmon')}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1 ${
-                activeFilter === 'Salmon' ? 'bg-[#FA9D7A] text-white shadow-xs' : 'bg-orange-50 text-[#C0613C] hover:bg-orange-100'
+              className={`px-3 min-h-[44px] rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer flex items-center space-x-1 ${
+                activeFilter === 'Salmon' ? 'bg-[#FA9D7A] text-white shadow-elev-1' : 'bg-orange-50 text-[#C0613C] hover:bg-orange-100'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#FA9D7A]" />
-              <span>Zone Est (6)</span>
+              <span>{L.fSalmon}</span>
             </button>
           </div>
 
           {/* Filtres par statut commercial (Disponibles / Réservées / Vendues) */}
           <div className="flex flex-wrap items-center gap-2 w-full pt-3 mt-1 border-t border-gray-100">
-            <span className="text-xs font-bold uppercase text-outline mr-1">Statut :</span>
+            <span className="text-xs font-bold uppercase text-outline mr-1">{L.statusLabel}</span>
             {(['All', 'Available', 'Reserved', 'Sold'] as const).map((s) => {
               const count = statusCounts[s];
               const label =
@@ -468,24 +746,24 @@ export default function MasterPlanPage({
               const pillCls =
                 s === 'Available'
                   ? isActive
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-emerald-600 text-white shadow-elev-1'
                     : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
                   : s === 'Reserved'
                   ? isActive
-                    ? 'bg-amber-500 text-white shadow-xs'
+                    ? 'bg-amber-500 text-white shadow-elev-1'
                     : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
                   : s === 'Sold'
                   ? isActive
-                    ? 'bg-rose-600 text-white shadow-xs'
+                    ? 'bg-rose-600 text-white shadow-elev-1'
                     : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
                   : isActive
-                  ? 'bg-primary text-white shadow-xs'
+                  ? 'bg-primary text-white shadow-elev-1'
                   : 'bg-gray-100 text-outline hover:text-primary';
               return (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${pillCls}`}
+                  className={`px-3.5 min-h-[44px] rounded-full text-caption font-bold transition-all duration-400 ease-spring cursor-pointer flex items-center space-x-1.5 ${pillCls}`}
                 >
                   {s !== 'All' && (
                     <span
@@ -508,10 +786,10 @@ export default function MasterPlanPage({
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
             <input
               type="text"
-              placeholder="Rechercher lot (ex: 4 ou 25)..."
+              placeholder={L.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-sans"
+              className="w-full min-h-[44px] pl-9 pr-3 py-1.5 rounded-inner border border-line text-caption focus:outline-none focus:ring-1 focus:ring-primary font-sans"
             />
           </div>
         </div>
@@ -523,7 +801,7 @@ export default function MasterPlanPage({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="fixed top-24 right-6 z-50 bg-primary text-white px-5 py-3 rounded-xl shadow-xl text-xs font-bold flex items-center space-x-2 border border-secondary-fixed/40"
+              className="toast-safe fixed top-24 right-6 z-[var(--z-toast)] bg-primary text-white px-5 py-3 rounded-inner shadow-elev-3 text-xs font-bold flex items-center space-x-2 border border-secondary-fixed/40"
             >
               <CheckCircle className="w-4 h-4 text-secondary-fixed" />
               <span>{toastMessage}</span>
@@ -535,7 +813,7 @@ export default function MasterPlanPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* SVG CADASTRE MAP (8 COLS) */}
-          <div className="lg:col-span-8 bg-white border border-gray-300 rounded-3xl overflow-hidden shadow-sm relative">
+          <div className="lg:col-span-8 bg-white border border-gray-300 rounded-card overflow-hidden shadow-elev-1 relative">
             
             {/* Map Top Bar */}
             <div className="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 bg-gray-50/70">
@@ -543,10 +821,10 @@ export default function MasterPlanPage({
                 <Map className="w-4 h-4 text-[#004D40]" />
                 <div>
                   <span className="text-xs font-serif font-bold text-primary block">
-                    Plan Cadastral Officiel Géomètre • Sébikhotane
+                    {L.mapTitle}
                   </span>
-                  <span className="text-[10px] text-outline font-mono">
-                    54 Lots • Bornage certifié B1 à B17 • Voirie 12m
+                  <span className="text-caption text-outline font-mono">
+                    {L.mapSub}
                   </span>
                 </div>
               </div>
@@ -554,53 +832,53 @@ export default function MasterPlanPage({
               {/* View Mode Switcher + Zoom controls */}
               <div className="flex items-center space-x-2">
                 {/* View Mode Switcher */}
-                <div className="hidden sm:flex items-center bg-gray-200/70 p-0.5 rounded-xl text-[10px] font-bold">
+                <div className="hidden sm:flex items-center bg-gray-200/70 p-0.5 rounded-inner text-caption font-bold">
                   <button
                     onClick={() => setCadastreViewMode('official')}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      cadastreViewMode === 'official' ? 'bg-white text-primary shadow-xs' : 'text-outline hover:text-primary'
+                    className={`px-3 min-h-[44px] rounded-full transition-all duration-400 ease-spring cursor-pointer ${
+                      cadastreViewMode === 'official' ? 'bg-white text-primary shadow-elev-1' : 'text-outline hover:text-primary'
                     }`}
                   >
-                    Plan Officiel
+                    {L.viewOfficial}
                   </button>
                   <button
                     onClick={() => setCadastreViewMode('status')}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      cadastreViewMode === 'status' ? 'bg-white text-primary shadow-xs' : 'text-outline hover:text-primary'
+                    className={`px-3 min-h-[44px] rounded-full transition-all duration-400 ease-spring cursor-pointer ${
+                      cadastreViewMode === 'status' ? 'bg-white text-primary shadow-elev-1' : 'text-outline hover:text-primary'
                     }`}
                   >
-                    Disponibilités
+                    {L.viewStatus}
                   </button>
                   <button
                     onClick={() => setCadastreViewMode('blueprint')}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                      cadastreViewMode === 'blueprint' ? 'bg-white text-primary shadow-xs' : 'text-outline hover:text-primary'
+                    className={`px-3 min-h-[44px] rounded-full transition-all duration-400 ease-spring cursor-pointer ${
+                      cadastreViewMode === 'blueprint' ? 'bg-white text-primary shadow-elev-1' : 'text-outline hover:text-primary'
                     }`}
                   >
-                    Plan CAD
+                    {L.viewBlueprint}
                   </button>
                 </div>
 
                 {/* Zoom controls */}
-                <div className="flex items-center space-x-1.5 bg-white border border-gray-200 rounded-xl p-1">
+                <div className="flex items-center space-x-1.5 bg-white border border-gray-200 rounded-inner p-1">
                   <button
                     onClick={zoomIn}
-                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
-                    title="Zoomer"
+                    className="tap-44 p-2.5 hover:bg-gray-100 rounded-micro text-primary transition-colors duration-400 cursor-pointer"
+                    title={L.zoomIn}
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={zoomOut}
-                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
-                    title="Dézoomer"
+                    className="tap-44 p-2.5 hover:bg-gray-100 rounded-micro text-primary transition-colors duration-400 cursor-pointer"
+                    title={L.zoomOut}
                   >
                     <ZoomOut className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={resetZoom}
-                    className="p-2.5 hover:bg-gray-100 rounded-lg text-primary transition-colors cursor-pointer"
-                    title="Réinitialiser"
+                    className="tap-44 p-2.5 hover:bg-gray-100 rounded-micro text-primary transition-colors duration-400 cursor-pointer"
+                    title={L.reset}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
@@ -628,7 +906,7 @@ export default function MasterPlanPage({
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                   transformOrigin: '500px 340px',
-                  transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                  transition: isDragging ? 'none' : 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
                   width: '1000px',
                   height: '680px'
                 }}
@@ -694,12 +972,12 @@ export default function MasterPlanPage({
                     x="360"
                     y="174"
                     textAnchor="middle"
-                    fontSize="9"
+                    fontSize="10.5"
                     fontWeight="bold"
                     fill={cadastreViewMode === 'blueprint' ? '#93C5FD' : '#4B5563'}
                     letterSpacing="1"
                   >
-                    VOIE D'ACCÈS NORD
+                    {L.svgNorthRoad}
                   </text>
 
                   {/* West Road (between Green & Yellow zones) */}
@@ -741,13 +1019,13 @@ export default function MasterPlanPage({
                     x="505"
                     y="390"
                     textAnchor="middle"
-                    fontSize="9"
+                    fontSize="10.5"
                     fontWeight="bold"
                     fill={cadastreViewMode === 'blueprint' ? '#93C5FD' : '#4B5563'}
                     letterSpacing="1"
                     transform="rotate(-90 505 390)"
                   >
-                    AVENUE CENTRALE AMÉNAGÉE (VOIRIE 12M)
+                    {L.svgCentralAvenue}
                   </text>
 
                   {/* East Road (leading to Salmon zone) */}
@@ -805,7 +1083,7 @@ export default function MasterPlanPage({
                       // Disponible = vert, Réservée = ambre, Vendue = rouge
                       if (isSelected) {
                         fillColor = '#004D40';
-                        strokeColor = '#002B1D';
+                        strokeColor = '#0f3d2e';
                         textColor = '#FFFFFF';
                       } else if (parcel.status === 'Sold') {
                         fillColor = '#FEE2E2';
@@ -837,7 +1115,7 @@ export default function MasterPlanPage({
                       <g
                         key={parcel.id}
                         onClick={() => setSelectedParcel(parcel)}
-                        className="cursor-pointer transition-all duration-150"
+                        className="cursor-pointer transition-all duration-200"
                         opacity={isVisible ? 1 : 0.2}
                         filter={isSelected ? 'url(#selected-glow)' : 'none'}
                       >
@@ -845,7 +1123,7 @@ export default function MasterPlanPage({
                         <polygon
                           points={geo.points}
                           fill={fillColor}
-                          stroke={isSelected ? (cadastreViewMode === 'blueprint' ? '#90E0EF' : '#002B1D') : strokeColor}
+                          stroke={isSelected ? (cadastreViewMode === 'blueprint' ? '#90E0EF' : '#0f3d2e') : strokeColor}
                           strokeWidth={strokeWidth}
                         />
 
@@ -877,7 +1155,7 @@ export default function MasterPlanPage({
                           x={geo.cx}
                           y={geo.cy + 13}
                           textAnchor="middle"
-                          fontSize="8"
+                          fontSize="10"
                           fontWeight="bold"
                           fill={isSelected ? '#FFFFFF' : (cadastreViewMode === 'official' ? textColor : '#64748B')}
                           opacity={isSelected ? 0.95 : 0.75}
@@ -902,20 +1180,22 @@ export default function MasterPlanPage({
                             x={geo.cx}
                             y={geo.cy + 25}
                             textAnchor="middle"
-                            fontSize="6.5"
+                            fontSize="10.5"
                             fontWeight="bold"
                             fill="#FFFFFF"
                           >
                             {parcel.status === 'Sold'
-                              ? 'T1 VENDUE'
+                              ? L.t1Sold
                               : parcel.status === 'Reserved'
-                              ? 'T1 RÉSERVÉE'
-                              : 'T1 DISPO'}
+                              ? L.t1Reserved
+                              : L.t1Available}
                           </text>
                         )}
 
                         <title>
-                          {`Parcelle #${parcel.id} (${geo.dimensions})\nZone : ${geo.zoneNameFR}\nSurface : ${parcel.area} m²\nFinancement : 3 000 € acompte + 300 €/mois (40 mois)\nComptant : 13 500 €`}
+                          {isFR
+                            ? `Parcelle #${parcel.id} (${geo.dimensions})\nZone : ${geo.zoneNameFR}\nSurface : ${parcel.area} m²\nFinancement : 3 000 € acompte + 300 €/mois (40 mois)\nComptant : 13 500 €`
+                            : `Plot #${parcel.id} (${geo.dimensions})\nZone: ${zoneLabel(geo.zone, geo.zoneNameFR)}\nArea: ${parcel.area} sqm\nFinancing: €3,000 down + €300/month (40 months)\nCash: €13,500`}
                         </title>
                       </g>
                     );
@@ -928,7 +1208,7 @@ export default function MasterPlanPage({
                         x={meas.textX}
                         y={meas.textY}
                         textAnchor="middle"
-                        fontSize="8.5"
+                        fontSize="10"
                         fontWeight="bold"
                         fill={cadastreViewMode === 'blueprint' ? '#93C5FD' : '#8C7A53'}
                         transform={meas.rotate ? `rotate(${meas.rotate} ${meas.textX} ${meas.textY})` : undefined}
@@ -945,7 +1225,7 @@ export default function MasterPlanPage({
                       x={anno.x}
                       y={anno.y}
                       textAnchor="middle"
-                      fontSize={anno.fontSize || 7}
+                      fontSize={anno.fontSize || 9}
                       fill={anno.color || (cadastreViewMode === 'blueprint' ? '#60A5FA' : '#718096')}
                       opacity="0.65"
                       transform={anno.rotate ? `rotate(${anno.rotate} ${anno.x} ${anno.y})` : undefined}
@@ -991,7 +1271,7 @@ export default function MasterPlanPage({
                           x={borne.labelX}
                           y={borne.labelY + 3.5}
                           textAnchor="middle"
-                          fontSize="8"
+                          fontSize="10"
                           fontWeight="bold"
                           fill={cadastreViewMode === 'blueprint' ? '#90E0EF' : '#111827'}
                         >
@@ -1017,10 +1297,10 @@ export default function MasterPlanPage({
                       strokeWidth="0.5"
                     />
                     {/* Cardinal letters */}
-                    <text x="0" y="-18" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#B91C1C">N</text>
-                    <text x="19" y="3" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#64748B">E</text>
-                    <text x="0" y="22" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#64748B">S</text>
-                    <text x="-19" y="3" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#64748B">O</text>
+                    <text x="0" y="-18" textAnchor="middle" fontSize="10.5" fontWeight="bold" fill="#B91C1C">N</text>
+                    <text x="19" y="3" textAnchor="middle" fontSize="10.5" fontWeight="bold" fill="#64748B">E</text>
+                    <text x="0" y="22" textAnchor="middle" fontSize="10.5" fontWeight="bold" fill="#64748B">S</text>
+                    <text x="-19" y="3" textAnchor="middle" fontSize="10.5" fontWeight="bold" fill="#64748B">O</text>
                     {/* North pointer needle */}
                     <polygon points="0,-25 4,-2 0,0" fill="#B91C1C" />
                     <polygon points="0,-25 -4,-2 0,0" fill="#DC2626" />
@@ -1044,73 +1324,73 @@ export default function MasterPlanPage({
                     <text
                       x="12"
                       y="20"
-                      fontSize="9.5"
+                      fontSize="11"
                       fontWeight="bold"
-                      fill={cadastreViewMode === 'blueprint' ? '#90E0EF' : '#002B1D'}
+                      fill={cadastreViewMode === 'blueprint' ? '#90E0EF' : '#0f3d2e'}
                       fontFamily="serif"
                     >
-                      DOMAINE DE SÉBIKHOTANE
+                      {L.svgTitleBadge}
                     </text>
                     <text
                       x="12"
                       y="33"
-                      fontSize="7.5"
+                      fontSize="11"
                       fill={cadastreViewMode === 'blueprint' ? '#64748B' : '#64748B'}
                     >
-                      54 Parcelles de 150 m² • Tranche 1 (Lots 1-20)
+                      {L.svgTitleSub}
                     </text>
                     <text
                       x="12"
                       y="44"
-                      fontSize="7"
+                      fontSize="10.5"
                       fill={cadastreViewMode === 'blueprint' ? '#00B4D8' : '#0F6B4F'}
                       fontWeight="bold"
                     >
-                      ✓ Bornage B1 à B17 • Délibération & NICAD
+                      {L.svgTitleLine3}
                     </text>
                   </g>
                 </svg>
               </div>
 
               {/* Map floating helper */}
-              <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-gray-200 text-[10px] text-primary flex items-center space-x-2 shadow-xs">
+              <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-inner border border-gray-200 text-caption text-primary flex items-center space-x-2 shadow-elev-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Cliquez sur l'un des 54 lots pour consulter ses dimensions et le réserver</span>
+                <span>{L.mapHelper}</span>
               </div>
             </div>
 
             {/* Cadastre Legend Bar */}
-            <div className="p-3.5 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-[11px]">
+            <div className="p-3.5 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-caption">
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#7BA877] border border-[#4E734A]" />
-                  <span className="font-bold text-primary">Zone Ouest (Lots 1-14)</span>
+                  <span className="w-3 h-3 rounded-micro bg-[#7BA877] border border-[#4E734A]" />
+                  <span className="font-bold text-primary">{L.legendWest}</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#FDE792] border border-[#C4A825]" />
-                  <span className="font-bold text-primary">Zone Centrale (Lots 15-32)</span>
+                  <span className="w-3 h-3 rounded-micro bg-[#FDE792] border border-[#C4A825]" />
+                  <span className="font-bold text-primary">{L.legendCentral}</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#EE7558] border border-[#B8452A]" />
-                  <span className="font-bold text-primary">Zone Centre-Est (Lots 33-47)</span>
+                  <span className="w-3 h-3 rounded-micro bg-[#EE7558] border border-[#B8452A]" />
+                  <span className="font-bold text-primary">{L.legendCenterEast}</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#FA9D7A] border border-[#C2633E]" />
-                  <span className="font-bold text-primary">Zone Est (Lots 48-54)</span>
+                  <span className="w-3 h-3 rounded-micro bg-[#FA9D7A] border border-[#C2633E]" />
+                  <span className="font-bold text-primary">{L.legendEast}</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
                   <span className="w-3 h-3 rounded-full bg-black border border-white" />
-                  <span className="font-bold text-primary">Bornes B1-B17</span>
+                  <span className="font-bold text-primary">{L.legendMarkers}</span>
                 </div>
               </div>
-              <span className="text-[10px] text-outline font-mono">
-                Conforme au plan officiel de lotissement
+              <span className="text-caption text-outline font-mono">
+                {L.legendNote}
               </span>
             </div>
           </div>
 
           {/* PARCEL DETAIL CARD (4 COLS) */}
-          <div className="lg:col-span-4 bg-white border border-gray-300 rounded-3xl p-6 space-y-5 shadow-sm">
+          <div className="lg:col-span-4 bg-white border border-gray-300 rounded-card p-6 space-y-5 shadow-elev-1">
             {selectedParcel ? (
               <div className="space-y-5">
                 
@@ -1118,8 +1398,8 @@ export default function MasterPlanPage({
                 <div className="flex items-start justify-between border-b border-gray-200 pb-4">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-[10px] uppercase font-mono font-bold text-secondary-fixed-dim tracking-wider">
-                        Sébikhotane • {selectedParcel.zoneName?.FR || 'Zone Cadastrale'}
+                      <span className="text-micro uppercase font-mono font-bold text-gold-ink tracking-wider">
+                        Sébikhotane • {selectedParcel.zoneName?.[currentLanguage] || L.zoneFallback}
                       </span>
                     </div>
                     <h3 className="font-serif text-3xl font-bold text-primary mt-1">
@@ -1129,42 +1409,42 @@ export default function MasterPlanPage({
 
                   <div className="flex flex-col items-end gap-1">
                     {selectedParcel.status === 'Sold' ? (
-                      <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        {selectedParcel.id <= 20 ? 'Tranche 1 • Vendue' : 'Vendue'}
+                      <span className="bg-rose-100 text-rose-800 border border-rose-300 text-micro font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {selectedParcel.id <= 20 ? L.statusSoldT1 : L.statusSold}
                       </span>
                     ) : selectedParcel.status === 'Reserved' ? (
-                      <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        {selectedParcel.id <= 20 ? 'Tranche 1 • Réservée' : 'Réservée'}
+                      <span className="bg-amber-100 text-amber-800 border border-amber-300 text-micro font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {selectedParcel.id <= 20 ? L.statusReservedT1 : L.statusReserved}
                       </span>
                     ) : selectedParcel.id <= 20 ? (
-                      <span className="bg-[#25D366]/15 text-[#0F6B4F] border border-[#25D366]/30 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Tranche 1 • Disponible
+                      <span className="bg-whatsapp/15 text-[#0F6B4F] border border-whatsapp/30 text-micro font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {L.statusAvailT1}
                       </span>
                     ) : (
-                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Tranche 2 • Réservable
+                      <span className="bg-amber-100 text-amber-800 text-micro font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {L.statusReservable2}
                       </span>
                     )}
                     {(selectedParcel.isPromo || selectedParcel.id <= 10) && (
-                      <span className="bg-secondary-fixed text-primary text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Promo 10 Premiers ⭐
+                      <span className="bg-secondary-fixed text-primary text-micro font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {L.promoBadge}
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Surface and Dimensions */}
-                <div className="grid grid-cols-2 gap-3 bg-[#FBF9F4] p-3.5 rounded-2xl border border-gray-200">
+                <div className="grid grid-cols-2 gap-3 bg-[#FAF9F5] p-3.5 rounded-card border border-gray-200">
                   <div>
-                    <span className="text-[9px] uppercase font-bold text-outline tracking-wider block">Surface Totale</span>
+                    <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.surfaceTotal}</span>
                     <div className="flex items-center space-x-1 mt-0.5">
-                      <Maximize className="w-3.5 h-3.5 text-secondary-fixed-dim" />
+                      <Maximize className="w-3.5 h-3.5 text-gold-ink" />
                       <span className="font-serif text-lg font-bold text-primary">{selectedParcel.area} m²</span>
                     </div>
                   </div>
 
                   <div>
-                    <span className="text-[9px] uppercase font-bold text-outline tracking-wider block">Dimensions Exactes</span>
+                    <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.dimensionsExact}</span>
                     <div className="flex items-center space-x-1 mt-0.5">
                       <Tag className="w-3.5 h-3.5 text-primary" />
                       <span className="font-sans text-xs font-bold text-primary">{selectedParcel.dimensions || '15.00 m × 10.00 m'}</span>
@@ -1173,39 +1453,40 @@ export default function MasterPlanPage({
                 </div>
 
                 {/* Cadastral Security */}
-                <div className="bg-emerald-50/60 border border-emerald-200/60 p-3 rounded-xl flex items-center space-x-2.5">
+                <div className="bg-emerald-50/60 border border-emerald-200/60 p-3 rounded-inner flex items-center space-x-2.5">
                   <ShieldCheck className="w-5 h-5 text-[#0F6B4F] shrink-0" />
                   <div className="text-xs text-[#064E3B]">
-                    <strong className="block font-bold">Délibération Communale + NICAD</strong>
-                    <span>Bornage officiel géomètre B1 à B17 avec PV de bornage</span>
+                    <strong className="block font-bold">{L.securityTitle}</strong>
+                    <span>{L.securitySub}</span>
                   </div>
                 </div>
 
                 {/* Financial Offer Tabs */}
-                <div className="bg-[#002B1D] text-white p-4.5 rounded-2xl space-y-3">
-                  <span className="text-[9px] font-mono uppercase tracking-wider text-secondary-fixed font-bold block">
-                    Modalités de Financement
+                <div className="bg-[#0f3d2e] text-white p-4.5 rounded-card space-y-3">
+                  <span className="text-micro font-mono uppercase tracking-wider text-secondary-fixed font-bold block">
+                    {L.finTitle}
                   </span>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-baseline">
-                      <span className="text-xs text-white/80">Option Échelonnée :</span>
+                      <span className="text-xs text-white/85">{L.finInstallments}</span>
                       <strong className="text-sm font-bold text-secondary-fixed">
-                        3 000 € + 300 € / mois
+                        {settings.defaultDeposit.toLocaleString()} € + {settings.defaultMonthly} €{' '}
+                        {isFR ? '/ mois' : '/ month'}
                       </strong>
                     </div>
-                    <div className="text-[11px] text-white/60">
-                      Sur 40 mois (coût total : 15 000 € sans intérêts bancaires)
+                    <div className="text-caption text-white/70">
+                      {L.finOver40}
                     </div>
 
                     <div className="border-t border-white/10 pt-2 flex justify-between items-baseline">
-                      <span className="text-xs text-white/80">Option Paiement Comptant :</span>
+                      <span className="text-xs text-white/85">{L.finCash}</span>
                       <strong className="text-sm font-bold text-white">
                         13 500 €
                       </strong>
                     </div>
-                    <div className="text-[10px] text-secondary-fixed font-mono">
-                      Remise immédiate de 1 500 € pour paiement comptant
+                    <div className="text-caption text-secondary-fixed font-mono">
+                      {L.finCashNote}
                     </div>
                   </div>
                 </div>
@@ -1214,15 +1495,15 @@ export default function MasterPlanPage({
                 <div className="space-y-1.5 text-xs text-on-surface-variant font-light">
                   <div className="flex items-center space-x-2 text-primary font-medium">
                     <CheckCircle className="w-4 h-4 text-[#0F6B4F] shrink-0" />
-                    <span>Propriété directe garantie avec mutation accompagnée</span>
+                    <span>{L.trust1}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-primary font-medium">
                     <CheckCircle className="w-4 h-4 text-[#0F6B4F] shrink-0" />
-                    <span>Remboursement intégral si engagements non respectés</span>
+                    <span>{L.trust2}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-primary font-medium">
                     <CheckCircle className="w-4 h-4 text-[#0F6B4F] shrink-0" />
-                    <span>Clôture et viabilisation incluses</span>
+                    <span>{L.trust3}</span>
                   </div>
                 </div>
 
@@ -1230,32 +1511,38 @@ export default function MasterPlanPage({
                 <div className="space-y-2.5 pt-2 border-t border-gray-200">
                   {/* WhatsApp Direct */}
                   <a
-                    href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(`Bonjour ${settings.companyName || 'Sénégal Immobilier Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${selectedParcel.id} (${selectedParcel.dimensions || '150 m²'} - ${selectedParcel.zoneName?.FR || 'Sébikhotane'}).`)}`}
+                    href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(
+                      L.waReserveMessage(
+                        selectedParcel.id,
+                        selectedParcel.dimensions || '150 m²',
+                        selectedParcel.zoneName?.[currentLanguage] || 'Sébikhotane'
+                      )
+                    )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-sm"
+                    className="w-full bg-whatsapp hover:bg-[#128c4a] text-white py-3.5 rounded-inner text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-elev-1"
                   >
                     <MessageCircle className="w-4 h-4 fill-white" />
-                    <span>Réserver ce Lot sur WhatsApp</span>
+                    <span>{L.waReserve}</span>
                   </a>
 
                   <div className="grid grid-cols-2 gap-2">
                     {/* 3D Virtual Tour Button */}
                     <button
                       onClick={() => setTourParcel(selectedParcel)}
-                      className="w-full bg-[#004D40]/10 hover:bg-[#004D40]/20 text-[#004D40] py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                      className="w-full bg-[#004D40]/10 hover:bg-[#004D40]/20 text-[#004D40] py-3 rounded-inner text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>Visite 3D</span>
+                      <span>{L.tour3d}</span>
                     </button>
 
                     {/* Share Parcel Button */}
                     <button
                       onClick={() => setShareParcel(selectedParcel)}
-                      className="w-full bg-gray-100 hover:bg-gray-200 text-primary py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-primary py-3 rounded-inner text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5" />
-                      <span>Partager</span>
+                      <span>{L.share}</span>
                     </button>
                   </div>
 
@@ -1263,21 +1550,21 @@ export default function MasterPlanPage({
                   <button
                     onClick={() => triggerDownload(selectedParcel)}
                     disabled={downloadingId !== null}
-                    className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-primary py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                    className="w-full min-h-[44px] bg-white border border-gray-200 hover:bg-gray-50 text-primary py-2.5 rounded-inner text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                   >
                     {downloadingId === selectedParcel.id ? (
                       <span className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <FileText className="w-3.5 h-3.5 text-secondary-fixed-dim" />
+                      <FileText className="w-3.5 h-3.5 text-gold-ink" />
                     )}
-                    <span>Télécharger Fiche Cadastrale PDF</span>
+                    <span>{L.downloadSheet}</span>
                   </button>
                 </div>
 
               </div>
             ) : (
-              <div className="py-20 text-center text-outline">
-                Sélectionnez une parcelle sur le plan.
+              <div className="py-section text-center text-outline">
+                {L.selectParcel}
               </div>
             )}
           </div>
@@ -1285,25 +1572,25 @@ export default function MasterPlanPage({
         </div>
 
         {/* FINANCIAL SIMULATOR INTERACTIVE TABLE */}
-        <section className="bg-white p-6 md:p-8 rounded-3xl border border-gray-300 shadow-sm space-y-6">
+        <section className="bg-white p-6 md:p-8 rounded-card border border-gray-300 shadow-elev-1 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-[#004D40]">
                 <Calculator className="w-4 h-4" />
-                <span className="text-[10px] uppercase font-bold tracking-wider font-mono">
-                  Échéancier Officiel Sébikhotane
+                <span className="text-micro uppercase font-bold tracking-wider font-mono">
+                  {L.simTag}
                 </span>
               </div>
               <h3 className="font-serif text-2xl font-bold text-primary">
-                Simulateur de Paiement Échelonné (150 m²)
+                {L.simTitle}
               </h3>
               <p className="text-xs text-outline font-light">
-                Choisissez votre apport initial pour adapter la durée de vos mensualités à 300 €/mois.
+                {L.simDesc}
               </p>
             </div>
 
-            <span className="text-xs bg-secondary-fixed/20 text-[#002B1D] font-bold px-3 py-1.5 rounded-xl self-start md:self-auto">
-              Sans Frais de Dossier Bancaire
+            <span className="text-xs bg-secondary-fixed/20 text-[#0f3d2e] font-bold px-3 py-1.5 rounded-inner self-start md:self-auto">
+              {L.simNoFees}
             </span>
           </div>
 
@@ -1315,42 +1602,42 @@ export default function MasterPlanPage({
                 <div
                   key={idx}
                   onClick={() => setSelectedTierIdx(idx)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer select-none space-y-3 ${
+                  className={`p-5 rounded-card border transition-all cursor-pointer select-none space-y-3 ${
                     isSelected
-                      ? 'bg-[#002B1D] text-white border-[#002B1D] shadow-md'
-                      : 'bg-[#FBF9F4] text-primary border-gray-300 hover:border-primary/60 shadow-xs'
+                      ? 'bg-[#0f3d2e] text-white border-[#0f3d2e] shadow-elev-2'
+                      : 'bg-[#FAF9F5] text-primary border-gray-300 hover:border-primary/60 shadow-elev-1'
                   }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${isSelected ? 'text-secondary-fixed' : 'text-outline'}`}>
-                      Option {idx + 1}
+                    <span className={`text-micro font-mono font-bold uppercase tracking-wider ${isSelected ? 'text-secondary-fixed' : 'text-outline'}`}>
+                      {L.simOption} {idx + 1}
                     </span>
                     {idx === 0 && (
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${isSelected ? 'bg-secondary-fixed text-primary' : 'bg-primary text-white'}`}>
-                        Populaire
+                      <span className={`text-micro px-2 py-0.5 rounded-full font-bold uppercase ${isSelected ? 'bg-secondary-fixed text-primary' : 'bg-primary text-white'}`}>
+                        {L.simPopular}
                       </span>
                     )}
                   </div>
 
                   <div>
-                    <span className="text-[9px] uppercase font-bold opacity-70 block">Acompte Initial</span>
+                    <span className="text-micro uppercase font-bold opacity-70 block">{L.simDeposit}</span>
                     <span className="font-serif text-2xl font-bold">{tier.deposit.toLocaleString()} €</span>
                   </div>
 
                   <div className="border-t border-current/10 pt-2.5 space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="opacity-80">Reste à payer :</span>
+                      <span className="opacity-80">{L.simRemaining}</span>
                       <strong>{tier.remaining.toLocaleString()} €</strong>
                     </div>
                     <div className="flex justify-between">
-                      <span className="opacity-80">Mensualité :</span>
+                      <span className="opacity-80">{L.simMonthly}</span>
                       <strong className={isSelected ? 'text-secondary-fixed' : 'text-[#0F6B4F]'}>
-                        {tier.monthly} € / mois
+                        {tier.monthly} {L.perMonth}
                       </strong>
                     </div>
                     <div className="flex justify-between">
-                      <span className="opacity-80">Durée :</span>
-                      <strong>{tier.duration} mois</strong>
+                      <span className="opacity-80">{L.simDuration}</span>
+                      <strong>{tier.duration} {L.months}</strong>
                     </div>
                   </div>
                 </div>
@@ -1363,41 +1650,41 @@ export default function MasterPlanPage({
         <section className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-serif text-xl sm:text-2xl font-bold text-primary">
-                Répertoire Cadastral des Parcelles (150 m²)
+              <h3 className="font-serif text-h3 font-bold text-primary">
+                {L.dirTitle}
               </h3>
               <p className="text-xs text-outline font-light">
-                Sélectionnez une parcelle pour la situer sur le plan cadastral et lancer votre demande.
+                {L.dirDesc}
               </p>
             </div>
 
             {/* Toggle between Tranche 1 and All 54 */}
-            <div className="flex items-center bg-gray-200/80 p-1 rounded-2xl text-xs font-bold self-start sm:self-auto">
+            <div className="flex items-center bg-gray-200/80 p-1 rounded-card text-xs font-bold self-start sm:self-auto">
               <button
                 onClick={() => {
                   setGridTab('phase1');
                   setActiveFilter('Phase1');
                 }}
-                className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                className={`px-4 min-h-[44px] inline-flex items-center rounded-full transition-all duration-400 ease-spring cursor-pointer ${
                   gridTab === 'phase1'
-                    ? 'bg-primary text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-elev-1'
                     : 'text-outline hover:text-primary'
                 }`}
               >
-                Tranche 1 (Lots 1 à 20)
+                {L.dirPhase1}
               </button>
               <button
                 onClick={() => {
                   setGridTab('all');
                   setActiveFilter('All');
                 }}
-                className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                className={`px-4 min-h-[44px] inline-flex items-center rounded-full transition-all duration-400 ease-spring cursor-pointer ${
                   gridTab === 'all'
-                    ? 'bg-primary text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-elev-1'
                     : 'text-outline hover:text-primary'
                 }`}
               >
-                Tous les 54 Lots
+                {L.dirAll}
               </button>
             </div>
           </div>
@@ -1424,27 +1711,27 @@ export default function MasterPlanPage({
                     setSelectedParcel(parcel);
                     window.scrollTo({ top: 320, behavior: 'smooth' });
                   }}
-                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-2.5 ${
+                  className={`p-3.5 rounded-card border transition-all cursor-pointer space-y-2.5 ${
                     isSelected
-                      ? 'bg-[#002B1D] text-white border-[#002B1D] shadow-md ring-2 ring-secondary-fixed'
-                      : 'bg-white text-primary border-gray-300 hover:border-primary hover:shadow-sm'
+                      ? 'bg-[#0f3d2e] text-white border-[#0f3d2e] shadow-elev-2 ring-2 ring-secondary-fixed'
+                      : 'bg-white text-primary border-gray-300 hover:border-primary hover:shadow-elev-1'
                   }`}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-serif font-bold text-base">
                       Lot #{parcel.id < 10 ? `0${parcel.id}` : parcel.id}
                     </span>
-                    <span className={`w-2.5 h-2.5 rounded-full ${isPhase1 ? 'bg-[#25D366]' : 'bg-amber-400'}`} />
+                    <span className={`w-2.5 h-2.5 rounded-full ${isPhase1 ? 'bg-whatsapp' : 'bg-amber-400'}`} />
                   </div>
 
                   {/* Zone and Dimensions */}
                   <div className="space-y-1">
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                    <span className={`text-micro font-bold px-2 py-0.5 rounded-full inline-block ${
                       isSelected ? 'bg-white/20 text-white' : zoneBadgeClass
                     }`}>
-                      {parcel.zoneName?.FR || 'Zone'}
+                      {parcel.zoneName?.[currentLanguage] || L.zoneFallback}
                     </span>
-                    <div className="text-[11px] flex justify-between opacity-80 font-mono">
+                    <div className="text-caption flex justify-between opacity-80 font-mono">
                       <span>{parcel.dimensions || '15 × 10 m'}</span>
                       <span>{parcel.area} m²</span>
                     </div>
@@ -1454,22 +1741,22 @@ export default function MasterPlanPage({
                   <div className="border-t border-current/10 pt-2 flex justify-between items-center text-xs">
                     <span className="font-bold">300 €/m</span>
                     {parcel.status === 'Sold' ? (
-                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider bg-rose-100 text-rose-800">
-                        Vendue
+                      <span className="text-micro font-bold px-1.5 py-0.5 rounded-micro uppercase tracking-wider bg-rose-100 text-rose-800">
+                        {L.sold}
                       </span>
                     ) : parcel.status === 'Reserved' ? (
-                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider bg-amber-100 text-amber-800">
-                        Réservée
+                      <span className="text-micro font-bold px-1.5 py-0.5 rounded-micro uppercase tracking-wider bg-amber-100 text-amber-800">
+                        {L.reserved}
                       </span>
                     ) : isPromo ? (
-                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider ${
+                      <span className={`text-micro font-bold px-1.5 py-0.5 rounded-micro uppercase tracking-wider ${
                         isSelected ? 'bg-secondary-fixed text-primary' : 'bg-emerald-50 text-emerald-800'
                       }`}>
                         ⭐ Promo
                       </span>
                     ) : (
-                      <span className="text-[9px] opacity-70">
-                        {isPhase1 ? 'T1 Disponible' : 'T2'}
+                      <span className="text-micro opacity-70">
+                        {isPhase1 ? L.t1Avail : L.t2}
                       </span>
                     )}
                   </div>

@@ -31,9 +31,9 @@ export function BankingSection({ content }: { content?: Partial<BankingContent> 
   return (
     <section
       id="banking"
-      className="py-16 bg-surface-container-low px-4 md:px-12 border-t border-b border-gray-200 scroll-mt-20"
+      className="py-section bg-surface-container-low px-5 md:px-12 border-t border-b border-gray-200 scroll-mt-20"
     >
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl p-6 sm:p-8 border border-gray-300 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="max-w-4xl mx-auto bg-white rounded-card p-6 sm:p-8 border border-gray-300 shadow-elev-1 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center space-x-2 text-primary font-bold text-sm">
             <Landmark className="w-5 h-5 text-secondary" />
@@ -42,11 +42,11 @@ export function BankingSection({ content }: { content?: Partial<BankingContent> 
           <p className="text-xs sm:text-sm text-on-surface-variant font-light leading-relaxed">
             <RichText as="span" html={c.description} />
           </p>
-          <p className="text-[11px] text-outline italic">⚠️ {c.disclaimer}</p>
+          <p className="text-caption text-outline italic">⚠️ {c.disclaimer}</p>
         </div>
         <button
           onClick={() => openWhatsApp(settings, ui.bankWaMsg)}
-          className="px-6 py-3 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 cursor-pointer shadow-sm"
+          className="px-6 py-3 bg-primary text-white rounded-inner text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 cursor-pointer shadow-elev-1"
         >
           {c.cta}
         </button>

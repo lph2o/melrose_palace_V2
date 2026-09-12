@@ -219,28 +219,28 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
         <div className="relative w-full max-w-md">
           {/* Monogramme + titre */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#fed65b] to-[#d4af37] flex items-center justify-center text-[#241a00] shadow-[0_8px_30px_rgba(254,214,91,0.25)] mb-4">
+            <div className="w-14 h-14 rounded-card bg-gradient-to-br from-[#fed65b] to-[#FED65B] flex items-center justify-center text-[#241a00] shadow-[0_8px_30px_rgba(254,214,91,0.25)] mb-4">
               <Compass className="w-6 h-6" strokeWidth={1.5} />
             </div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-amber-300/70 mb-2">
+            <p className="font-mono text-caption uppercase tracking-[0.35em] text-secondary-fixed/70 mb-2">
               Sénégal Immobilier Consulting
             </p>
             <h1 className="font-serif text-2xl font-bold tracking-tight">Éditeur visuel</h1>
-            <p className="text-xs text-white/40 mt-2 max-w-xs">
+            <p className="text-xs text-white/60 mt-2 max-w-xs">
               Modifiez les sections de la page d'accueil et publiez en un clic.
             </p>
           </div>
 
-          <div className="rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl p-8">
+          <div className="rounded-card bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl p-8">
             {authState === 'loading' ? (
-              <div className="flex items-center justify-center gap-3 text-white/60 text-xs py-6">
+              <div className="flex items-center justify-center gap-3 text-white/70 text-xs py-6">
                 <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
                 Vérification…
               </div>
             ) : (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2">
+                  <label className="block font-mono text-caption uppercase tracking-[0.25em] text-white/60 mb-2">
                     Email
                   </label>
                   <input
@@ -249,11 +249,11 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] ring-1 ring-white/10 text-sm placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-amber-300/60 transition-shadow"
+                    className="w-full px-4 py-3 rounded-inner bg-white/[0.06] ring-1 ring-white/10 text-sm placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-amber-300/60 transition-shadow"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2">
+                  <label className="block font-mono text-caption uppercase tracking-[0.25em] text-white/60 mb-2">
                     Mot de passe
                   </label>
                   <input
@@ -262,12 +262,12 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.06] ring-1 ring-white/10 text-sm placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-amber-300/60 transition-shadow"
+                    className="w-full px-4 py-3 rounded-inner bg-white/[0.06] ring-1 ring-white/10 text-sm placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-amber-300/60 transition-shadow"
                   />
                 </div>
 
                 {authError && (
-                  <p className="p-3 rounded-xl bg-rose-500/10 ring-1 ring-rose-400/30 text-rose-200 text-xs flex items-center gap-2">
+                  <p className="p-3 rounded-inner bg-rose-500/10 ring-1 ring-rose-400/30 text-rose-200 text-xs flex items-center gap-2">
                     <XCircle className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                     {authError}
                   </p>
@@ -276,7 +276,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
                 <button
                   type="submit"
                   disabled={authSubmitting}
-                  className="w-full py-3 rounded-full bg-gradient-to-br from-[#fed65b] to-[#d4af37] text-[#241a00] text-xs font-bold uppercase tracking-widest disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 transition-all hover:brightness-105 active:scale-[0.98] shadow-[0_8px_24px_rgba(254,214,91,0.2)]"
+                  className="w-full py-3 rounded-full bg-gradient-to-br from-[#fed65b] to-[#FED65B] text-[#241a00] text-xs font-bold uppercase tracking-widest disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 transition-all hover:brightness-105 active:scale-[0.98] shadow-[0_8px_24px_rgba(254,214,91,0.2)]"
                 >
                   {authSubmitting ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Lock className="w-3.5 h-3.5" strokeWidth={2} />}
                   {authSubmitting ? 'Connexion…' : 'Se connecter'}
@@ -285,7 +285,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
                 <button
                   type="button"
                   onClick={onBack}
-                  className="w-full text-center text-[11px] text-white/40 hover:text-white/70 cursor-pointer transition-colors"
+                  className="w-full text-center text-caption text-white/60 hover:text-white/70 cursor-pointer transition-colors"
                 >
                   Retour au site
                 </button>
@@ -303,12 +303,12 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
       <div className="sticky top-0 z-50 flex flex-wrap items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 bg-[#0d0f11]/92 backdrop-blur border-b border-white/[0.07]">
         {/* Identité */}
         <div className="hidden sm:flex items-center gap-3 mr-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#fed65b] to-[#d4af37] flex items-center justify-center text-[#241a00] shadow-[0_4px_14px_rgba(254,214,91,0.25)]">
+          <div className="w-8 h-8 rounded-inner bg-gradient-to-br from-[#fed65b] to-[#FED65B] flex items-center justify-center text-[#241a00] shadow-[0_4px_14px_rgba(254,214,91,0.25)]">
             <Compass className="w-4 h-4" strokeWidth={1.5} />
           </div>
           <div className="leading-tight">
-            <p className="text-[11px] font-semibold tracking-tight">Éditeur visuel</p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/35">
+            <p className="text-caption font-semibold tracking-tight">Éditeur visuel</p>
+            <p className="font-mono text-micro uppercase tracking-[0.25em] text-white/60">
               page : {puckPageId(language)}
             </p>
           </div>
@@ -320,7 +320,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
           {hiddenSectionCount(settings) > 0 && (
             <span
               title="Ces sections restent dans la composition et sont modifiables ici, mais l'Espace Gérant les masque sur le site public (onglet « Sections »)."
-              className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-white/45"
+              className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-white/60"
             >
               <EyeOff className="w-3.5 h-3.5" strokeWidth={1.5} />
               {hiddenSectionCount(settings)} section(s) masquée(s) sur le site
@@ -353,7 +353,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
             </span>
           )}
           {save.kind === 'idle' && isSupabaseConfigured && (
-            <span className="hidden xl:inline-flex items-center gap-2 text-white/30">
+            <span className="hidden xl:inline-flex items-center gap-2 text-white/60">
               <Cloud className="w-3.5 h-3.5" strokeWidth={1.5} />
               Non publié
             </span>
@@ -361,15 +361,15 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
 
           {/* Sélecteur de langue */}
           <div className="flex items-center rounded-full bg-white/[0.05] ring-1 ring-white/10 p-0.5">
-            <Globe className="w-3.5 h-3.5 text-white/40 mx-1.5 hidden sm:block" strokeWidth={1.5} />
+            <Globe className="w-3.5 h-3.5 text-white/60 mx-1.5 hidden sm:block" strokeWidth={1.5} />
             {(['FR', 'EN'] as Language[]).map((lang) => (
               <button
                 key={lang}
                 onClick={() => setLanguage(lang)}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest cursor-pointer transition-all duration-200 ${
+                className={`px-3 py-1.5 rounded-full text-caption font-bold uppercase tracking-widest cursor-pointer transition-all duration-200 ${
                   language === lang
                     ? 'bg-amber-300 text-[#241a00] shadow-[0_2px_10px_rgba(254,214,91,0.35)]'
-                    : 'text-white/60 hover:text-white'
+                    : 'text-white/70 hover:text-white'
                 }`}
               >
                 {lang}
@@ -380,7 +380,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
           <button
             onClick={handleResetToDefaults}
             title="Remplacer la composition publiée par le contenu par défaut"
-            className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-[11px] text-white/60 hover:text-white hover:bg-white/10 cursor-pointer transition-all"
+            className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-caption text-white/70 hover:text-white hover:bg-white/10 cursor-pointer transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
             Contenu par défaut
@@ -388,7 +388,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
 
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-[11px] text-white/60 hover:text-white hover:bg-white/10 cursor-pointer transition-all"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-caption text-white/70 hover:text-white hover:bg-white/10 cursor-pointer transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span className="hidden md:inline">Espace Gérant</span>
@@ -400,7 +400,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
       {/* Détail de l'erreur de publication (si besoin) */}
       {save.kind === 'error' && (
         <div className="px-4 py-2 flex items-center justify-center">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-500/10 ring-1 ring-rose-400/30 text-rose-200 text-[11px] max-w-2xl">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-card bg-rose-500/10 ring-1 ring-rose-400/30 text-rose-200 text-caption max-w-2xl">
             <XCircle className="w-3.5 h-3.5 shrink-0" strokeWidth={1.5} />
             {save.reason}
           </span>
@@ -408,7 +408,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
       )}
 
       {loadState === 'loading' ? (
-        <div className="min-h-[60vh] flex items-center justify-center gap-3 text-white/50 text-xs">
+        <div className="min-h-[60dvh] flex items-center justify-center gap-3 text-white/60 text-xs">
           <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
           Chargement de la composition…
         </div>

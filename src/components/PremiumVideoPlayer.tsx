@@ -253,9 +253,9 @@ export default function PremiumVideoPlayer({
       onTouchStart={bumpControls}
       onClick={togglePlay}
       className={`group/player relative isolate overflow-hidden bg-black outline-none
-        ${isFullscreen ? 'rounded-none' : 'rounded-xl'}
-        ring-1 ring-[#D4AF37]/25 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]
-        focus-visible:ring-[#D4AF37]/60 transition-shadow cursor-pointer select-none ${className}`}
+        ${isFullscreen ? 'rounded-none' : 'rounded-inner'}
+        ring-1 ring-[#FED65B]/25 shadow-elev-3
+        focus-visible:ring-[#FED65B]/60 transition-shadow cursor-pointer select-none ${className}`}
       style={{ transitionTimingFunction: EASE }}
     >
       <video
@@ -271,13 +271,13 @@ export default function PremiumVideoPlayer({
       {/* ---------- Elegant top badges ---------- */}
       <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 pointer-events-none z-20">
         {badgeLeft && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1 text-[9px] sm:text-[10px] font-medium uppercase tracking-[0.18em] text-[#F0DFA8] ring-1 ring-[#D4AF37]/40 shadow-lg">
-            <span className="w-1 h-1 rounded-full bg-[#D4AF37]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md px-3 py-1 text-micro sm:text-caption font-medium uppercase tracking-[0.18em] text-[#FED65B] ring-1 ring-[#FED65B]/40 shadow-elev-2">
+            <span className="w-1 h-1 rounded-full bg-[#FED65B]" />
             {badgeLeft}
           </span>
         )}
         {badgeRight && (
-          <span className="inline-flex items-center rounded-full bg-black/45 backdrop-blur-md px-2.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.14em] text-white/90 ring-1 ring-white/15 shadow-lg">
+          <span className="inline-flex items-center rounded-full bg-black/45 backdrop-blur-md px-2.5 py-1 text-micro sm:text-caption font-bold uppercase tracking-[0.14em] text-white/90 ring-1 ring-white/15 shadow-elev-2">
             {badgeRight}
           </span>
         )}
@@ -290,9 +290,9 @@ export default function PremiumVideoPlayer({
           aria-label={isPlaying ? 'Pause' : 'Play'}
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
           className={`pointer-events-auto relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center
-            bg-black/35 backdrop-blur-md ring-1 ring-[#D4AF37]/50 text-[#F3E3AC]
+            bg-black/35 backdrop-blur-md ring-1 ring-[#FED65B]/50 text-[#FED65B]
             shadow-[0_0_40px_rgba(212,175,55,0.25)]
-            transition-all duration-500 hover:scale-105 hover:bg-black/50 active:scale-95
+            transition-all duration-400 hover:scale-105 hover:bg-black/50 active:scale-95
             ${isPlaying && !isWaiting ? 'scale-75 opacity-0' : 'scale-100 opacity-100'}`}
           style={{ transitionTimingFunction: EASE }}
         >
@@ -301,11 +301,11 @@ export default function PremiumVideoPlayer({
           ) : (
             <span className="relative block w-7 h-7 sm:w-8 sm:h-8">
               <Play
-                className={`absolute inset-0 w-full h-full fill-current transition-all duration-300
+                className={`absolute inset-0 w-full h-full fill-current transition-all duration-400
                   ${isPlaying ? 'scale-50 opacity-0' : 'scale-100 opacity-100 translate-x-0.5'}`}
               />
               <Pause
-                className={`absolute inset-0 w-full h-full fill-current transition-all duration-300
+                className={`absolute inset-0 w-full h-full fill-current transition-all duration-400
                   ${isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
               />
             </span>
@@ -316,11 +316,11 @@ export default function PremiumVideoPlayer({
       {/* ---------- Custom control bar (hover reveal) ---------- */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`absolute inset-x-3 bottom-3 z-30 transition-all duration-500
+        className={`absolute inset-x-3 bottom-3 z-30 transition-all duration-400
           ${controlsVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0 pointer-events-none'}`}
         style={{ transitionTimingFunction: EASE }}
       >
-        <div className="rounded-2xl bg-black/55 backdrop-blur-md ring-1 ring-[#D4AF37]/25 shadow-2xl px-3 sm:px-4 pt-2.5 pb-2 space-y-1.5">
+        <div className="rounded-card bg-black/55 backdrop-blur-md ring-1 ring-[#FED65B]/25 shadow-elev-3 px-3 sm:px-4 pt-2.5 pb-2 space-y-1.5">
           {/* Seek bar with hover time preview */}
           <div
             ref={progressRef}
@@ -344,23 +344,23 @@ export default function PremiumVideoPlayer({
               />
               {/* Gold progress (GPU-friendly scaleX) */}
               <div
-                className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#B8942E] via-[#D4AF37] to-[#F3E3AC] origin-left"
+                className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#8C7A53] via-[#FED65B] to-[#FED65B] origin-left"
                 style={{ transform: `scaleX(${progress})` }}
               />
             </div>
 
             {/* Playhead knob */}
             <div
-              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#F3E3AC]
-                ring-2 ring-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.7)] pointer-events-none
-                transition-opacity duration-300 ${hoverRatio !== null || dragging ? 'opacity-100' : 'opacity-0'}`}
+              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#FED65B]
+                ring-2 ring-[#FED65B] shadow-[0_0_12px_rgba(212,175,55,0.7)] pointer-events-none
+                transition-opacity duration-400 ${hoverRatio !== null || dragging ? 'opacity-100' : 'opacity-0'}`}
               style={{ left: `${progress * 100}%` }}
             />
 
             {/* Hover time preview tooltip */}
             <div
-              className={`absolute bottom-full mb-1.5 -translate-x-1/2 rounded-md bg-black/85 backdrop-blur-md
-                ring-1 ring-[#D4AF37]/40 px-2 py-0.5 text-[10px] font-mono tabular-nums text-[#F0DFA8]
+              className={`absolute bottom-full mb-1.5 -translate-x-1/2 rounded-micro bg-black/85 backdrop-blur-md
+                ring-1 ring-[#FED65B]/40 px-2 py-0.5 text-caption font-mono tabular-nums text-[#FED65B]
                 pointer-events-none transition-opacity duration-200
                 ${hoverRatio !== null && !dragging ? 'opacity-100' : 'opacity-0'}`}
               style={{ left: hoverRatio !== null ? `${hoverRatio * 100}%` : '0%' }}
@@ -376,25 +376,25 @@ export default function PremiumVideoPlayer({
               type="button"
               aria-label={isPlaying ? 'Pause' : 'Play'}
               onClick={togglePlay}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
-                hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer shrink-0"
+              className="tap-44 w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
+                hover:bg-white/10 active:scale-90 transition-all duration-400 cursor-pointer shrink-0"
             >
               <span className="relative block w-4 h-4">
                 <Play
-                  className={`absolute inset-0 w-full h-full fill-current transition-all duration-300
+                  className={`absolute inset-0 w-full h-full fill-current transition-all duration-400
                     ${isPlaying ? 'scale-50 opacity-0' : 'scale-100 opacity-100 translate-x-px'}`}
                 />
                 <Pause
-                  className={`absolute inset-0 w-full h-full fill-current transition-all duration-300
+                  className={`absolute inset-0 w-full h-full fill-current transition-all duration-400
                     ${isPlaying ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
                 />
               </span>
             </button>
 
             {/* Time */}
-            <span className="font-mono text-[10px] sm:text-[11px] tabular-nums text-white/85 tracking-wide shrink-0">
+            <span className="font-mono text-caption sm:text-caption tabular-nums text-white/85 tracking-wide shrink-0">
               {formatTime(progress * duration)}
-              <span className="text-white/40"> / {formatTime(duration)}</span>
+              <span className="text-white/60"> / {formatTime(duration)}</span>
             </span>
 
             <div className="flex-1" />
@@ -405,8 +405,8 @@ export default function PremiumVideoPlayer({
                 type="button"
                 aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
                 onClick={toggleMute}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
-                  hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer"
+                className="tap-44 w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
+                  hover:bg-white/10 active:scale-90 transition-all duration-400 cursor-pointer"
               >
                 <VolIcon className="w-4 h-4" />
               </button>
@@ -418,7 +418,7 @@ export default function PremiumVideoPlayer({
                 value={isMuted ? 0 : volume}
                 onChange={onVolumeInput}
                 aria-label="Volume"
-                className={`h-1 accent-[#D4AF37] cursor-pointer transition-all duration-500
+                className={`tap-44 h-1 accent-[#FED65B] cursor-pointer transition-all duration-400
                   w-14 opacity-100 sm:w-0 sm:opacity-0 sm:group-hover/vol:w-14 sm:group-hover/vol:opacity-100`}
                 style={{ transitionTimingFunction: EASE }}
               />
@@ -429,8 +429,8 @@ export default function PremiumVideoPlayer({
               type="button"
               aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               onClick={toggleFullscreen}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
-                hover:bg-white/10 active:scale-90 transition-all duration-300 cursor-pointer shrink-0"
+              className="tap-44 w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white
+                hover:bg-white/10 active:scale-90 transition-all duration-400 cursor-pointer shrink-0"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>

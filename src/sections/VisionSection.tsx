@@ -54,7 +54,9 @@ export function defaultVisionContent(lang: Language, settings: SiteSettings): Vi
     viewPlanLabel: ui.visionViewPlan,
     certifiedBadge: ui.visionCertifiedBadge,
     domainName: ui.visionDomainName,
-    dashedLegend: ui.visionDashedLegendEn,
+    // `visionDashedLegend` est déjà décliné par langue dans TRANSLATIONS :
+    // utiliser la variante `…En` affichait de l'anglais sur le site français.
+    dashedLegend: ui.visionDashedLegend,
     explorePlanCta: ui.heroExplorePlan,
     imageAlt: ui.aerialImgAlt,
   };
@@ -74,16 +76,16 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
   const [visionViewMode, setVisionViewMode] = useState<'overlay' | 'plan'>('overlay');
 
   return (
-    <section id="vision" className="py-20 px-4 md:px-12 max-w-7xl mx-auto scroll-mt-20">
+    <section id="vision" className="py-section px-5 md:px-12 max-w-7xl mx-auto scroll-mt-20">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         {/* Left Visual Area - Photo Drone Orthophoto des 54 Parcelles & Plan */}
-        <div className="lg:col-span-6 relative h-[440px] sm:h-[500px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl border border-gray-300 group bg-neutral-900">
+        <div className="lg:col-span-6 relative h-[440px] sm:h-[500px] md:h-[540px] rounded-card overflow-hidden shadow-elev-3 border border-gray-300 group bg-neutral-900">
           {/* View Mode 1: Authentic Drone Photo with 54 plots embedded on the ground */}
           {visionViewMode === 'overlay' ? (
             <img
               src={c.image || AERIAL_IMAGE_FALLBACK}
               alt={c.imageAlt}
-              className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.03]"
+              className="w-full h-full object-cover transition-transform duration-700 ease-spring group-hover:scale-[1.03]"
               referrerPolicy="no-referrer"
               loading="lazy"
               decoding="async"
@@ -93,7 +95,7 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
             <div className="w-full h-full bg-[#EFECE6] relative flex items-center justify-center p-4">
               <svg
                 viewBox="20 40 960 620"
-                className="w-full h-full max-h-[460px] select-none filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.15)]"
+                className="w-full h-full max-h-[460px] select-none filter drop-shadow-elev-2"
               >
                 <defs>
                   <filter id="plan-shadow" x="-10%" y="-10%" width="120%" height="120%">
@@ -191,7 +193,7 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
           <div className="absolute top-[16%] sm:top-[17%] left-[50%] -translate-x-1/2 -translate-y-full pointer-events-none z-20 flex flex-col items-center">
             <div className="relative flex flex-col items-center pointer-events-auto">
               <svg
-                className="w-7 h-9 sm:w-8 sm:h-10 filter drop-shadow-[0_10px_16px_rgba(0,0,0,0.7)]"
+                className="w-7 h-9 sm:w-8 sm:h-10 filter drop-shadow-elev-3"
                 viewBox="0 0 24 32"
                 fill="none"
               >
@@ -208,24 +210,24 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
 
           {/* Top Switcher & Badges */}
           <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-30 pointer-events-auto">
-            <span className="inline-flex items-center gap-1.5 bg-black/75 backdrop-blur-md text-amber-300 border border-amber-400/40 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide shadow-md">
+            <span className="inline-flex items-center gap-1.5 bg-black/75 backdrop-blur-md text-secondary-fixed border border-amber-400/40 px-3 py-1.5 rounded-full text-caption font-semibold tracking-wide shadow-elev-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               {visionViewMode === 'overlay' ? c.overlayBadge : c.planBadge}
             </span>
 
-            <div className="flex items-center bg-black/75 backdrop-blur-md border border-white/20 p-1 rounded-xl space-x-1 text-[10px] font-bold text-white">
+            <div className="flex items-center bg-black/75 backdrop-blur-md border border-white/20 p-1 rounded-inner space-x-1 text-caption font-bold text-white">
               <button
                 onClick={() => setVisionViewMode('overlay')}
-                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                  visionViewMode === 'overlay' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/80'
+                className={`px-3 min-h-[44px] inline-flex items-center rounded-full transition-all duration-400 ease-spring cursor-pointer ${
+                  visionViewMode === 'overlay' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/85'
                 }`}
               >
                 {c.viewDroneLabel}
               </button>
               <button
                 onClick={() => setVisionViewMode('plan')}
-                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                  visionViewMode === 'plan' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/80'
+                className={`px-3 min-h-[44px] inline-flex items-center rounded-full transition-all duration-400 ease-spring cursor-pointer ${
+                  visionViewMode === 'plan' ? 'bg-secondary-fixed text-primary' : 'hover:bg-white/10 text-white/85'
                 }`}
               >
                 {c.viewPlanLabel}
@@ -236,11 +238,11 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
           {/* Bottom Info Bar with link to Masterplan */}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 z-20 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
             <div>
-              <span className="bg-secondary-fixed text-primary px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider shadow-xs">
+              <span className="bg-secondary-fixed text-primary px-2.5 py-0.5 rounded-micro text-micro font-bold uppercase font-mono tracking-wider shadow-elev-1">
                 {c.certifiedBadge}
               </span>
               <h4 className="font-serif font-bold text-base sm:text-lg text-white">{c.domainName}</h4>
-              <p className="text-[11px] text-white/90 font-light">{c.dashedLegend}</p>
+              <p className="text-caption text-white/90 font-light">{c.dashedLegend}</p>
             </div>
 
             <button
@@ -248,7 +250,7 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
                 setActiveTab('masterplan');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="bg-white/15 hover:bg-white/25 border border-white/40 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer backdrop-blur-md shrink-0 shadow-md"
+              className="bg-white/15 hover:bg-white/25 border border-white/40 text-white text-caption font-semibold px-4 min-h-[44px] rounded-full transition-all duration-400 ease-spring flex items-center space-x-1.5 cursor-pointer backdrop-blur-md shrink-0 shadow-elev-2"
             >
               <span>{c.explorePlanCta}</span>
               <ChevronRight className="w-3.5 h-3.5 text-secondary-fixed" />
@@ -259,10 +261,10 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
         {/* Right Rich Text Information */}
         <div className="lg:col-span-6 space-y-6">
           <div className="space-y-2">
-            <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
+            <span className="font-mono font-bold text-micro uppercase text-secondary tracking-widest block">
               {c.sectionTag}
             </span>
-            <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary leading-tight">
+            <h2 className="reveal font-serif text-h2 font-bold text-primary leading-tight">
               <RichText as="span" html={c.title} />
             </h2>
           </div>
@@ -276,7 +278,7 @@ export function VisionSection({ content }: { content?: Partial<VisionContent> })
             {c.pillars.map((pillar, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-white border border-gray-300 shadow-xs space-y-2 hover:border-gray-400 hover:shadow-sm transition-all"
+                className="p-5 rounded-card bg-white border border-gray-300 shadow-elev-1 space-y-2 hover:border-gray-400 hover:shadow-elev-1 transition-all"
               >
                 <div className="flex items-center space-x-2 text-primary font-bold">
                   <SectionIcon name={pillar.icon} className="w-5 h-5 text-secondary" />

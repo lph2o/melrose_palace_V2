@@ -38,10 +38,22 @@ composition Puck** stockée dans Supabase, éditable en drag-and-drop depuis
 | `src/sections/*.tsx` | Les sections elles-mêmes, réutilisées par le site **et** par le canevas |
 | `src/sections/icons.tsx` | Registre d'icônes sélectionnables dans Puck (champs `select`) |
 | `src/puck/MediaField.tsx` | Champ `custom` média : `imageField()` / `videoField()` — aperçu + téléversement Supabase Storage + URL |
+| `src/index.css` | **Système de design** : `@theme` (échelle typographique, palette à rôles, rayons, élévations, courbes), `:root` (empilement, `--nav-h`, `--section-y`), classes `.py-section` / `.tap-44` / `.reveal` / `.menu-stagger` |
+| `src/ui/*` | **Primitives réutilisables** : `Button`, `Card` / `Panel`, `Section` / `SectionHeading` / `Eyebrow`, `Badge`, `Field` / `TextArea` / `Select` — aucune section ne doit réinventer un bouton ou un champ |
+| `src/lib/reveal.ts` | `initScrollReveal()` : apparition au scroll globale (IntersectionObserver + MutationObserver), monté une fois dans `App` |
+| `docs/plans/2026-09-12-refonte-design-premium-design.md` | **Référence design** : audit mesuré, jetons, règles opposables, conventions pour la suite |
+| `public/mobile-audit.html` | Harnais d'audit mobile (contenu **et design**) — `npm run audit:mobile` |
 | `src/site/SiteContext.tsx` | Dépendances runtime des sections (settings, parcels, navigation) |
 | `src/site/sectionsCatalog.ts` | **Catalogue des sections** (clé Puck + libellé + ancre HTML + icône + description) et helpers de visibilité (`hiddenSectionTypes`, `hiddenAnchors`, `sectionLabel`) — partagé par l'Espace Gérant, la bibliothèque de blocs et la navigation. N'importe **rien** de Puck : ne jamais y ajouter d'import éditeur |
 | `src/components/AdminSectionsTab.tsx` | Onglet « Sections » de l'Espace Gérant : interrupteurs afficher/masquer (`settings.hiddenSections`) |
 | `src/site/whatsapp.ts` | Ouverture WhatsApp partagée par les sections |
+| `src/components/BrochureModal.tsx` | Lecteur de la plaquette officielle : mode **Pages** (images pré-rendues) + mode **PDF** (iframe) + téléchargement |
+| `src/components/ShareSiteModal.tsx` | Partage du site (WhatsApp, Facebook, X, LinkedIn, Telegram, e-mail, copie de lien, Web Share natif) |
+| `src/components/ShareParcelModal.tsx` | Partage d'une parcelle : fiche digitale, lien profond `?plot=N`, WhatsApp/email + 4 réseaux |
+| `src/lib/date.ts` | `formatEditorialDate()` : traduit les mois français saisis dans l'Espace Gérant pour les visiteurs EN |
+| `src/seo/routeMeta.json` | **source unique** des textes SEO / partage par route et par langue (lue par `src/lib/seo.ts` **et** par le postbuild) |
+| `scripts/prerender-routes.cjs` | Postbuild : écrit un `index.html` par route avec ses balises Open Graph / Twitter (crawlers sans JS) |
+| `scripts/make-og-image.swift` | Génère les cartes de partage 1200×630 (`public/og/*.jpg`) |
 | `src/lib/supabase.ts` | `fetchPuckPage` / `upsertPuckPage` / `clearPuckPage` |
 | `supabase/schema.sql` | Table `puck_pages` + RLS + publication temps réel |
 
@@ -236,6 +248,52 @@ Aucune migration de schéma n'est nécessaire pour un nouveau bloc : `data` est 
 `jsonb` libre. Le bloc n'existe que pour les pages publiées **après** son ajout ;
 les compositions existantes l'ignorent simplement.
 
+## Assets publics & contenus dérivés
+
+Quelques contenus publics sont **générés à partir d'un fichier source** et doivent
+être régénérés quand la source change :
+
+| Source | Dérivé | Régénération |
+| --- | --- | --- |
+| `public/pdf/Dun-Tni-Brochure-Premium.pdf` (7 pages) | `public/pdf/plaquette/page-1…7.jpg` (1100 px de large, ≈ 230 ko/page) | `swift scripts/pdf-to-jpg.swift public/pdf/Dun-Tni-Brochure-Premium.pdf public/pdf/plaquette 1100` |
+
+Pourquoi des images : un `<iframe>` PDF n'affiche rien sur iOS et dans beaucoup de
+WebView. `BrochureModal` affiche donc les pages pré-rendues par défaut (lecteur
+paginé avec vignettes, flèches ←/→ au clavier) et le PDF d'origine en mode
+« PDF ». Le téléchargement du PDF reste présent dans les deux modes.
+
+> Si le gérant remplace la plaquette (Espace Gérant → Plaquette PDF) par un autre
+> fichier, `BrochureModal` bascule automatiquement sur le mode PDF : les images ne
+> correspondent plus au document. Régénérer les pages puis mettre à jour
+> `RENDERED_BROCHURE_FILE` / `RENDERED_PAGE_COUNT` dans le composant.
+
+| Source | Dérivé | Régénération |
+| --- | --- | --- |
+| `src/seo/routeMeta.json` (accroches) + une photo de `public/images/` | `public/og/og-{home,plan}-{fr,en}.jpg` (1200×630) | `swiftc -O scripts/make-og-image.swift -o /tmp/make-og && /tmp/make-og --help` (voir l'en-tête du script : une commande par visuel) |
+
+### Balises de partage par route (à ne pas casser)
+
+Les crawlers sociaux (WhatsApp, Facebook, LinkedIn, X) **n'exécutent pas le JS** :
+ils lisent le HTML servi. Le build écrit donc un fichier par route —
+`dist/fr/plan/index.html` etc. — via `scripts/prerender-routes.cjs` (postbuild),
+avec l'origine absolue du domaine dans `og:image` / `og:url`.
+
+Règles :
+
+1. **Toute accroche SEO ou de partage se modifie dans `src/seo/routeMeta.json`**,
+   jamais dans les balises de `index.html` (le bloc entre les marqueurs
+   `<!-- seo:route:start -->` et `<!-- seo:route:end -->` est réécrit au build ;
+   ce qui s'y trouve n'est que le repli servi en dev).
+2. Ajouter une **nouvelle route publique** ⇒ une entrée dans `routeMeta.json`
+   (`path` + `meta` par langue) **et** dans la liste `views` de
+   `scripts/generate-seo-files.cjs` (sitemap). Le pré-rendu suit
+   automatiquement.
+3. `og:image` doit rester une **URL absolue** : un chemin relatif est ignoré par
+   les crawlers. Le postbuild l'absolutise, `src/lib/seo.ts` fait de même à
+   l'exécution.
+4. `dist/admin/**` est généré avec `noindex` : ne pas le supprimer, sinon
+   `/admin` hérite du titre et de la carte de la page d'accueil.
+
 ## Ajouter une dépendance runtime à une section
 
 Si une section a besoin de quelque chose qui n'est pas sérialisable (settings,
@@ -344,13 +402,135 @@ produit un `css-syntax-error` d'esbuild au build.
 - Les interactions du canevas (CTA, FAQ, formulaire) sont neutralisées via
   `editorContext` : cliquer dans l'éditeur ne doit jamais naviguer hors canevas.
 
+## Règles de design (système de jetons)
+
+Depuis la refonte du 2026-09-12, **aucune valeur visuelle ne s'écrit à la main**
+dans un composant. La référence complète est
+`docs/plans/2026-09-12-refonte-design-premium-design.md` ; les jetons sont dans
+`@theme` (`src/index.css`).
+
+Interdits (l'audit les signale) :
+
+| À ne jamais écrire | À utiliser |
+| --- | --- |
+| `text-[11px]`, `text-[9px]` | `text-micro` (11 px), `text-caption` (13 px), `text-sm` (15 px) |
+| `text-2xl md:text-4xl` pour un titre de section | `text-h2` ; titre de page : `text-h1` |
+| `rounded-xl`, `rounded-2xl`, `rounded-[2rem]` | `rounded-card` (20), `rounded-inner` (14), `rounded-micro` (8) |
+| `shadow-md`, `shadow-2xl`, `shadow-[0_…]` | `shadow-elev-1` / `-2` / `-3`, `shadow-inset-highlight` |
+| `#D4AF37`, `#8C7A53` (texte), `#FBF9F4` | `secondary-fixed` / `text-gold-ink` / `bg-surface` |
+| `text-white/40`, `text-white/50` | quatre niveaux seulement : `/60`, `/70`, `/85`, `/90` |
+| `ease-in-out`, `duration-300` | `ease-spring` / `ease-out-expo`, `duration-200/400/700` |
+| `border-gray-300` | `border-line` (les gris Tailwind sont déjà redéfinis en hairlines chaudes) |
+| `py-20` sur une section | `py-section` (96 → 128 px) |
+| `z-50`, `z-[110]` | `z-[var(--z-nav)]`, `--z-promo`, `--z-menu`, `--z-modal`, `--z-progress`, `--z-toast` |
+| `min-h-[92vh]` | `min-h-[92dvh]` (saut de viewport sur iOS Safari) |
+| `bottom-5 right-5` sur un élément collé au bord | `fab-safe` (`max(retrait, env(safe-area-inset-*))`) |
+| `pt-[56px]`, `top-16` sous une barre fixe | `var(--nav-h)` — mesuré par `ResizeObserver`, jamais en dur |
+| `text-caption` / `text-xs` sur une étiquette en majuscules | `text-micro` (11 px) — le 13 px est réservé au texte de phrase |
+
+Marges de sécurité iOS : le `viewport` est en `viewport-fit=cover`, donc **chaque
+zone collée à un bord réserve elle-même sa marge** avec `--safe-top` / `-right` /
+`-bottom` / `-left` (classes `safe-t`, `safe-x`, `safe-b`, `sheet-safe`,
+`fab-safe`, `toast-safe`). Une zone collée à un bord sans marge `safe-*` laisse
+le contenu sous l'encoche ou sous la barre d'accueil. Hors de ces zones,
+`body { padding-left/right }` protège le contenu courant en paysage.
+
+Registre des libellés (règle 2 du document de design) : **majuscules +
+interlettrage `tracking-*` ⇒ `text-micro` (11 px)**, jamais 13 px. Les contrôles
+(`button`, `a`, intitulés de champ) sont exemptés : une action reste lisible
+avant d'être élégante. Une entrée de menu mobile se dimensionne comme un corps
+confortable (`text-base`, 16 px), pas comme un sous-titre.
+
+Vérifié par l'audit : **aucun texte d'interface sous 11 px** (le texte SVG du plan
+est exclu — unités vectorielles), **aucune cible tactile sous 44 px**, **aucun
+libellé capitales au-dessus de 11 px**, aucun
+chevauchement du chrome fixe, **contraste ≥ 4,5:1**, un seul `h1` par page.
+
+### Cibles tactiles
+
+44×44 px minimum. Deux outils selon le cas :
+
+- `min-h-[44px]` quand le dessin peut grandir (boutons pleine largeur, champs) ;
+- la classe `tap-44` quand la cible doit s'étendre **sans grossir le glyphe**
+  (icônes, pilules de filtre). Elle est déclarée dans `@layer components`, donc
+  elle ne peut jamais écraser un `absolute` / `fixed` utilitaire.
+
+### Primitives à réutiliser (`src/ui/`)
+
+`Button` (+ icône de fuite en pastille), `Card` / `Panel` (double coque),
+`Section` / `SectionHeading` / `Eyebrow`, `Badge`, `Field` / `TextArea` / `Select`.
+Un nouveau bloc éditable s'appuie dessus plutôt que de réinventer un bouton.
+
+### Apparition au scroll
+
+Poser la classe `reveal` sur les blocs qui doivent monter en fondu. Le contrôleur
+est global (`src/lib/reveal.ts`, monté une fois dans `App`) : rien à câbler côté
+section, et les blocs rendus par Puck sont repris automatiquement. L'état masqué
+n'existe qu'après le passage de `html.reveal-ready` — sans JavaScript, le contenu
+reste lisible.
+
+### Modales et feuilles glissantes (`src/ui/ModalShell.tsx`)
+
+Toute modale passe par cette coque — portail dans `document.body`, feuille ancrée
+en bas sous 640 px avec poignée et fermeture au glissé, carte centrée au-delà,
+verrou de défilement, piège de focus, `dvh`, marges `env(safe-area-inset-*)`.
+
+**Le bouton de fermeture doit s'appeler `close()` issu de `useModalClose()`**,
+jamais la prop `onClose` directement : `onClose` démonte la modale sans jouer
+l'animation de sortie, et l'ancienne version du hook (contexte React) était
+inerte parce que la coque est l'*enfant* de la modale — `useContext` y lisait
+toujours la valeur par défaut. Échap, le fond et le glissé fonctionnaient, ce qui
+masquait le défaut. `closeRef` est la seule voie correcte.
+
+### Scènes 3D (`src/components/VirtualTourModal.tsx`)
+
+La visite 3D est un moteur de projection logiciel rendu en SVG, sans dépendance.
+Trois règles valent pour toute scène ajoutée ou modifiée :
+
+1. **Trier les faces** (algorithme du peintre) : couche d'abord (sol → dallage →
+bâti → toiture), profondeur ensuite. Peindre dans l'ordre du code se voit à la
+première rotation.
+2. **Éclairer les faces** : normale orientée par le centroïde du solide, produit
+scalaire avec un vecteur soleil par heure, et une exposition par heure pour que
+la nuit reste sombre. L'ombre portée et l'éclairage descendent du **même**
+vecteur lumière.
+3. **Rendre la scène manipulable** : glissé (orbite), pincement et molette
+(zoom — la molette s'écoute nativement et non en passif), flèches du clavier sur
+un conteneur focalisable.
+4. **Ancrer les objets au sol** : ombre portée déduite de la hauteur du soleil
+(`h × horizontal ÷ vertical`, enveloppe convexe du contour balayé, plusieurs
+passes pour la pénombre) et occlusion ambiante de contact (dégradé radial en
+`userSpaceOnUse`, qui s'éteint avant le bord de la forme porteuse). Leur
+empilement est **fixe** — couches fractionnaires — sinon le tri par profondeur
+l'inverse avec la caméra.
+
+**Interdit : les filtres SVG** (`feGaussianBlur`) sur les éléments animés. La
+rotation automatique redessine à chaque image ; le flou s'obtient par empilement
+de formes, qui se paie en éléments et pas en repaints.
+
+Ne jamais afficher une instrumentation inventée (l'ancien `FPS: 60.0_STABLE`) :
+exposer les valeurs réelles (`YAW`, `PITCH`, `ZOOM`).
+
 ## Vérification
 
 ```bash
-npm run lint      # tsc --noEmit
-npm run build     # vite build (+ génération robots.txt / sitemap.xml)
+npm run lint          # tsc --noEmit
+npm run build         # vite build (+ robots.txt / sitemap.xml / prerender des routes)
+npm run audit:mobile  # audite le rendu mobile : contenu ET design (74 contrôles)
 ```
 
-Il n'existe pas encore de tests automatisés sur ce périmètre : toute modification
-des sections doit être vérifiée visuellement sur `/fr` **et** sur `/admin/editor`,
-en comparant le rendu avant/après publication.
+`npm run audit:mobile` produit `public/mobile-audit-standalone.html`, à ouvrir
+dans un navigateur : il charge le site en 375 px, balaie l'accueil, bascule en
+anglais, vérifie la section Localisation et le plan cadastral, ouvre chaque modale
+et referme sa croix avec un tap réel (`elementFromPoint`), puis compare le contenu
+rendu aux réglages du gérant. Le groupe **« Design »** applique les règles
+ci-dessus et **doit rester à zéro échec** avant tout commit.
+
+**Sonder, jamais dormir.** Un `.click()` programmatique contourne le test de
+collision — il valide un bouton recouvert — et une attente fixe (`wait(700)`)
+mesure une durée, pas un état : les navigateurs étirent les `setTimeout` au-delà de
+~1 s dès que la fenêtre n'est pas au premier plan. Utiliser `waitUntil(predicate)`
+(voir `public/mobile-audit.html`).
+
+Au-delà de l'audit, toute modification des sections doit être vérifiée
+visuellement sur `/fr` **et** `/admin/editor`, en comparant avant/après publication.

@@ -46,13 +46,13 @@ export function FaqSection({ content }: { content?: Partial<FaqContent> }) {
   const toggleFaq = (id: string) => setActiveFaq((prev) => (prev === id ? null : id));
 
   return (
-    <section id="faqs-section" className="py-20 bg-surface px-4 md:px-12 border-t border-gray-200 scroll-mt-20">
+    <section id="faqs-section" className="py-section bg-surface px-5 md:px-12 border-t border-gray-200 scroll-mt-20">
       <div className="max-w-3xl mx-auto space-y-10">
         <div className="text-center space-y-2">
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-secondary block">
+          <span className="font-mono text-micro font-bold uppercase tracking-widest text-secondary block">
             {c.sectionTag}
           </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+          <h2 className="reveal font-serif text-h2 font-bold text-primary">
             <RichText as="span" html={c.title} />
           </h2>
           <p className="text-xs sm:text-sm text-outline font-light">
@@ -66,11 +66,11 @@ export function FaqSection({ content }: { content?: Partial<FaqContent> }) {
             return (
               <div
                 key={faq.id}
-                className="bg-white border border-gray-300 rounded-xl p-5 hover:border-gray-400 transition-colors shadow-xs"
+                className="bg-white border border-gray-300 rounded-inner p-5 hover:border-gray-400 transition-colors shadow-elev-1"
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}
-                  className="w-full flex justify-between items-start text-left cursor-pointer"
+                  className="w-full min-h-[44px] flex justify-between items-start text-left cursor-pointer"
                 >
                   <h4 className="font-serif text-sm sm:text-base font-bold text-primary pr-4 leading-snug">
                     {faq.question[language]}

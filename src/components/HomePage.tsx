@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Render } from '@puckeditor/core/rsc';
 import type { Data as PuckData } from '@puckeditor/core';
+import { X } from 'lucide-react';
 import { UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { useSite } from '../site/SiteContext';
@@ -24,10 +25,42 @@ import { puckConfig } from '../puck/config';
  * un bloc. Le filtrage se fait **au rendu**, sans toucher à la composition
  * stockée : réactiver une section réaffiche son contenu tel qu'il était.
  */
+const PROMO_DISMISS_KEY = 'sic_promo_dismissed';
+
 export default function HomePage() {
   const { language, settings, setActiveTab } = useSite();
   const ui = TRANSLATIONS[language].ui as UITranslations;
   const { data } = usePuckPage(language, settings);
+
+  // Bandeau promo piloté par les réglages du gérant, mais **jamais** affiché
+  // dans la mauvaise langue : en anglais on prend la version EN si elle est
+  // renseignée, sinon les libellés i18n (jamais le texte français saisi).
+  const isEN = language === 'EN';
+  const promoTitle =
+    (isEN ? settings.promoTitleEn : settings.promoTitle)?.trim() || ui.promoBadge;
+  const promoDesc =
+    (isEN ? settings.promoDescEn : settings.promoDesc)?.trim() ||
+    ui.promoText.replace('{remaining}', String(settings.promoPlotsRemaining));
+
+  // Le visiteur peut refermer le bandeau. La préférence ne vit que pour la
+  // session : le réglage du gérant (`promoActive`) reste la seule source de
+  // vérité, on ne fait que retirer la gêne pendant la visite en cours.
+  const [promoDismissed, setPromoDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(PROMO_DISMISS_KEY) === '1') setPromoDismissed(true);
+    } catch {
+      /* navigation privée : on reste simplement sur l'affichage par défaut */
+    }
+  }, []);
+  const dismissPromo = () => {
+    setPromoDismissed(true);
+    try {
+      sessionStorage.setItem(PROMO_DISMISS_KEY, '1');
+    } catch {
+      /* sans stockage, le bandeau se referme tout de même pour cette page */
+    }
+  };
 
   // Sections masquées depuis l'Espace Gérant — filtrées bloc par bloc (toutes
   // les instances d'un même type disparaissent, même si l'admin l'a dupliqué).
@@ -65,36 +98,47 @@ export default function HomePage() {
       {/* Scroll Depth Progress Indicator */}
       <div
         id="scroll-progress-container"
-        className="fixed top-0 left-0 right-0 h-[3px] bg-secondary-fixed/20 z-[110] pointer-events-none"
+        className="fixed top-[var(--safe-top)] left-0 right-0 h-[3px] bg-secondary-fixed/20 z-[var(--z-progress)] pointer-events-none"
       >
         <div
           id="scroll-progress-bar"
-          className="h-full bg-secondary-fixed rounded-r-full shadow-[0_0_8px_rgba(230,190,100,0.6)] transition-all duration-75 ease-out"
+          className="h-full bg-secondary-fixed rounded-r-full shadow-[0_0_8px_rgba(254,214,91,0.6)] transition-all duration-200 ease-out-expo"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
-      {/* TOP PROMO BANNER FOR FIRST 10 BUYERS */}
-      {settings.promoActive && (
+      {/* BANDEAU PROMO — 10 premiers acquéreurs.
+          Volontairement **non collant** : cumulé à la navbar et au bouton
+          WhatsApp, un bandeau sticky occupait 26 % de la hauteur d'un écran de
+          téléphone en permanence. Il reste visible en haut de page, refermable,
+          et passe sous la navbar (top = hauteur réelle de la barre). */}
+      {settings.promoActive && !promoDismissed && (
         <div
-          className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white text-xs font-medium py-2.5 px-4 text-center sticky z-30 shadow-md"
-          style={{ top: 'var(--nav-h)', marginTop: 'var(--nav-h)' }}
+          className="relative z-[var(--z-promo)] bg-gradient-to-r from-[#F7E7B4] via-secondary-fixed to-[#E9C349] text-on-secondary-fixed font-medium py-3 pl-5 pr-14 shadow-elev-2"
+          style={{ marginTop: 'var(--nav-h)' }}
         >
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-4">
-            <span className="bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px]">
-              ⭐ {settings.promoTitle || ui.promoBadge}
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span className="bg-[#241a00]/10 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider text-micro">
+              ⭐ {promoTitle}
             </span>
-            <span>{settings.promoDesc || ui.promoText.replace('{remaining}', String(settings.promoPlotsRemaining))}</span>
+            <span className="text-caption max-w-[52ch]">{promoDesc}</span>
             <button
               onClick={() => {
                 setActiveTab('masterplan');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="inline-block underline font-bold hover:text-amber-100 cursor-pointer text-xs ml-1 py-2 px-1"
+              className="text-caption underline font-bold hover:text-[#241a00] cursor-pointer py-1 px-1 tap-44 transition-colors duration-400"
             >
               {ui.promoCta}
             </button>
           </div>
+          <button
+            onClick={dismissPromo}
+            className="absolute top-1/2 right-3 -translate-y-1/2 p-2.5 rounded-full text-[#241a00]/70 hover:text-[#241a00] hover:bg-[#241a00]/10 transition-colors duration-400 cursor-pointer tap-44"
+            aria-label={isEN ? 'Dismiss announcement' : 'Masquer l’annonce'}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

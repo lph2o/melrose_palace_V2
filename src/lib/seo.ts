@@ -1,30 +1,62 @@
 import { Language, SiteSettings } from '../types';
-import { SITE_MEDIA_BASE_URL, COMPLEMENTARY_PACKS, FAQ_ITEMS } from '../data';
+import { COMPLEMENTARY_PACKS, FAQ_ITEMS } from '../data';
+import routeMetaJson from '../seo/routeMeta.json';
 
 /**
  * SEO — moteur de balisage piloté par le client.
  *
  * L'app est une SPA en rendu client (Vite, sans router). Google exécute le JS
- * et voit le DOM final, mais les balises <head> statiques de index.html servent
- * de repli pour les crawlers qui ne l'exécutent pas. Ce module synchronise à
- * chaque navigation / changement de langue :
- *   - <title> + meta description (uniques par vue et par langue)
- *   - Open Graph + Twitter Cards (partages WhatsApp de la diaspora)
- *   - canonical + hreflang réciproques (URLs distinctes /fr et /en)
- *   - JSON-LD : RealEstateAgent, Product (packs), FAQPage, BreadcrumbList
- *   - noindex sur la route admin
+ * et voit le DOM final, mais **WhatsApp, Facebook, LinkedIn et X n'exécutent
+ * pas le JS** : pour eux, seules comptent les balises présentes dans le HTML
+ * servi. C'est pourquoi les mêmes copies existent à deux endroits :
  *
- * Stratégie de rendu retenue : CSR + URLs par langue via History API, avec
- * prerendering statique recommandé en prochaine étape (voir README du rapport).
+ *  1. `scripts/prerender-routes.cjs` (postbuild) écrit un `dist/<route>/index.html`
+ *     par route (/fr, /en, /fr/plan, /en/plan) avec le <head> complet — c'est ce
+ *     que lisent les crawlers qui n'exécutent pas JS ;
+ *  2. ce module réapplique les mêmes valeurs côté client à chaque navigation /
+ *     changement de langue (titre, description, OG, Twitter, canonical,
+ *     hreflang, JSON-LD, noindex sur /admin).
+ *
+ * Les deux lisent **`src/seo/routeMeta.json`** : une seule source de vérité, donc
+ * aucune dérive possible entre le HTML pré-rendu et la version client.
+ *
+ * Les images de partage (`public/og/*.jpg`, 1200×630) sont générées par
+ * `swift scripts/make-og-image.swift` et servies depuis notre propre domaine
+ * (pas de dépendance à Supabase pour une requête de crawler).
  */
 
 export type SeoView = 'home' | 'masterplan' | 'admin';
+export type PublicView = 'home' | 'masterplan';
 
 /* ------------------------------------------------------------------ */
-/* Chemins par langue / vue (URLs distinctes = hreflang crédible)      */
+/* Source unique de vérité (partagée avec scripts/prerender-routes.cjs) */
 /* ------------------------------------------------------------------ */
 
-const LANG_PREFIX: Record<Language, string> = { FR: '/fr', EN: '/en' };
+export interface RouteMeta {
+  title: string;
+  description: string;
+  /** Chemin de l'image de partage, relatif au domaine. */
+  ogImage: string;
+  imageAlt: string;
+  /** Texte de la carte de partage (généré dans l'image). */
+  shareTitle: string;
+  shareFooter: string;
+  kicker: string;
+}
+
+const PUBLISHED_ROUTES = routeMetaJson.routes as Record<
+  PublicView,
+  { path: Record<Language, string>; meta: Record<Language, RouteMeta> }
+>;
+const ADMIN_META = routeMetaJson.admin as Record<Language, { title: string; description: string }>;
+
+/** Métadonnées d'une route publique dans une langue. */
+export function routeMeta(view: PublicView, language: Language): RouteMeta {
+  return PUBLISHED_ROUTES[view].meta[language];
+}
+
+/** Routes publiées, pour la génération des fichiers statiques et du sitemap. */
+export const PUBLIC_ROUTES = PUBLISHED_ROUTES;
 
 /** Langue déduite du chemin : /en* → EN, tout le reste → FR (défaut). */
 export function detectLanguageFromPath(pathname: string): Language {
@@ -37,45 +69,18 @@ export function detectViewFromPath(pathname: string): 'home' | 'masterplan' {
 }
 
 /** Chemin canonique d'une vue publique dans une langue. */
-export function getViewPath(lang: Language, view: 'home' | 'masterplan'): string {
-  return view === 'masterplan' ? `${LANG_PREFIX[lang]}/plan` : LANG_PREFIX[lang];
+export function getViewPath(lang: Language, view: PublicView): string {
+  return PUBLISHED_ROUTES[view].path[lang];
 }
 
-/* ------------------------------------------------------------------ */
-/* Copies SEO uniques par vue et par langue (mots-clés ciblés)         */
-/* ------------------------------------------------------------------ */
+/** Dimensions des cartes de partage générées (voir scripts/make-og-image.swift). */
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
 
-const TITLES: Record<SeoView, Record<Language, string>> = {
-  home: {
-    FR: 'Acheter un terrain au Sénégal | Sébikhotane dès 300 €/mois',
-    EN: 'Buy Land in Senegal | Sebikhotane plots from €300/mo',
-  },
-  masterplan: {
-    FR: 'Plan du domaine Sébikhotane | 54 parcelles avec NICAD',
-    EN: 'Domain Map Sebikhotane | 54 plots with NICAD title',
-  },
-  admin: {
-    FR: 'Espace Gérant | Sénégal Immobilier Consulting',
-    EN: 'Admin | Sénégal Immobilier Consulting',
-  },
-};
-
-const DESCRIPTIONS: Record<SeoView, Record<Language, string>> = {
-  home: {
-    FR: "Parcelles de 150 m² à Sébikhotane, délibération + NICAD, à 20 min de l'AIBD et 4 km du TER. Acompte 3 000 € puis 300 €/mois, sécurisé diaspora.",
-    EN: '150 m² plots in Sebikhotane, deliberation + NICAD title, 20 min from AIBD, 4 km from the TER. €3,000 down then €300/month — diaspora-safe.',
-  },
-  masterplan: {
-    FR: "Plan du domaine Dun Tni : 54 parcelles de 150 m², bornage B1-B17, statut en temps réel et simulateur de financement 300 €/mois.",
-    EN: 'Dun Tni domain map: 54 plots of 150 m², B1–B17 boundary markers, real-time availability and a €300/month financing simulator.',
-  },
-  admin: {
-    FR: 'Espace de gestion privé — réservé à l’administrateur.',
-    EN: 'Private management area — reserved for the administrator.',
-  },
-};
-
-const DEFAULT_OG_IMAGE = `${SITE_MEDIA_BASE_URL}/images/hero.jpg`;
+/** URL absolue d'une image de partage (les crawlers n'acceptent pas de chemin relatif). */
+function absoluteAssetUrl(origin: string, path: string): string {
+  return /^https?:\/\//.test(path) ? path : `${origin}${path}`;
+}
 
 /* ------------------------------------------------------------------ */
 /* Helpers DOM (upsert, jamais de doublons)                            */
@@ -205,20 +210,22 @@ export function applySeo({ settings, language, view }: SeoInput) {
   if (view === 'admin') {
     const isEditor =
       window.location.hash === '#/admin/editor' || /\/admin\/editor\/?$/.test(window.location.pathname);
-    document.title = TITLES.admin[language];
-    upsertMeta('name', 'description', DESCRIPTIONS.admin[language]);
+    document.title = ADMIN_META[language].title;
+    upsertMeta('name', 'description', ADMIN_META[language].description);
     upsertMeta('name', 'robots', 'noindex, nofollow');
     upsertLink('canonical', `${origin}${isEditor ? '/admin/editor' : '/admin'}`);
     return;
   }
   upsertMeta('name', 'robots', 'index, follow');
 
-  const path = getViewPath(language, view);
+  const path = getViewPath(language, view as PublicView);
   const url = `${origin}${path}`;
-  const title = TITLES[view][language];
-  const description = DESCRIPTIONS[view][language];
-  // Image partagée (OG/Twitter/JSON-LD) : suit le hero éditée depuis l'admin
-  const ogImage = settings.heroImage || DEFAULT_OG_IMAGE;
+  const meta = routeMeta(view as PublicView, language);
+  const title = meta.title;
+  const description = meta.description;
+  // Image de partage dédiée (1200×630) : elle ne suit pas le hero de l'admin,
+  // pour que le partage social reste lisible et stable dans le temps.
+  const ogImage = absoluteAssetUrl(origin, meta.ogImage);
 
   // Title + description uniques
   document.title = title;
@@ -241,7 +248,11 @@ export function applySeo({ settings, language, view }: SeoInput) {
   upsertMeta('property', 'og:description', description);
   upsertMeta('property', 'og:url', url);
   upsertMeta('property', 'og:image', ogImage);
-  upsertMeta('property', 'og:image:alt', 'Vue aérienne du domaine Dun Tni à Sébikhotane, Sénégal');
+  upsertMeta('property', 'og:image:secure_url', ogImage);
+  upsertMeta('property', 'og:image:type', 'image/jpeg');
+  upsertMeta('property', 'og:image:width', String(OG_IMAGE_WIDTH));
+  upsertMeta('property', 'og:image:height', String(OG_IMAGE_HEIGHT));
+  upsertMeta('property', 'og:image:alt', meta.imageAlt);
   upsertMeta('property', 'og:locale', language === 'FR' ? 'fr_FR' : 'en_US');
   upsertMeta('property', 'og:locale:alternate', language === 'FR' ? 'en_US' : 'fr_FR');
 
@@ -250,6 +261,7 @@ export function applySeo({ settings, language, view }: SeoInput) {
   upsertMeta('name', 'twitter:title', title);
   upsertMeta('name', 'twitter:description', description);
   upsertMeta('name', 'twitter:image', ogImage);
+  upsertMeta('name', 'twitter:image:alt', meta.imageAlt);
 
   // JSON-LD
   upsertJsonLd('ld-organization', organizationLd(settings, url, ogImage));
@@ -265,6 +277,6 @@ export function applySeo({ settings, language, view }: SeoInput) {
 }
 
 /** Renvoie le chemin public (langue + vue) depuis le chemin courant. */
-export function langViewPath(lang: Language, view: 'home' | 'masterplan'): string {
+export function langViewPath(lang: Language, view: PublicView): string {
   return getViewPath(lang, view);
 }

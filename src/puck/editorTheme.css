@@ -423,7 +423,7 @@
   letter-spacing: 0.04em;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-in);
+  transition: opacity var(--puck-duration-fast, 50ms) var(--puck-ease-exit, ease-out-expo);
   z-index: 3;
   /* Le portal Puck force `pointer-events: auto !important` : on contre pour
      que le badge ne capture pas les clics destinés au bloc. */

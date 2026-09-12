@@ -28,13 +28,13 @@ export function TestimonialsSection({ content }: { content?: Partial<Testimonial
   const testimonials = settings.content?.testimonials ?? TESTIMONIALS;
 
   return (
-    <section id="testimonials" className="py-20 bg-white px-4 md:px-12 border-b border-gray-200 scroll-mt-20">
+    <section id="testimonials" className="py-section bg-white px-5 md:px-12 border-b border-gray-200 scroll-mt-20">
       <div className="max-w-7xl mx-auto space-y-12">
         <div className="text-center max-w-3xl mx-auto space-y-2">
-          <span className="font-mono font-bold text-xs uppercase text-secondary tracking-widest block">
+          <span className="font-mono font-bold text-micro uppercase text-secondary tracking-widest block">
             {c.sectionTag}
           </span>
-          <h2 className="font-serif text-2xl sm:text-4xl font-bold text-primary">
+          <h2 className="reveal font-serif text-h2 font-bold text-primary">
             <RichText as="span" html={c.title} />
           </h2>
           <p className="text-xs sm:text-sm text-outline font-light">
@@ -46,7 +46,7 @@ export function TestimonialsSection({ content }: { content?: Partial<Testimonial
           {testimonials.map((test) => (
             <div
               key={test.id}
-              className="bg-white p-6 rounded-2xl border border-gray-300 shadow-xs flex flex-col justify-between space-y-4 hover:shadow-md hover:border-gray-400 transition-all"
+              className="bg-white p-6 rounded-card border border-gray-300 shadow-elev-1 flex flex-col justify-between space-y-4 hover:shadow-elev-2 hover:border-gray-400 transition-all"
             >
               <div className="space-y-3">
                 <div className="flex items-center space-x-1">
@@ -71,8 +71,8 @@ export function TestimonialsSection({ content }: { content?: Partial<Testimonial
                 />
                 <div>
                   <h4 className="font-serif font-bold text-xs sm:text-sm text-primary">{test.name}</h4>
-                  <p className="text-[11px] text-secondary font-medium">{test.role[language]}</p>
-                  <span className="text-[10px] text-outline font-mono">{test.relationship[language]}</span>
+                  <p className="text-caption text-secondary font-medium">{test.role[language]}</p>
+                  <span className="text-caption text-outline font-mono">{test.relationship[language]}</span>
                 </div>
               </div>
             </div>

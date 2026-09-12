@@ -59,11 +59,11 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 type ItemKey = keyof SiteContent;
 
 const inputCls =
-  'w-full px-3.5 py-2.5 rounded-xl bg-(--admin-input) ring-1 ring-(--admin-ring) text-sm text-(--admin-text) ' +
+  'w-full px-3.5 py-2.5 rounded-inner bg-(--admin-input) ring-1 ring-(--admin-ring) text-sm text-(--admin-text) ' +
   'placeholder:text-(--admin-muted-2) focus:outline-none focus:ring-2 focus:ring-(--admin-accent)/60 ' +
-  'transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]';
+  'transition-all duration-400 ease-spring';
 
-const labelCls = 'block font-mono text-[9px] uppercase tracking-[0.2em] text-(--admin-muted)';
+const labelCls = 'block font-mono text-micro uppercase tracking-[0.2em] text-(--admin-muted)';
 
 /* ------------------------------------------------------------------ *
  * Validation de longueur : compteur n/max (muted → ambre → rouge)
@@ -74,7 +74,7 @@ function CharCount({ value, max }: { value: string | number; max?: number }) {
   const pct = n / max;
   const cls = n > max ? 'text-[#fb7185]' : pct >= 0.85 ? 'text-[#fbbf24]' : 'text-(--admin-muted-2)';
   return (
-    <span className={`font-mono text-[9px] tabular-nums shrink-0 ${cls}`} aria-live="polite">
+    <span className={`font-mono text-micro tabular-nums shrink-0 ${cls}`} aria-live="polite">
       {n}/{max}
     </span>
   );
@@ -126,11 +126,11 @@ function Field({
         className={`${inputCls} ${bad ? 'ring-2 ring-[#fb7185]/60' : ''}`}
       />
       {bad ? (
-        <p className="mt-1 text-[9px] text-[#fb7185] font-mono">
+        <p className="mt-1 text-micro text-[#fb7185] font-mono">
           {isMissing ? 'Champ requis — affiché sur le site' : 'Doit commencer par / ou http(s)://'}
         </p>
       ) : hint ? (
-        <p className="mt-1 text-[9px] text-(--admin-muted-2) font-mono truncate">{hint}</p>
+        <p className="mt-1 text-micro text-(--admin-muted-2) font-mono truncate">{hint}</p>
       ) : null}
     </div>
   );
@@ -176,7 +176,7 @@ function LangPair({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         <div className="min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[8px] font-mono uppercase tracking-widest text-(--admin-muted-2)">FR</span>
+            <span className="text-micro font-mono uppercase tracking-widest text-(--admin-muted-2)">FR</span>
             <CharCount value={fr} max={max} />
           </div>
           {textarea ? (
@@ -190,11 +190,11 @@ function LangPair({
           ) : (
             <input value={fr} maxLength={max} onChange={(e) => onFR(e.target.value)} className={inputClsBad} />
           )}
-          {frMissing && <p className="mt-1 text-[9px] text-[#fb7185] font-mono">Champ requis — affiché sur le site</p>}
+          {frMissing && <p className="mt-1 text-micro text-[#fb7185] font-mono">Champ requis — affiché sur le site</p>}
         </div>
         <div className="min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[8px] font-mono uppercase tracking-widest text-(--admin-muted-2)">EN</span>
+            <span className="text-micro font-mono uppercase tracking-widest text-(--admin-muted-2)">EN</span>
             <CharCount value={en} max={max} />
           </div>
           {textarea ? (
@@ -208,10 +208,10 @@ function LangPair({
           ) : (
             <input value={en} maxLength={max} onChange={(e) => onEN(e.target.value)} className={inputClsBadEn} />
           )}
-          {enMissing && <p className="mt-1 text-[9px] text-[#fb7185] font-mono">Champ requis — affiché sur le site</p>}
+          {enMissing && <p className="mt-1 text-micro text-[#fb7185] font-mono">Champ requis — affiché sur le site</p>}
         </div>
       </div>
-      {hint && <p className="text-[9px] text-(--admin-muted-2) font-mono">{hint}</p>}
+      {hint && <p className="text-micro text-(--admin-muted-2) font-mono">{hint}</p>}
     </div>
   );
 }
@@ -236,24 +236,24 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <div className="rounded-[1.75rem] p-1.5 bg-(--admin-shell) ring-1 ring-(--admin-ring)">
-      <div className="rounded-[calc(1.75rem-0.375rem)] bg-(--admin-card) shadow-[var(--admin-inset)] overflow-hidden">
+    <div className="rounded-card p-1.5 bg-(--admin-shell) ring-1 ring-(--admin-ring)">
+      <div className="rounded-inner bg-(--admin-card) shadow-[var(--admin-inset)] overflow-hidden">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           className="w-full flex items-center justify-between gap-3 px-5 py-4 cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <span className="w-9 h-9 shrink-0 rounded-xl bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) flex items-center justify-center text-(--admin-accent)">
+            <span className="w-9 h-9 shrink-0 rounded-inner bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) flex items-center justify-center text-(--admin-accent)">
               {icon}
             </span>
             <div className="text-left min-w-0">
               <p className="font-serif text-sm font-bold text-(--admin-text)">{title}</p>
-              <p className="text-[10px] text-(--admin-muted) truncate">{sub}</p>
+              <p className="text-caption text-(--admin-muted) truncate">{sub}</p>
             </div>
           </div>
           <ChevronDown
-            className={`w-4 h-4 text-(--admin-muted) shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${open ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-(--admin-muted) shrink-0 transition-transform duration-400 ease-spring ${open ? 'rotate-180' : ''}`}
             strokeWidth={1.5}
           />
         </button>
@@ -280,10 +280,10 @@ function Section({
  * ------------------------------------------------------------------ */
 function FormGroup({ icon, label, children }: { icon?: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-3.5 space-y-3">
+    <div className="rounded-inner bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-3.5 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-(--admin-hairline)">
         {icon && <span className="text-(--admin-muted) shrink-0">{icon}</span>}
-        <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-(--admin-muted)">{label}</span>
+        <span className="font-mono text-micro uppercase tracking-[0.22em] text-(--admin-muted)">{label}</span>
       </div>
       {children}
     </div>
@@ -302,7 +302,7 @@ function LangToggle({ lang, onChange }: { lang: 'FR' | 'EN'; onChange: (l: 'FR' 
           key={l}
           type="button"
           onClick={() => onChange(l)}
-          className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+          className={`px-2 py-0.5 rounded-full text-micro font-mono font-bold uppercase tracking-wider transition-all duration-400 ease-spring cursor-pointer ${
             lang === l
               ? 'bg-(--admin-accent) text-(--admin-accent-text)'
               : 'bg-(--admin-shell-strong) text-(--admin-muted) hover:text-(--admin-text)'
@@ -338,7 +338,7 @@ function ViewportToggle({ vp, onChange }: { vp: Viewport; onChange: (v: Viewport
           title={`Aperçu ${it.id} (${VP_LABEL[it.id]})`}
           aria-label={`Aperçu ${it.id} (${VP_LABEL[it.id]})`}
           onClick={() => onChange(it.id)}
-          className={`w-6 h-5 rounded-full flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+          className={`w-6 h-5 rounded-full flex items-center justify-center transition-all duration-400 ease-spring cursor-pointer ${
             vp === it.id
               ? 'bg-(--admin-accent) text-(--admin-accent-text)'
               : 'text-(--admin-muted) hover:text-(--admin-text)'
@@ -374,7 +374,7 @@ function IconBtn({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center ring-1 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+      className={`w-7 h-7 shrink-0 rounded-micro flex items-center justify-center ring-1 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all duration-400 ease-spring cursor-pointer ${
         danger
           ? 'bg-[#fb7185]/10 text-[#fb7185] ring-[#fb7185]/30 hover:bg-[#fb7185]/20'
           : 'bg-(--admin-shell-strong) text-(--admin-muted) ring-(--admin-ring) hover:text-(--admin-text)'
@@ -424,14 +424,14 @@ function ItemCard({
   const hasActions = !!(onDuplicate || onDelete || onMoveUp || onMoveDown);
 
   return (
-    <div className="rounded-2xl bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-4 space-y-3">
+    <div className="rounded-card bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--admin-accent)/80 truncate">{title}</p>
+          <p className="font-mono text-caption uppercase tracking-[0.2em] text-(--admin-accent)/80 truncate">{title}</p>
           {dirty && (
             <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-(--admin-accent)/10 ring-1 ring-(--admin-accent)/30 px-2 py-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-(--admin-accent) shadow-[0_0_8px_rgba(254,214,91,0.9)] animate-pulse" />
-              <span className="font-mono text-[8px] uppercase tracking-[0.18em] text-(--admin-accent)">
+              <span className="font-mono text-micro uppercase tracking-[0.18em] text-(--admin-accent)">
                 Non sauvegardé
               </span>
             </span>
@@ -471,7 +471,7 @@ function ItemCard({
             <button
               type="button"
               onClick={() => setShow((s) => !s)}
-              className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-mono uppercase tracking-widest font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+              className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-mono uppercase tracking-widest font-bold transition-all duration-400 ease-spring cursor-pointer ${
                 show
                   ? 'bg-(--admin-accent)/15 text-(--admin-accent) ring-1 ring-(--admin-accent)/30'
                   : 'bg-(--admin-shell-strong) text-(--admin-muted) hover:text-(--admin-text) ring-1 ring-(--admin-ring)'
@@ -491,9 +491,9 @@ function ItemCard({
           transition={{ duration: 0.4, ease: EASE }}
           className="overflow-hidden"
         >
-          <div className="rounded-xl bg-(--admin-shell-strong)/50 ring-1 ring-(--admin-ring-soft) p-2.5 space-y-2">
+          <div className="rounded-inner bg-(--admin-shell-strong)/50 ring-1 ring-(--admin-ring-soft) p-2.5 space-y-2">
             <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
-              <span className="font-mono text-[8px] uppercase tracking-[0.25em] text-(--admin-muted)">
+              <span className="font-mono text-micro uppercase tracking-[0.25em] text-(--admin-muted)">
                 Aperçu site — {VP_LABEL[vp]}
               </span>
               <div className="flex items-center gap-2">
@@ -501,7 +501,7 @@ function ItemCard({
                 <LangToggle lang={lang} onChange={setLang} />
               </div>
             </div>
-            <div className="rounded-lg bg-[#fcf9f8] ring-1 ring-(--admin-ring)/50 p-3 max-h-96 overflow-y-auto">
+            <div className="rounded-micro bg-[#FAF9F5] ring-1 ring-(--admin-ring)/50 p-3 max-h-96 overflow-y-auto">
               <div className="mx-auto w-full" style={{ maxWidth: VP_WIDTH[vp] }}>
                 {renderPreview(lang)}
               </div>
@@ -525,7 +525,7 @@ function AvatarMini({ src, name }: { src: string; name: string }) {
       {src && !err ? (
         <img src={src} alt={name} className="w-full h-full object-cover" onError={() => setErr(true)} />
       ) : (
-        <span className="font-serif text-[10px] font-bold text-primary">{name.charAt(0) || '·'}</span>
+        <span className="font-serif text-caption font-bold text-primary">{name.charAt(0) || '·'}</span>
       )}
     </div>
   );
@@ -533,19 +533,19 @@ function AvatarMini({ src, name }: { src: string; name: string }) {
 
 function PreviewVideo({ v, lang }: { v: VideoContent; lang: 'FR' | 'EN' }) {
   return (
-    <div className="rounded-xl bg-[#0B0B0C] ring-1 ring-[#D4AF37]/25 p-1.5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
-      <div className="relative aspect-video rounded-lg bg-gradient-to-br from-[#1c1c1e] to-[#101012] flex items-center justify-center overflow-hidden">
-        <Play className="w-8 h-8 text-[#E5C860]" strokeWidth={1} />
-        <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[7px] uppercase tracking-[0.2em] font-medium bg-white/5 text-[#E5C860] ring-1 ring-[#D4AF37]/35">
+    <div className="rounded-inner bg-[#0B0B0C] ring-1 ring-[#FED65B]/25 p-1.5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
+      <div className="relative aspect-video rounded-micro bg-gradient-to-br from-[#1c1c1e] to-[#101012] flex items-center justify-center overflow-hidden">
+        <Play className="w-8 h-8 text-[#FED65B]" strokeWidth={1} />
+        <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-micro uppercase tracking-[0.2em] font-medium bg-white/5 text-[#FED65B] ring-1 ring-[#FED65B]/35">
           {v.badgeLeft[lang] || 'VIDÉO'}
         </span>
-        <span className="absolute bottom-2 right-2 text-[7px] font-mono text-white/40 truncate max-w-[70%]">
+        <span className="absolute bottom-2 right-2 text-micro font-mono text-white/60 truncate max-w-[70%]">
           {v.src || 'Aucun fichier'}
         </span>
       </div>
       <div className="px-2 pt-2 pb-1 space-y-1">
-        <p className="font-serif text-[11px] font-bold text-white leading-snug">{v.title[lang] || 'Titre de la vidéo'}</p>
-        <p className="text-[9px] text-white/60 font-light leading-relaxed line-clamp-2">
+        <p className="font-serif text-caption font-bold text-white leading-snug">{v.title[lang] || 'Titre de la vidéo'}</p>
+        <p className="text-micro text-white/70 font-light leading-relaxed line-clamp-2">
           {v.desc[lang] || 'Description…'}
         </p>
       </div>
@@ -555,10 +555,10 @@ function PreviewVideo({ v, lang }: { v: VideoContent; lang: 'FR' | 'EN' }) {
 
 function PreviewTier({ t }: { t: PaymentTier }) {
   return (
-    <div className="rounded-xl bg-gradient-to-br from-[#00261a] to-[#003826] p-3">
-      <table className="w-full text-left text-[10px] font-mono text-white/90">
+    <div className="rounded-inner bg-gradient-to-br from-[#00261a] to-[#003826] p-3">
+      <table className="w-full text-left text-caption font-mono text-white/90">
         <thead>
-          <tr className="border-b border-white/15 text-[8px] uppercase text-secondary-fixed">
+          <tr className="border-b border-white/15 text-micro uppercase text-secondary-fixed">
             <th className="pb-1 pr-2">Acompte</th>
             <th className="pb-1 pr-2">Reste</th>
             <th className="pb-1 pr-2">Mensualité</th>
@@ -580,14 +580,14 @@ function PreviewTier({ t }: { t: PaymentTier }) {
 
 function PreviewConnectivity({ c, lang }: { c: ConnectivityItem; lang: 'FR' | 'EN' }) {
   return (
-    <div className="bg-white p-3 rounded-xl shadow-xs border border-gray-300 border-l-4 border-l-secondary">
+    <div className="bg-white p-3 rounded-inner shadow-elev-1 border border-gray-300 border-l-4 border-l-secondary">
       <div className="flex justify-between items-center gap-2 mb-1.5">
-        <span className="font-serif font-bold text-[11px] text-primary truncate">{c.title[lang] || 'Titre'}</span>
-        <span className="font-mono font-bold text-[8px] text-secondary bg-secondary/10 px-1.5 py-0.5 rounded shrink-0">
+        <span className="font-serif font-bold text-caption text-primary truncate">{c.title[lang] || 'Titre'}</span>
+        <span className="font-mono font-bold text-micro text-secondary bg-secondary/10 px-1.5 py-0.5 rounded-micro shrink-0">
           {c.time}
         </span>
       </div>
-      <p className="text-[9px] text-on-surface-variant font-light leading-relaxed line-clamp-2">
+      <p className="text-micro text-on-surface-variant font-light leading-relaxed line-clamp-2">
         {c.description[lang] || 'Description…'}
       </p>
     </div>
@@ -598,33 +598,33 @@ function PreviewPack({ p, lang }: { p: ComplementaryPack; lang: 'FR' | 'EN' }) {
   const features = p.features[lang] ?? [];
   return (
     <div
-      className={`bg-white rounded-xl p-3 border transition-all ${
+      className={`bg-white rounded-inner p-3 border transition-all ${
         p.badge?.[lang] ? 'border-2 border-secondary ring-1 ring-secondary/30' : 'border-gray-300'
       }`}
     >
       <div className="flex justify-between items-start gap-2">
-        <span className="font-serif font-bold text-[11px] text-primary leading-snug">
+        <span className="font-serif font-bold text-caption text-primary leading-snug">
           {p.title[lang] || 'Titre du pack'}
         </span>
         {p.badge?.[lang] && (
-          <span className="text-[8px] font-mono font-bold bg-secondary/15 text-secondary px-1.5 py-0.5 rounded-full shrink-0">
+          <span className="text-micro font-mono font-bold bg-secondary/15 text-secondary px-1.5 py-0.5 rounded-full shrink-0">
             {p.badge[lang]}
           </span>
         )}
       </div>
-      <p className="font-mono text-[9px] text-secondary font-semibold mt-0.5">{p.subtitle[lang]}</p>
-      <p className="text-[9px] text-on-surface-variant font-light leading-relaxed mt-1 line-clamp-2">
+      <p className="font-mono text-micro text-secondary font-semibold mt-0.5">{p.subtitle[lang]}</p>
+      <p className="text-micro text-on-surface-variant font-light leading-relaxed mt-1 line-clamp-2">
         {p.description[lang] || 'Description…'}
       </p>
       <ul className="mt-2 pt-2 border-t border-gray-200 space-y-1">
         {features.slice(0, 3).map((f, i) => (
-          <li key={i} className="flex items-start gap-1.5 text-[8px] leading-snug text-on-surface">
+          <li key={i} className="flex items-start gap-1.5 text-micro leading-snug text-on-surface">
             <Check className="w-2.5 h-2.5 text-secondary shrink-0 mt-0.5" strokeWidth={2.5} />
             <span>{f}</span>
           </li>
         ))}
         {features.length > 3 && (
-          <li className="text-[8px] text-outline font-mono">+ {features.length - 3} autres inclus…</li>
+          <li className="text-micro text-outline font-mono">+ {features.length - 3} autres inclus…</li>
         )}
       </ul>
     </div>
@@ -633,23 +633,23 @@ function PreviewPack({ p, lang }: { p: ComplementaryPack; lang: 'FR' | 'EN' }) {
 
 function PreviewTestimonial({ t, lang }: { t: Testimonial; lang: 'FR' | 'EN' }) {
   return (
-    <div className="bg-white p-3.5 rounded-xl border border-gray-300 shadow-xs flex flex-col justify-between space-y-3">
+    <div className="bg-white p-3.5 rounded-inner border border-gray-300 shadow-elev-1 flex flex-col justify-between space-y-3">
       <div className="space-y-2">
         <div className="flex gap-0.5">
           {[...Array(t.rating ?? 5)].map((_, i) => (
             <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
           ))}
         </div>
-        <blockquote className="text-[9px] italic leading-relaxed text-primary/90 font-light line-clamp-3">
+        <blockquote className="text-micro italic leading-relaxed text-primary/90 font-light line-clamp-3">
           « {t.quote[lang] || 'Citation…'} »
         </blockquote>
       </div>
       <div className="pt-2.5 mt-1 border-t border-gray-200 flex items-center gap-2">
         <AvatarMini src={t.avatar} name={t.name} />
         <div className="min-w-0">
-          <p className="font-serif font-bold text-[9px] text-primary truncate">{t.name || 'Nom'}</p>
-          <p className="text-[8px] text-secondary font-medium truncate">{t.role[lang]}</p>
-          <p className="text-[7px] text-outline font-mono truncate">{t.relationship[lang]}</p>
+          <p className="font-serif font-bold text-micro text-primary truncate">{t.name || 'Nom'}</p>
+          <p className="text-micro text-secondary font-medium truncate">{t.role[lang]}</p>
+          <p className="text-micro text-outline font-mono truncate">{t.relationship[lang]}</p>
         </div>
       </div>
     </div>
@@ -658,14 +658,14 @@ function PreviewTestimonial({ t, lang }: { t: Testimonial; lang: 'FR' | 'EN' }) 
 
 function PreviewFaq({ f, lang }: { f: FAQItem; lang: 'FR' | 'EN' }) {
   return (
-    <div className="bg-white border border-gray-300 rounded-xl p-3 shadow-xs">
+    <div className="bg-white border border-gray-300 rounded-inner p-3 shadow-elev-1">
       <div className="flex justify-between items-start gap-2">
-        <p className="font-serif text-[10px] font-bold text-primary leading-snug">{f.question[lang] || 'Question…'}</p>
+        <p className="font-serif text-caption font-bold text-primary leading-snug">{f.question[lang] || 'Question…'}</p>
         <span className="shrink-0 p-0.5 rounded-full bg-surface-container-low text-secondary">
           <Plus className="w-3 h-3" />
         </span>
       </div>
-      <p className="pt-2 mt-2 text-[9px] text-on-surface-variant leading-relaxed border-t border-gray-200 line-clamp-3 text-justify">
+      <p className="pt-2 mt-2 text-micro text-on-surface-variant leading-relaxed border-t border-gray-200 line-clamp-3 text-justify">
         {f.answer[lang] || 'Réponse…'}
       </p>
     </div>
@@ -675,30 +675,30 @@ function PreviewFaq({ f, lang }: { f: FAQItem; lang: 'FR' | 'EN' }) {
 function PreviewBlog({ b, lang }: { b: BlogArticle; lang: 'FR' | 'EN' }) {
   const [imgErr, setImgErr] = useState(false);
   return (
-    <div className="bg-white border border-gray-300 rounded-xl overflow-hidden shadow-xs flex flex-col">
+    <div className="bg-white border border-gray-300 rounded-inner overflow-hidden shadow-elev-1 flex flex-col">
       <div className="h-16 relative bg-gradient-to-br from-[#0f3d2e] to-[#00261a] flex items-center justify-center overflow-hidden">
         {b.image && !imgErr ? (
           <img src={b.image} alt={b.title[lang]} className="w-full h-full object-cover" onError={() => setImgErr(true)} />
         ) : (
-          <span className="font-serif text-[8px] text-white/70 italic">{b.category[lang] || 'Catégorie'}</span>
+          <span className="font-serif text-micro text-white/70 italic">{b.category[lang] || 'Catégorie'}</span>
         )}
-        <span className="absolute top-1.5 left-1.5 bg-primary text-white text-[7px] font-mono uppercase font-bold px-1.5 py-0.5 rounded">
+        <span className="absolute top-1.5 left-1.5 bg-primary text-white text-micro font-mono uppercase font-bold px-1.5 py-0.5 rounded-micro">
           {b.category[lang] || 'Article'}
         </span>
       </div>
       <div className="p-2.5 space-y-1 flex-1 flex flex-col justify-between">
         <div className="space-y-1">
-          <span className="text-[7px] font-mono text-outline">
+          <span className="text-micro font-mono text-outline">
             {b.date} • {b.readTime}
           </span>
-          <p className="font-serif text-[10px] font-bold text-primary leading-snug line-clamp-2">
+          <p className="font-serif text-caption font-bold text-primary leading-snug line-clamp-2">
             {b.title[lang] || 'Titre de l’article'}
           </p>
-          <p className="text-[8px] text-on-surface-variant font-light line-clamp-2 leading-relaxed">
+          <p className="text-micro text-on-surface-variant font-light line-clamp-2 leading-relaxed">
             {b.summary[lang] || 'Résumé…'}
           </p>
         </div>
-        <p className="pt-1.5 mt-1 border-t border-outline-variant/20 flex items-center justify-between text-[8px] font-bold text-secondary">
+        <p className="pt-1.5 mt-1 border-t border-outline-variant/20 flex items-center justify-between text-micro font-bold text-secondary">
           <span>Lire le guide</span>
           <Plus className="w-3 h-3" />
         </p>
@@ -711,31 +711,31 @@ function PreviewIdentity({ settings }: { settings: SiteSettings }) {
   return (
     <div className="space-y-1.5">
       {/* Navbar miniature */}
-      <div className="flex items-center justify-between bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 shadow-xs">
+      <div className="flex items-center justify-between bg-white border border-gray-300 rounded-micro px-2.5 py-1.5 shadow-elev-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="w-4 h-4 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-serif text-[7px] font-bold">
+          <span className="w-4 h-4 shrink-0 rounded-full bg-primary text-white flex items-center justify-center font-serif text-micro font-bold">
             S
           </span>
-          <span className="font-serif text-[10px] font-bold text-primary truncate">
+          <span className="font-serif text-caption font-bold text-primary truncate">
             {settings.companyName || 'Nom de l’entreprise'}
           </span>
         </div>
-        <span className="font-mono text-[7px] text-outline truncate ml-2">{settings.projectName || ''}</span>
+        <span className="font-mono text-micro text-outline truncate ml-2">{settings.projectName || ''}</span>
       </div>
       {/* Bandeau promo miniature */}
       <div
-        className={`rounded-lg px-2.5 py-2 border transition-all ${
+        className={`rounded-micro px-2.5 py-2 border transition-all ${
           settings.promoActive
             ? 'bg-secondary-container/20 border-secondary/40'
             : 'bg-gray-100 border-gray-300 opacity-60'
         }`}
       >
-        <p className="text-[8px] font-mono font-bold uppercase tracking-wider text-secondary">
+        <p className="text-micro font-mono font-bold uppercase tracking-wider text-secondary">
           ⭐ {settings.promoTitle || 'Promotion de lancement'}{' '}
           {settings.promoActive ? '' : '— désactivée'}
         </p>
-        <p className="text-[8px] text-on-surface-variant line-clamp-1">{settings.promoDesc}</p>
-        <p className="text-[7px] font-mono text-outline mt-0.5">
+        <p className="text-micro text-on-surface-variant line-clamp-1">{settings.promoDesc}</p>
+        <p className="text-micro font-mono text-outline mt-0.5">
           {settings.promoPlotsRemaining} places restantes
         </p>
       </div>
@@ -762,11 +762,11 @@ function ActionsBar({
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap">
       {count === 0 ? (
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--admin-muted) italic">
+        <p className="font-mono text-caption uppercase tracking-[0.2em] text-(--admin-muted) italic">
           Aucun élément — ajoutez-en un ci-contre
         </p>
       ) : (
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--admin-muted)">
+        <p className="font-mono text-caption uppercase tracking-[0.2em] text-(--admin-muted)">
           {count} élément{count > 1 ? 's' : ''} — réordonnez avec ↑ ↓ dans chaque carte
         </p>
       )}
@@ -780,7 +780,7 @@ function ActionsBar({
         <button
           type="button"
           onClick={onAdd}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-mono uppercase tracking-widest font-bold bg-(--admin-accent) text-(--admin-accent-text) shadow-[0_6px_20px_rgba(254,214,91,0.2)] hover:shadow-[0_6px_28px_rgba(254,214,91,0.3)] active:scale-[0.97] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-caption font-mono uppercase tracking-widest font-bold bg-(--admin-accent) text-(--admin-accent-text) shadow-[0_6px_20px_rgba(254,214,91,0.2)] hover:shadow-[0_6px_28px_rgba(254,214,91,0.3)] active:scale-[0.97] transition-all duration-400 ease-spring cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" strokeWidth={2} />
           {addLabel}
@@ -809,7 +809,7 @@ function SyncStamp({ lastSyncedAt }: { lastSyncedAt: number | null }) {
   return (
     <span
       title={label}
-      className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-(--admin-muted-2)"
+      className="inline-flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.18em] text-(--admin-muted-2)"
     >
       <Clock3 className="w-3 h-3 shrink-0" strokeWidth={1.5} />
       {label}
@@ -981,7 +981,7 @@ export default function AdminContentTab({
       <div className="flex items-center justify-between gap-3 flex-wrap px-1">
         <SyncStamp lastSyncedAt={lastSyncedAt ?? null} />
         {isSyncing && (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-(--admin-sky)">
+          <span className="inline-flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.18em] text-(--admin-sky)">
             <Loader2 className="w-3 h-3 animate-spin shrink-0" strokeWidth={1.5} />
             Synchronisation cloud…
           </span>
@@ -1046,11 +1046,11 @@ export default function AdminContentTab({
             </FormGroup>
           </div>
           <div className="space-y-2">
-            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-(--admin-muted)">
+            <span className="font-mono text-micro uppercase tracking-[0.2em] text-(--admin-muted)">
               Aperçu en direct
             </span>
-            <div className="rounded-xl bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-3">
-              <div className="rounded-lg bg-[#fcf9f8] ring-1 ring-(--admin-ring)/50 p-3">
+            <div className="rounded-inner bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) p-3">
+              <div className="rounded-micro bg-[#FAF9F5] ring-1 ring-(--admin-ring)/50 p-3">
                 <PreviewIdentity settings={settings} />
               </div>
             </div>
@@ -1275,6 +1275,7 @@ export default function AdminContentTab({
               id: `place-${Date.now()}`,
               icon: 'MapPin',
               time: '',
+              timeEn: '',
               title: { FR: '', EN: '' },
               description: { FR: '', EN: '' },
             }))
@@ -1298,6 +1299,14 @@ export default function AdminContentTab({
                 placeholder="< 20 MIN"
                 max={24}
                 hint="Affiché dans le badge doré de la carte"
+              />
+              <Field
+                label="Temps / distance — anglais"
+                value={c.timeEn || ''}
+                onChange={(val) => setField('connectivity', i, 'timeEn', val)}
+                placeholder="IMMEDIATE"
+                max={24}
+                hint="Optionnel — utile seulement si le texte français n'est pas neutre (« IMMÉDIAT »)"
               />
             </FormGroup>
             <FormGroup icon={<Type className="w-3.5 h-3.5" strokeWidth={1.5} />} label="Textes FR / EN">
@@ -1695,13 +1704,13 @@ export default function AdminContentTab({
             className="fixed bottom-20 sm:bottom-6 left-1/2 z-40 w-max max-w-[calc(100vw-2rem)]"
           >
             <div className="relative overflow-hidden flex items-center gap-2 pl-4 pr-2 py-2 rounded-full bg-(--admin-card) ring-1 ring-(--admin-accent)/30 shadow-[0_16px_50px_rgba(0,0,0,0.5)]">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-(--admin-text) whitespace-nowrap">
+              <span className="font-mono text-caption uppercase tracking-[0.18em] text-(--admin-text) whitespace-nowrap">
                 {undo.action === 'deleted' ? 'Élément supprimé' : 'Élément dupliqué'}
               </span>
               <button
                 type="button"
                 onClick={performUndo}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--admin-accent) text-(--admin-accent-text) text-[10px] font-mono font-bold uppercase tracking-widest active:scale-95 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-(--admin-accent) text-(--admin-accent-text) text-caption font-mono font-bold uppercase tracking-widest active:scale-95 transition-transform duration-400 ease-spring cursor-pointer"
               >
                 <Undo2 className="w-3.5 h-3.5" strokeWidth={2} />
                 Annuler
@@ -1713,7 +1722,7 @@ export default function AdminContentTab({
                   setUndo(null);
                 }}
                 aria-label="Fermer"
-                className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-(--admin-muted) hover:text-(--admin-text) transition-colors duration-300 cursor-pointer"
+                className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-(--admin-muted) hover:text-(--admin-text) transition-colors duration-400 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" strokeWidth={1.5} />
               </button>

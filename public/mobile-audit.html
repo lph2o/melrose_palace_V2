@@ -53,6 +53,21 @@
 const R = [];
 let FRAME_ERR = [];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+/* Sonde une condition au lieu de dormir une durée fixe.
+   Nos animations de sortie reposent sur des `setTimeout`, que le navigateur
+   étire dès que l'onglet n'est pas au premier plan (les navigateurs portent le
+   plancher de minutage à ~1 s). Une attente fixe rend donc l'audit instable :
+   il a déjà déclaré « croix inopérante » alors que la modale se fermait bien,
+   une centaine de millisecondes trop tard. Un audit doit juger un état final,
+   pas une durée. */
+const waitUntil = async (predicate, timeout = 3000, step = 100) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeout) {
+    if (predicate()) return true;
+    await wait(step);
+  }
+  return predicate();
+};
 const STANDALONE = () => !!document.getElementById('app-shell'); /* page autonome : app inlinée, aucun serveur */
 
 function add(status, group, name, detail) {
@@ -250,6 +265,21 @@ function auditOverflow(group) {
 }
 
 /* ---------- Onglet Plan cadastral ---------- */
+/* Referme le menu mobile s'il est ouvert. Indispensable avant toute mesure :
+   un menu laissé ouvert recouvre la page, ce qui fausse les contrôles de
+   recouvrement et masque ceux qui porteraient sur le chrome fixe. */
+async function closeMenuIfOpen() {
+  const d = doc();
+  const isOpen = () => [...d.querySelectorAll('div')].some((el) => String(el.className).includes('pt-[var(--nav-h)]'));
+  if (!isOpen()) return false;
+  const burger = [...d.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Menu' && visible(b));
+  if (burger) {
+    burger.click();
+    await wait(450);
+  }
+  return isOpen();
+}
+
 async function gotoPlanTab() {
   const d = doc();
   let btn = [...d.querySelectorAll('button, a')].find((b) => /plan cadastral/i.test(b.textContent) && visible(b));
@@ -264,7 +294,8 @@ async function gotoPlanTab() {
     if (b2) {
       b2.click();
       const t0 = Date.now();
-      while (Date.now() - t0 < 8000) { await wait(400); if (/répertoire cadastral|rechercher lot|plan officiel/i.test(allText())) return true; }
+      while (Date.now() - t0 < 8000) { await wait(400); if (/répertoire cadastral|rechercher lot|plan officiel/i.test(allText())) { await closeMenuIfOpen(); return true; } }
+      await closeMenuIfOpen();
       return false;
     }
   }
@@ -273,8 +304,9 @@ async function gotoPlanTab() {
   const t0 = Date.now();
   while (Date.now() - t0 < 8000) {
     await wait(400);
-    if (/répertoire cadastral|rechercher lot/i.test(allText())) return true;
+    if (/répertoire cadastral|rechercher lot/i.test(allText())) { await closeMenuIfOpen(); return true; }
   }
+  await closeMenuIfOpen();
   return false;
 }
 
@@ -299,6 +331,19 @@ function auditPlan() {
 }
 
 /* ---------- Section Localisation : connectivité admin ---------- */
+async function gotoHome() {
+  await closeMenuIfOpen();
+  const w = win();
+  w.scrollTo(0, 0);
+  try { w.history.replaceState({}, '', '/'); } catch (e) { /* origine blob : sans effet */ }
+  const candidates = [...doc().querySelectorAll('button')];
+  const logo = doc().getElementById('nav-logo');
+  if (logo) { logo.click(); await wait(900); return true; }
+  const back = candidates.find((b) => /accueil|home/i.test(b.textContent || ''));
+  if (back) { back.click(); await wait(900); return true; }
+  return true;
+}
+
 async function gotoLocalisation() {
   const d = doc();
   const loc = [...d.querySelectorAll('button, a')].find((b) => visible(b) && /^localisation$/i.test(b.textContent.trim()));
@@ -365,6 +410,574 @@ function render(statusMsg) {
   window.__AUDIT_RESULTS = R;
 }
 
+/* ---------- Contraste : WCAG 2.1 ---------- */
+function srgbToLinear(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function luminance(rgb) { return 0.2126 * srgbToLinear(rgb[0]) + 0.7152 * srgbToLinear(rgb[1]) + 0.0722 * srgbToLinear(rgb[2]); }
+function contrastRatio(a, b) {
+  const la = luminance(a), lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+let _colorCtx = null;
+function parseColor(value) {
+  if (!value) return null;
+  if (value === 'transparent') return { rgb: [0, 0, 0], a: 0 };
+  const m = /rgba?\(([^)]+)\)/.exec(value);
+  if (m) {
+    const p = m[1].split(',').map((s) => parseFloat(s.trim()));
+    return { rgb: [p[0], p[1], p[2]], a: p.length > 3 ? p[3] : 1 };
+  }
+  // Tailwind v4 produit des `color-mix(in oklab, …)` : le canvas normalise
+  // ces syntaxes CSS Color 4 en rgb()/rgba() exploitables.
+  if (!_colorCtx) _colorCtx = document.createElement('canvas').getContext('2d');
+  _colorCtx.fillStyle = '#000000';
+  _colorCtx.fillStyle = value;
+  const normalized = String(_colorCtx.fillStyle);
+  const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(normalized);
+  if (hex && normalized.toLowerCase() !== '#000000') {
+    return { rgb: [parseInt(hex[1], 16), parseInt(hex[2], 16), parseInt(hex[3], 16)], a: 1 };
+  }
+  const m2 = /rgba?\(([^)]+)\)/.exec(normalized);
+  if (m2) {
+    const p = m2[1].split(',').map((s) => parseFloat(s.trim()));
+    return { rgb: [p[0], p[1], p[2]], a: p.length > 3 ? p[3] : 1 };
+  }
+  return null; // syntaxe indéterminée : on ne juge pas
+}
+/* Compose les fonds translucides du plus bas au plus haut pour obtenir la
+   couleur réellement perçue derrière un texte. Renvoie null quand la réponse
+   n'est pas calculable : mieux vaut ne rien dire que d'accuser à tort. */
+function effectiveBackground(el, w) {
+  const layers = [];
+  let node = el;
+  while (node && node.nodeType === 1) {
+    const raw = w.getComputedStyle(node).backgroundColor;
+    if (raw && raw !== 'transparent' && raw !== 'rgba(0, 0, 0, 0)') {
+      const bg = parseColor(raw);
+      if (!bg) return null;
+      if (bg.a > 0.02) {
+        layers.unshift(bg);
+        if (bg.a >= 0.98) break;
+      }
+    }
+    node = node.parentElement;
+  }
+  let base = [255, 255, 255];
+  for (const layer of layers) {
+    base = [
+      layer.rgb[0] * layer.a + base[0] * (1 - layer.a),
+      layer.rgb[1] * layer.a + base[1] * (1 - layer.a),
+      layer.rgb[2] * layer.a + base[2] * (1 - layer.a),
+    ];
+  }
+  return base;
+}
+/* Un texte posé sur une photo ou un dégradé n'a pas de contraste calculable
+   de façon statique : on l'écarte du verdict au lieu de le déclarer fautif. */
+function overMedia(el, rect, w) {
+  const area = rect.width * rect.height;
+  let node = el;
+  while (node && node.nodeType === 1) {
+    const cs = w.getComputedStyle(node);
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const media = node.querySelectorAll('img, video, picture');
+    for (const m of media) {
+      const r = m.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      // Recouvrement exigé : au moins 97 % du rectangle de texte. La tolérance
+      // en dur de ±2 px se faisait piéger par l'arrondi sous-pixel d'un texte
+      // posé sur une photo (2 px de débordement faisaient basculer le test), ce
+      // qui déclarait un contraste illisible sur un texte parfaitement lisible.
+      // Un texte qui déborde franchement garde, lui, moins de 97 %.
+      const ox = Math.max(0, Math.min(r.right, rect.right) - Math.max(r.left, rect.left));
+      const oy = Math.max(0, Math.min(r.bottom, rect.bottom) - Math.max(r.top, rect.top));
+      if (area > 0 && (ox * oy) / area >= 0.97) return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+function rgbToHex(rgb) {
+  return '#' + rgb.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+}
+
+/* ---------- Audit design (système de jetons) ---------- */
+const TOKEN_RADII = [0, 8, 14, 20];
+const MIN_TEXT_PX = 11;
+const MIN_TARGET_PX = 44;
+
+function auditDesign(group) {
+  const d = doc(), w = win();
+  const tooSmall = [];
+  const lowContrast = [];
+  const smallTargets = [];
+  const oddRadii = new Map();
+  const palette = new Set();
+  const chrome = [];
+  let skippedContrast = 0;
+
+  const isVisible = (el, cs, r) =>
+    cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0.05 && r.width > 0 && r.height > 0;
+
+  d.querySelectorAll('body *').forEach((el) => {
+    const cs = w.getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (!isVisible(el, cs, r)) return;
+
+    if (cs.position === 'fixed' || cs.position === 'sticky') {
+      if (cs.pointerEvents !== 'none' && r.height < w.innerHeight * 0.98) {
+        chrome.push({ el, r, cls: String(el.className).slice(0, 42) });
+      }
+    }
+
+    const radius = parseFloat(cs.borderTopLeftRadius);
+    if (radius > 0 && radius < 100 && !TOKEN_RADII.some((t) => Math.abs(t - radius) < 0.6)) {
+      oddRadii.set(radius, (oddRadii.get(radius) || 0) + 1);
+    }
+
+    if (/^rgba?\(/.test(cs.color)) {
+      const c = parseColor(cs.color);
+      if (c && c.a > 0.05) palette.add(rgbToHex([
+        c.rgb[0] * c.a + 255 * (1 - c.a),
+        c.rgb[1] * c.a + 255 * (1 - c.a),
+        c.rgb[2] * c.a + 255 * (1 - c.a),
+      ]));
+    }
+
+    if (el.matches('button, a[href], input, select, textarea, [role="button"], label[for]')) {
+      // `tap-44` étend la zone cliquable par un pseudo-élément : on la compte
+      // comme 44px, sinon on juge sur la boîte réelle.
+      const extended = el.classList.contains('tap-44');
+      const hitsW = extended ? Math.max(r.width, MIN_TARGET_PX) : r.width;
+      const hitsH = extended ? Math.max(r.height, MIN_TARGET_PX) : r.height;
+      if (hitsW + 0.5 < MIN_TARGET_PX || hitsH + 0.5 < MIN_TARGET_PX) {
+        smallTargets.push(
+          (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 26) +
+            ' (' + Math.round(r.width) + '×' + Math.round(r.height) + ')',
+        );
+      }
+    }
+
+    // Texte : taille et contraste, uniquement sur les nœuds porteurs de texte.
+    // Le texte SVG est écarté du plancher de taille : ses « px » sont des
+    // unités vectorielles d'un plan zoomable, pas des pixels d'interface.
+    const inSvg = !!el.closest('svg');
+    Array.prototype.forEach.call(el.childNodes, (node) => {
+      if (node.nodeType !== 3 || !node.nodeValue.trim()) return;
+      const px = parseFloat(cs.fontSize);
+      const label = node.nodeValue.trim().slice(0, 24);
+      if (!inSvg && px + 0.4 < MIN_TEXT_PX) tooSmall.push(px + 'px « ' + label + ' »');
+
+      const fg = parseColor(cs.color);
+      if (!fg || fg.a < 0.05) return;
+      if (overMedia(el, r, w)) { skippedContrast++; return; }
+      const bg = effectiveBackground(el, w);
+      if (!bg) { skippedContrast++; return; }
+      const blended = [
+        fg.rgb[0] * fg.a + bg[0] * (1 - fg.a),
+        fg.rgb[1] * fg.a + bg[1] * (1 - fg.a),
+        fg.rgb[2] * fg.a + bg[2] * (1 - fg.a),
+      ];
+      const ratio = contrastRatio(blended, bg);
+      const large = px >= 24 || (px >= 18.66 && parseInt(cs.fontWeight, 10) >= 700);
+      const need = large ? 3 : 4.5;
+      if (ratio < need) {
+        lowContrast.push(ratio.toFixed(2) + ':1 « ' + label + ' » (' + rgbToHex(blended) + ' sur ' + rgbToHex(bg) + ')');
+      }
+    });
+  });
+
+  // Chevauchements entre éléments de chrome fixe (navbar, bandeau, bouton flottant)
+  const overlaps = [];
+  for (let i = 0; i < chrome.length; i++) {
+    for (let j = i + 1; j < chrome.length; j++) {
+      const a = chrome[i].r, b = chrome[j].r;
+      if (chrome[i].el.contains(chrome[j].el) || chrome[j].el.contains(chrome[i].el)) continue;
+      const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+      const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (ox > 6 && oy > 6) overlaps.push('<' + chrome[i].cls + '> × <' + chrome[j].cls + '> (' + Math.round(ox) + '×' + Math.round(oy) + ')');
+    }
+  }
+  overlaps.length
+    ? add('fail', group, 'Chevauchement du chrome fixe (' + overlaps.length + ')', overlaps.slice(0, 3).join(' · '))
+    : add('pass', group, 'Aucun chevauchement entre éléments fixes/collants', 'navbar + bandeau + bouton flottant testés');
+
+  tooSmall.length
+    ? add('fail', group, 'Texte sous ' + MIN_TEXT_PX + 'px (' + tooSmall.length + ')', tooSmall.slice(0, 4).join(' · '))
+    : add('pass', group, 'Aucun texte sous ' + MIN_TEXT_PX + 'px', 'plancher typographique respecté (texte SVG du plan exclu)');
+
+  smallTargets.length
+    ? add('fail', group, 'Cibles tactiles sous ' + MIN_TARGET_PX + 'px (' + smallTargets.length + ')', smallTargets.slice(0, 4).join(' · '))
+    : add('pass', group, 'Cibles tactiles ≥ ' + MIN_TARGET_PX + 'px', 'toutes les zones cliquables conformes');
+
+  lowContrast.length
+    ? add('fail', group, 'Contraste insuffisant (' + lowContrast.length + ')', lowContrast.slice(0, 3).join(' · '))
+    : add('pass', group, 'Contraste ≥ 4,5:1 sur tous les textes', 'calcul WCAG 2.1 réel · ' + skippedContrast + ' texte(s) sur photo/dégradé écarté(s)');
+
+  // « Cliquable » ne se déduit pas de l'aspect : un contrôle peut être recouvert
+  // par un calque et paraître intact. On le prouve par test de collision, à la
+  // position du doigt. (`elementFromPoint` ignore les `pointer-events: none`.)
+  const unhittable = [];
+  const overlayOpen = !!d.querySelector('[role="dialog"]') ||
+    [...d.querySelectorAll('div')].some((el) => String(el.className).includes('pt-[var(--nav-h)]'));
+  if (overlayOpen) {
+    // Un calque ouvert recouvre volontairement la page : juger ici produirait
+    // des faux positifs. Le cas du menu est couvert par le contrôle dédié
+    // « Menu mobile », qui teste la croix de fermeture calque ouvert.
+    add('info', group, 'Contrôles atteignables : non jugé', 'un calque est ouvert (menu ou modale)');
+  } else {
+    d.querySelectorAll('button, a[href], input, select, textarea, [role="button"]').forEach((el) => {
+      // On ne juge que le chrome fixe/collant : c'est le seul qui soit censé
+      // rester cliquable en toutes circonstances. Le contenu de page est
+      // légitimement recouvert par un menu ou une modale ouverte.
+      let node = el;
+      let inChrome = false;
+      while (node && node !== d.body) {
+        const p = w.getComputedStyle(node).position;
+        if (p === 'fixed' || p === 'sticky') { inChrome = true; break; }
+        node = node.parentElement;
+      }
+      if (!inChrome) return;
+      const r = el.getBoundingClientRect();
+      if (r.width < 6 || r.height < 6) return;
+      // Entièrement dans le viewport : sinon le recouvrement vient du défilement.
+      if (r.top < 0 || r.left < 0 || r.bottom > w.innerHeight || r.right > w.innerWidth) return;
+      const cs = w.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.pointerEvents === 'none') return;
+      const hit = d.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if (!hit || hit === el || el.contains(hit) || hit.contains(el)) return;
+      unhittable.push(
+        (el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 24) +
+          ' → ' + String(hit.className || hit.tagName).trim().slice(0, 34),
+      );
+    });
+    unhittable.length
+      ? add('fail', group, 'Contrôles du chrome recouverts (' + unhittable.length + ')', 'un tap n\'atteint pas le bouton · ' + unhittable.slice(0, 3).join(' · '))
+      : add('pass', group, 'Chrome fixe entièrement atteignable au doigt', 'test de collision réel (elementFromPoint) sur le centre de chaque contrôle');
+  }
+
+  // Registre des libellés : une étiquette en MAJUSCULES avec interlettrage doit
+  // rester discrète (`text-micro`, 11px). Les contrôles et les intitulés de
+  // champ sont exemptés (une action reste lisible avant d'être élégante).
+  const loudLabels = [];
+  d.querySelectorAll('body *').forEach((el) => {
+    if (typeof el.classList?.contains !== 'function') return;
+    if (!el.classList.contains('uppercase')) return;
+    if (![...el.classList].some((c) => c.startsWith('tracking-'))) return;
+    if (el.closest('button, a, label, input, select, textarea, summary, svg')) return;
+    // Une étiquette qui déclare explicitement sa taille par point de rupture
+    // (`text-micro sm:text-caption`) dit son intention : la règle ne vise que
+    // les étiquettes restées à 13px par défaut sur mobile.
+    if (/(^|\s)(sm|md|lg|xl|2xl):text-(micro|caption|xs|sm|base|lg|xl|2xl)/.test(String(el.className))) return;
+    const px = parseFloat(w.getComputedStyle(el).fontSize);
+    if (px > 12.5) {
+      loudLabels.push((el.textContent || el.tagName).trim().slice(0, 24) + ' (' + px + 'px)');
+    }
+  });
+  loudLabels.length
+    ? add('fail', group, 'Libellés capitales trop gros (' + loudLabels.length + ')', 'attendu ≤ 11px · ' + loudLabels.slice(0, 4).join(' · '))
+    : add('pass', group, 'Libellés capitales au registre discret', 'majuscules + interlettrage ≤ 11px, contrôles exemptés');
+
+  const h1 = d.querySelectorAll('h1').length;
+  h1 === 1
+    ? add('pass', group, 'Un seul H1 sur la page', 'hiérarchie de titres valide')
+    : add('fail', group, h1 + ' balises H1 sur la page', 'attendu : exactement 1');
+
+  const odd = [...oddRadii.entries()].sort((a, b) => b[1] - a[1]);
+  add(
+    odd.length ? 'warn' : 'pass',
+    group,
+    odd.length ? 'Rayons hors jetons (' + odd.length + ')' : 'Rayons conformes aux jetons',
+    odd.length ? odd.slice(0, 5).map(([r, n]) => r + 'px×' + n).join(' · ') : '8 / 14 / 20 px + pilulier',
+  );
+
+  add('info', group, 'Palette de texte observée (' + palette.size + ' teintes)', [...palette].slice(0, 12).join(' '));
+}
+
+/* ---------- Boutons de fermeture des modales ----------
+   Chaque modale place sa croix en appelant `useModalClose()`. Ce hook a longtemps
+   été inerte (il lisait un contexte fourni par la coque, elle-même rendue EN
+   DESSOUS de la modale : `useContext` y retombait toujours sur la valeur par
+   défaut). Échap, le fond et le glissé — internes à la coque — fonctionnaient,
+   ce qui masquait le problème. On vérifie donc ici le geste réel : un tap au
+   centre de la croix, sur l'élément que le doigt toucherait. */
+async function auditModalClose(group, openers) {
+  const d = doc();
+  const w = win();
+  const dialog = () => d.querySelector('[role="dialog"]');
+  for (const o of openers) {
+    const trigger = (() => { try { return o.find(d); } catch (e) { return null; } })();
+    if (!trigger) { add('info', group, o.label + ' : déclencheur absent', 'rien à vérifier'); continue; }
+    trigger.click();
+    await waitUntil(() => !!dialog(), 4000);
+    const dlg = dialog();
+    if (!dlg) { add('warn', group, o.label + ' : la modale ne s\'ouvre pas', 'vérifier le déclencheur'); continue; }
+    const x = [...dlg.querySelectorAll('button')].find((b) => /ferm|close/i.test(b.getAttribute('aria-label') || b.textContent || ''));
+    if (!x) {
+      add('info', group, o.label + ' : pas de croix', 'fermeture par un autre moyen');
+      d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await wait(500);
+      continue;
+    }
+    // Certaines modales portent leur croix dans une colonne défilante : on la
+    // ramène dans la zone visible avant de juger, comme le ferait un doigt qui
+    // va la chercher.
+    try { x.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ }
+    await wait(200);
+    const r = x.getBoundingClientRect();
+    const inView = r.top >= 0 && r.bottom <= win().innerHeight && r.left >= 0 && r.right <= win().innerWidth;
+    const hit = inView ? d.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+    const tapped = !!hit && (hit === x || x.contains(hit));
+    (tapped ? hit : x).dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+    const closed = await waitUntil(() => !dialog());
+    const how = tapped
+      ? 'tap sur la croix'
+      : !inView
+        ? 'croix hors zone visible du viewport'
+        : 'un tap atteindrait <' + String((hit && hit.className) || (hit && hit.tagName) || 'rien').slice(0, 34) + '>';
+    add(
+      closed ? 'pass' : 'fail',
+      group,
+      closed ? 'Croix fonctionnelle — ' + o.label : 'Croix inopérante — ' + o.label,
+      how + (closed ? ', modale démontée' : ', modale toujours ouverte'),
+    );
+    if (dialog()) {
+      d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await wait(500);
+    }
+  }
+}
+
+/* ---------- Menu mobile : refermable au doigt ----------
+   Le menu est un calque plein largeur. S'il passe AU-DESSUS de la navbar, il
+   recouvre la croix de fermeture : le menu s'ouvre et ne se referme plus au
+   doigt (le tap atterrit sur le calque). Un `.click()` programmatique ne voit
+   pas le problème — il contourne le test de collision. D'où ce contrôle, qui
+   ne juge que ce que le doigt toucherait vraiment. */
+async function auditMobileMenu() {
+  const group = 'Menu mobile';
+  const d = doc(), w = win();
+  const burger = [...d.querySelectorAll('button')].find(
+    (b) => /menu/i.test(b.getAttribute('aria-label') || '') && b.offsetParent !== null,
+  );
+  if (!burger) {
+    add('warn', group, 'Bouton menu introuvable', 'largeur bureau ? rien à vérifier');
+    return;
+  }
+  const findOverlay = () => [...d.querySelectorAll('div')].find((el) => String(el.className).includes('pt-[var(--nav-h)]'));
+  // Le bouton est réinterrogé à chaque fois : la barre se re-rend (état « scrollé »)
+  // et l'ancien nœud peut être détaché — un `.click()` sur un nœud détaché ne fait rien.
+  const findBurger = () => [...d.querySelectorAll('button')].find((b) => /menu/i.test(b.getAttribute('aria-label') || '') && b.offsetParent !== null);
+  const tap = (el) => el && el.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+
+  burger.click();
+  await waitUntil(() => !!findOverlay(), 3000);
+  const overlay = findOverlay();
+  if (!overlay) {
+    add('fail', group, "Le menu ne s'ouvre pas", 'aucun calque après activation du bouton');
+    return;
+  }
+
+  // 1. Le bouton d'ouverture (devenu croix) doit rester atteignable.
+  const br = burger.getBoundingClientRect();
+  const hit = d.elementFromPoint(br.left + br.width / 2, br.top + br.height / 2);
+  const reachable = hit === burger || burger.contains(hit) || (hit && hit.contains(burger));
+  add(
+    reachable ? 'pass' : 'fail',
+    group,
+    reachable ? 'La croix de fermeture reste atteignable menu ouvert' : 'La croix de fermeture est recouverte',
+    reachable
+      ? 'test de collision sur le centre du bouton'
+      : 'un tap atteint <' + String((hit && hit.className) || (hit && hit.tagName) || '?').slice(0, 40) + '>',
+  );
+
+  // 2. Un tap sur la zone sombre sous les entrées doit refermer (pouce, une main).
+  const inner = overlay.firstElementChild;
+  const ir = inner.getBoundingClientRect();
+  const y = Math.min(w.innerHeight - 6, ir.bottom + 24);
+  if (y > ir.bottom + 4) {
+    const target = d.elementFromPoint(20, y);
+    tap(target);
+    const closed = await waitUntil(() => !findOverlay(), 2500);
+    add(
+      closed ? 'pass' : 'fail',
+      group,
+      closed ? 'Un tap sur la zone sombre referme le menu' : 'Un tap sur la zone sombre ne referme pas le menu',
+      target && target.hasAttribute && target.hasAttribute('data-menu-scrim')
+        ? 'tap hors du panneau, sur le calque'
+        : 'cible touchée : <' + String((target && target.className) || (target && target.tagName) || '?').slice(0, 40) + '>',
+    );
+  } else {
+    add('info', group, 'Menu plein écran : pas de zone sombre libre', 'fermeture par la croix ou Échap uniquement');
+  }
+
+  // 3. Ne jamais laisser le menu ouvert derrière soi.
+  if (findOverlay()) {
+    const b2 = findBurger();
+    if (b2) {
+      b2.click();
+      await waitUntil(() => !findOverlay(), 2500);
+    }
+  }
+  const stuckAfterClick = !!findOverlay();
+  if (stuckAfterClick) {
+    // Repli : la touche Échap doit toujours pouvoir libérer la page.
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await waitUntil(() => !findOverlay(), 2500);
+  }
+  const stillOpen = !!findOverlay();
+  add(
+    stillOpen ? 'fail' : 'pass',
+    group,
+    stillOpen ? 'Le menu ne se referme pas' : 'Le menu se referme et rend la page',
+    stillOpen
+      ? 'le calque est encore monté après le bouton puis Échap'
+      : stuckAfterClick
+        ? 'fermé par Échap (bouton : à vérifier)'
+        : 'calque démonté, page de nouveau interactive',
+  );
+}
+
+/* ---------- Visite 3D : ancrage au sol et coût du flou ----------
+   La scène 3D est un moteur de projection logiciel : ce qui la fait tenir (tri
+   des faces, ombre déduite du soleil, occlusion de contact, coordonnées finies)
+   ne se voit pas dans l'interface et casse donc en silence. Ce contrôle fixe
+   quatre invariants mesurables. */
+async function auditScene3D(group) {
+  const d = doc(), w = win();
+  const trigger = [...d.querySelectorAll('button')].find((b) => /visite 3d|3d tour/i.test(b.textContent || ''));
+  if (!trigger) { add('info', group, 'Visite 3D non atteignable', 'rien à vérifier'); return; }
+
+  trigger.click();
+  await waitUntil(() => !!d.querySelector('[role="dialog"]'), 4000);
+  const scene = () => [...d.querySelectorAll('[role="dialog"] svg')]
+    .find((s) => s.getAttribute('viewBox') === '0 0 500 350');
+  if (!scene()) { add('warn', group, 'Scène 3D non rendue', 'aucun SVG 500×350 dans la modale'); return; }
+
+  // On juge un état, pas une image de passage : la rotation auto doit s'arrêter.
+  const auto = [...d.querySelectorAll('[role="dialog"] button')].find((b) => /auto/i.test(b.textContent || ''));
+  if (auto && /ON/.test(auto.textContent)) { auto.click(); await wait(300); }
+
+  // 1. Aucun filtre SVG : il se ré-rasteriserait à chaque image de la rotation.
+  const filters = scene().querySelectorAll('filter, feGaussianBlur');
+  add(filters.length === 0 ? 'pass' : 'fail', group,
+    filters.length ? 'Filtre SVG dans une scène animée (' + filters.length + ')' : 'Aucun filtre SVG dans la scène 3D',
+    filters.length ? 'le flou doit venir d\'un empilement de formes' : 'flou obtenu par empilement, pas par repaint');
+
+  // 2. Ombre portée et occlusion présentes, et empilées dans l'ordre fixe.
+  const stack = [...scene().querySelectorAll('polygon')].map((p) => {
+    const f = p.getAttribute('fill') || '';
+    if (f.indexOf('url(#vt-shadow') === 0) return 'shadow:' + (p.getAttribute('fill-opacity') || '0');
+    if (f === 'url(#vt-ao)') return 'ao';
+    return null;
+  }).filter(Boolean);
+  const shadows = stack.filter((s) => s !== 'ao');
+  const growing = shadows.every((s, i) => i === 0 || parseFloat(s.slice(7)) > parseFloat(shadows[i - 1].slice(7)));
+  const anchored = shadows.length >= 2 && growing && stack.indexOf('ao') === shadows.length;
+  add(anchored ? 'pass' : 'fail', group,
+    anchored ? 'Ombre portée et occlusion ambiante en place' : 'Ancrage au sol incomplet',
+    anchored ? shadows.length + ' passes d\'ombre (pâle → dense) puis l\'occlusion' : 'empilement observé : ' + (stack.join(' → ') || 'aucun'));
+
+  // 3. La longueur de l'ombre doit suivre la hauteur du soleil.
+  const rows = [...d.querySelectorAll('[role="dialog"] button')];
+  const byLabel = (re) => rows.find((x) => re.test((x.textContent || '').trim()));
+  let dawnBtn = byLabel(/^(aube|sunrise|dawn)/i), noonBtn = byLabel(/^(midi|noon|midday)/i);
+  if (!dawnBtn || !noonBtn) {
+    // Libellés traduits : on retombe sur les positions de la rangée des heures.
+    const night = byLabel(/^(nuit|night)/i);
+    const kids = night && night.parentElement ? [...night.parentElement.children] : [];
+    if (kids.length >= 4) { dawnBtn = kids[0]; noonBtn = kids[1]; }
+  }
+  const shadowLength = async (btn) => {
+    if (!btn) return null;
+    btn.click();
+    await waitUntil(() => !!scene(), 1500);
+    await wait(250);
+    const g = [...scene().querySelectorAll('linearGradient')].find((x) => x.id === 'vt-shadow');
+    if (!g) return null;
+    return Math.hypot(+g.getAttribute('x2') - +g.getAttribute('x1'), +g.getAttribute('y2') - +g.getAttribute('y1'));
+  };
+  const dawn = await shadowLength(dawnBtn);
+  const noon = await shadowLength(noonBtn);
+  const sunDriven = dawn !== null && noon !== null && dawn > noon * 1.5;
+  add(sunDriven ? 'pass' : 'fail', group,
+    sunDriven ? 'Ombre indexée sur la hauteur du soleil' : 'Ombre indépendante du soleil',
+    dawn === null || noon === null
+      ? 'boutons d\'heure introuvables'
+      : 'aube ' + dawn.toFixed(1) + ' px vs midi ' + noon.toFixed(1) + ' px');
+
+  // 4. Une seule coordonnée non finie suffit à vider le SVG.
+  const coords = [...scene().querySelectorAll('polygon,line,ellipse,rect,radialGradient,linearGradient')]
+    .map((e) => [...e.attributes].map((a) => a.value).join(' ')).join(' ');
+  const broken = /NaN|undefined|Infinity/.test(coords);
+  add(broken ? 'fail' : 'pass', group,
+    broken ? 'Coordonnées non finies dans la scène 3D' : 'Projection sans coordonnée non finie',
+    broken ? 'NaN / undefined / Infinity détecté' : 'aucune valeur invalide dans le SVG');
+
+  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await waitUntil(() => !d.querySelector('[role="dialog"]'), 2500);
+}
+
+/* ---------- Légende de zone contre plan réellement dessiné ----------
+   Les libellés de zone étaient écrits à la main et avaient dérivé du plan
+   qu'ils décrivent : la légende annonçait une zone centrale de 18 lots pour 19
+   lots peints, et les filtres totalisaient 53 lots à côté d'un bouton
+   « Tous (54 lots) ». Ce contrôle recompte les lots effectivement dessinés par
+   couleur et exige l'égalité avec ce qui est annoncé — il ne connaît rien des
+   données de l'app, il compare deux choses à l'écran. */
+function auditZoneLegend(group) {
+  const d = doc();
+  const ZONES = [
+    { name: 'Ouest', re: /ouest|west/i, fills: ['#7BA877', '#548750'] },
+    { name: 'Centrale', re: /centrale|\(central/i, fills: ['#FDE792', '#F0D45E'] },
+    { name: 'Centre-Est', re: /centre-est|center-east/i, fills: ['#EE7558', '#DB5838'] },
+    { name: 'Est', re: /zone est|east zone|zone east/i, fills: ['#FA9D7A', '#EB7E56'] },
+  ];
+  const painted = (fills) =>
+    [...d.querySelectorAll('polygon')].filter((p) => {
+      const f = (p.getAttribute('fill') || '').toUpperCase();
+      return fills.some((c) => f === c.toUpperCase());
+    }).length;
+  const declared = (re) => {
+    const el = [...d.querySelectorAll('button')].find((b) => re.test(b.textContent || ''));
+    const m = el && (el.textContent || '').match(/\((\d+)\)/);
+    return { el, n: m ? +m[1] : null };
+  };
+
+  const rows = [];
+  let onScreen = 0;
+  let announced = 0;
+  let readable = true;
+  for (const z of ZONES) {
+    const decl = declared(z.re);
+    if (!decl.el || decl.n === null) { readable = false; continue; }
+    const drawn = painted(z.fills);
+    onScreen += drawn;
+    announced += decl.n;
+    rows.push(z.name + ' ' + drawn + '/' + decl.n);
+  }
+
+  if (!readable) {
+    add('info', group, 'Zones non lisibles sur cette vue', 'changez de mode d\'affichage ?');
+    return;
+  }
+
+  const eachMatch = rows.every((r) => {
+    const [drawn, decl] = r.split(' ')[1].split('/');
+    return drawn === decl;
+  });
+  add(eachMatch ? 'pass' : 'fail', group,
+    eachMatch ? 'Chaque zone annonce le nombre de lots dessinés' : 'Une zone annonce un nombre de lots faux',
+    rows.join(' · ') + ' (dessinés / annoncés)');
+
+  const allBtn = [...d.querySelectorAll('button')]
+    .find((b) => /^(tous|all)\b/i.test((b.textContent || '').trim()));
+  const totalDecl = allBtn ? +(((allBtn.textContent || '').match(/\((\d+)/) || [])[1] || 0) : 0;
+  const consistent = !!allBtn && totalDecl === onScreen && announced === onScreen;
+  add(consistent ? 'pass' : 'fail', group,
+    consistent ? 'Somme des zones égale au total des lots' : 'Somme des zones différente du total des lots',
+    'zones ' + announced + ' · dessinés ' + onScreen + ' · bouton « Tous » ' + (totalDecl || 'introuvable'));
+}
+
 /* ---------- Orchestration ---------- */
 async function runAudit() {
   R.length = 0; FRAME_ERR = [];
@@ -387,9 +1000,17 @@ async function runAudit() {
   document.getElementById('status').innerHTML = '<span class="spin">◌</span> Balayage de la page d\'accueil…';
   await sweepScroll();
   auditHome();
+  await auditMobileMenu();
+  await auditModalClose('Modales — fermeture', [
+    { label: 'Recherche', find: (d) => d.querySelector('button[aria-label="Recherche"]') || d.querySelector('button[aria-label="Rechercher"]') },
+    { label: 'Partage du site', find: (d) => d.querySelector('button[aria-label="Partager le projet"]') || d.querySelector('button[aria-label="Partager"]') },
+    { label: 'Plaquette', find: (d) => [...d.querySelectorAll('button')].find((b) => /plaquette/i.test(b.textContent || '')) },
+    { label: 'Article', find: (d) => [...d.querySelectorAll('[role="button"]')].find((el) => el.querySelector('h4') && String(el.className).includes('rounded-card')) },
+  ]);
   await auditMedia();
   await auditBrochure();
   auditOverflow('Accueil — rendu mobile');
+  auditDesign('Design — accueil');
   auditErrors('Accueil — rendu mobile');
 
   document.getElementById('status').innerHTML = '<span class="spin">◌</span> Test bascule EN (accueil)…';
@@ -402,11 +1023,25 @@ async function runAudit() {
   document.getElementById('status').innerHTML = '<span class="spin">◌</span> Onglet Plan cadastral…';
   if (await gotoPlanTab()) {
     await sweepScroll();
+    await auditModalClose('Modales — fermeture (plan)', [
+      { label: 'Partage de parcelle', find: (d) => [...d.querySelectorAll('button')].find((b) => (b.textContent || '').trim() === (d.documentElement.lang === 'en' ? 'Share' : 'Partager')) },
+      { label: 'Visite 3D', find: (d) => [...d.querySelectorAll('button')].find((b) => /visite 3d|3d tour/i.test(b.textContent || '')) },
+    ]);
+    await auditScene3D('Visite 3D — ancrage');
+    auditZoneLegend('Plan — légende de zone');
     auditPlan();
     auditOverflow('Plan — rendu mobile');
+    auditDesign('Design — plan cadastral');
     auditErrors('Plan — rendu mobile');
   } else {
     add('warn', 'Plan cadastral', 'Onglet Plan non atteint', 'ni bouton direct, ni menu hamburger, ni lien Choisir ma parcelle');
+  }
+
+  document.getElementById('status').innerHTML = '<span class="spin">◌</span> Retour accueil pour l\'audit design…';
+  if (await gotoHome()) {
+    await sweepScroll();
+    auditDesign('Design — accueil (après navigation)');
+    auditOverflow('Accueil — après navigation');
   }
 
   const counts = { pass: 0, fail: 0, warn: 0 };
