@@ -14,6 +14,7 @@ import {
   Linkedin,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import Logo from './Logo';
 import { insertLead } from '../lib/supabase';
 
 /**
@@ -73,8 +74,8 @@ export default function Footer({
       ? ''
       : `${window.location.origin}${window.location.pathname}`;
   const shareText = isFR
-    ? `${settings?.companyName || 'Sénégal Immobilier Consulting'} — Parcelles de 150 m² à Sébikhotane (dès 300 €/mois)`
-    : `${settings?.companyName || 'Senegal Real Estate Consulting'} — 150 sqm plots in Sebikhotane (from €300/month)`;
+    ? `${settings?.companyName || 'Senegal Investment Consulting'} — Parcelles de 150 m² à Sébikhotane (dès 300 €/mois)`
+    : `${settings?.companyName || 'Senegal Investment Consulting'} — 150 sqm plots in Sebikhotane (from €300/month)`;
   const enc = encodeURIComponent;
   const socialShares = [
     {
@@ -197,14 +198,12 @@ export default function Footer({
         {/* Main Footer Info */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           <div className="md:col-span-5 space-y-3">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-micro bg-secondary-fixed text-primary flex items-center justify-center font-bold font-serif text-sm">
-                SIC
-              </div>
-              <span className="font-serif text-xl font-bold tracking-tight text-white">
-                {settings.companyName || 'Sénégal Immobilier Consulting'}
-              </span>
-            </div>
+            {/* Même marque que la navbar, un cran plus grande : le pied de page a
+                la place de déployer le nom et le filet tricolore en entier. */}
+            <Logo
+              label={settings?.companyName || 'Senegal Investment Consulting'}
+              className="h-16 w-auto"
+            />
             <p className="text-xs text-white/70 leading-relaxed font-light max-w-sm">
               {t.footerWord}
             </p>
@@ -290,8 +289,8 @@ export default function Footer({
               <a
                 href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(
                   isFR
-                    ? 'Bonjour Sénégal Immobilier Consulting, je souhaite échanger avec un conseiller.'
-                    : 'Hello Senegal Real Estate Consulting, I would like to talk to an advisor.'
+                    ? 'Bonjour Senegal Investment Consulting, je souhaite échanger avec un conseiller.'
+                    : 'Hello Senegal Investment Consulting, I would like to talk to an advisor.'
                 )}`}
                 target="_blank"
                 rel="noreferrer"

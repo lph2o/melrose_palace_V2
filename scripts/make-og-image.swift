@@ -2,16 +2,45 @@
 // 1200 × 630, aux couleurs de la marque, sans dépendance externe
 // (CoreGraphics + CoreText, fournis par macOS).
 //
-// Usage :
-//   swift scripts/make-og-image.swift \
-//     --photo public/images/parcelles_54_drone.jpg \
-//     --out public/og/og-home-fr.jpg \
-//     --kicker "SÉBIKHOTANE • SÉNÉGAL" \
-//     --title "Votre terrain à Sébikhotane, dès 300 €/mois" \
+// Usage — les quatre visuels du site, un par route et par langue :
+//
+//   swift scripts/make-og-image.swift --photo public/images/54_parcelles.png \
+//     --out public/og/og-home-fr.jpg --kicker "Sébikhotane • Sénégal" \
+//     --title "Votre terrain à Sébikhotane dès 300 €/mois" \
 //     --subtitle "54 parcelles de 150 m² avec délibération municipale et NICAD, à 20 min de l'AIBD." \
 //     --footer "54 PARCELLES  •  BORNAGE B1-B17  •  MUTATION ACCOMPAGNÉE"
 //
+//   swift scripts/make-og-image.swift --photo public/images/54_parcelles.png \
+//     --out public/og/og-home-en.jpg --kicker "Sebikhotane • Senegal" \
+//     --title "Your plot in Sebikhotane from €300/month" \
+//     --subtitle "54 plots of 150 sqm with municipal deliberation and NICAD title, 20 min from AIBD airport." \
+//     --footer "54 PLOTS  •  B1-B17 MARKERS  •  GUIDED TITLE TRANSFER"
+//
+//   swift scripts/make-og-image.swift --photo public/images/reel_terrain_sebikhotane.jpg \
+//     --out public/og/og-plan-fr.jpg --kicker "Plan cadastral • Sébikhotane" \
+//     --title "Plan cadastral : les 54 parcelles en détail" \
+//     --subtitle "Bornage certifié B1-B17, disponibilités en temps réel et simulateur de financement." \
+//     --footer "PLAN OFFICIEL  •  DISPONIBILITÉS EN TEMPS RÉEL  •  BORNAGE B1-B17"
+//
+//   swift scripts/make-og-image.swift --photo public/images/reel_terrain_sebikhotane.jpg \
+//     --out public/og/og-plan-en.jpg --kicker "Cadastral map • Sebikhotane" \
+//     --title "Cadastral map: all 54 plots in detail" \
+//     --subtitle "Certified B1-B17 boundary markers, real-time availability and financing simulator." \
+//     --footer "OFFICIAL MAP  •  REAL-TIME AVAILABILITY  •  B1-B17 MARKERS"
+//
 // Toutes les options sont obligatoires sauf --footer.
+//
+// `--logo` (facultatif) place la marque complète en haut à gauche ; par défaut
+// il utilise `public/logo/logo-lockup.png`, la marque du site. Le nom n'est pas
+// réécrit à côté du logo : il est gravé dedans.
+//
+// `--kicker` et `--footer` reprennent `kicker` et `shareFooter` de
+// `src/seo/routeMeta.json` (le kicker et le pied sont passés en majuscules par
+// le script — les recopier tels quels). Le `--title` reprend `shareTitle` du
+// même fichier, mais les `--subtitle` ont été rédigés à la main : ils ne vivent
+// que dans les commandes ci-dessus, donc les relire ici avant de régénérer.
+// Attention aux deux espaces autour des « • » des pieds : ils font la largeur
+// du texte, un seul espace décale toute la ligne.
 
 import Foundation
 import CoreGraphics
@@ -34,10 +63,15 @@ guard let photoPath = argValue("--photo"),
       let kicker = argValue("--kicker"),
       let title = argValue("--title"),
       let subtitle = argValue("--subtitle") else {
-    print("usage: swift make-og-image.swift --photo <jpg> --out <jpg> --kicker <txt> --title <txt> --subtitle <txt> [--footer <txt>]")
+    print("usage: swift make-og-image.swift --photo <jpg> --out <jpg> --kicker <txt> --title <txt> --subtitle <txt> [--footer <txt>] [--logo <png>]")
     exit(2)
 }
 let footer = argValue("--footer")
+
+// Le logo complet posé sur la carte. Surchargeable, mais le fichier par défaut
+// est celui du site : c'est la marque validée, il n'y a pas de raison d'en
+// générer un autre.
+let logoPath = argValue("--logo") ?? "public/logo/logo-lockup.png"
 
 /* ------------------------------------------------------------------ */
 /* Couleurs de la marque (identiques au site)                          */
@@ -200,26 +234,43 @@ func drawPill(text: String, x: CGFloat, topY: CGFloat, fill: CGColor, textColor:
 /* Composition                                                         */
 /* ------------------------------------------------------------------ */
 
-// Badge de marque « SIC » en haut à gauche.
-let badgeRect = CGRect(x: margin, y: CGFloat(height) - 62 - 58, width: 58, height: 58)
-ctx.addPath(CGPath(roundedRect: badgeRect, cornerWidth: 14, cornerHeight: 14, transform: nil))
-ctx.setFillColor(gold)
-ctx.fillPath()
-let monogram = line("SIC", fontName: "Georgia-Bold", size: 24, color: deepGreen)
-ctx.textPosition = CGPoint(
-    x: badgeRect.midX - textWidth(monogram) / 2,
-    y: badgeRect.midY - 9
-)
-CTLineDraw(monogram, ctx)
+/* ------------------------------------------------------------------ */
+/* Marque : le logo entier, en haut à gauche                           */
+/* ------------------------------------------------------------------ */
 
-// Nom de la société à côté du badge.
-let brand = line("Sénégal Immobilier Consulting", fontName: "Georgia-Bold", size: 25, color: white)
-ctx.textPosition = CGPoint(x: badgeRect.maxX + 16, y: badgeRect.midY - 9)
-CTLineDraw(brand, ctx)
+// Le fichier de marque est posé tel quel — emblème doré, nom « SÉNÉGAL /
+// INVESTMENT CONSULTING » et filet tricolore — au lieu du seul monogramme
+// « SIC ».
+// Ces trois éléments font la marque, et le nom y est déjà gravé : il n'est donc
+// pas répété en texte à côté (sinon le nom apparaîtrait deux fois).
+//
+// Le centre du bloc reprend celui de l'ancien badge, ce qui laisse le kicker
+// doré exactement à la même hauteur.
+let brandTop: CGFloat = 31          // depuis le bord haut de l'image
+let logoHeight: CGFloat = 120
+let brandCenterY = CGFloat(height) - brandTop - logoHeight / 2
+
+if let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: logoPath) as CFURL, nil),
+   let logo = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+    let logoWidth = logoHeight * CGFloat(logo.width) / CGFloat(logo.height)
+    ctx.saveGState()
+    // Le filet tricolore fait 1,5 % de la hauteur du logo : sans
+    // rééchantillonnage de qualité il disparaîtrait purement et simplement.
+    ctx.interpolationQuality = .high
+    ctx.draw(logo, in: CGRect(
+        x: margin,
+        y: brandCenterY - logoHeight / 2,
+        width: logoWidth,
+        height: logoHeight
+    ))
+    ctx.restoreGState()
+} else {
+    print("⚠  Logo introuvable (\(logoPath)) — carte sans marque.")
+}
 
 // Kicker doré, en haut à droite.
 let kickerLine = line(kicker.uppercased(), fontName: "HelveticaNeue-Bold", size: 17, color: gold, kern: 2.2)
-ctx.textPosition = CGPoint(x: CGFloat(width) - margin - textWidth(kickerLine), y: badgeRect.midY - 6)
+ctx.textPosition = CGPoint(x: CGFloat(width) - margin - textWidth(kickerLine), y: brandCenterY - 6)
 CTLineDraw(kickerLine, ctx)
 
 // Titre : 2 lignes maximum, au-dessus du bloc bas.

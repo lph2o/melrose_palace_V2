@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Parcel, Language } from '../types';
 import { ModalShell, useModalClose } from '../ui';
+import Logo from './Logo';
 
 interface ShareParcelModalProps {
   parcel: Parcel;
@@ -26,8 +27,8 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
 
   // Tailored share text
   const shareTitle = isFR 
-    ? `Sénégal Immobilier Consulting - Parcelle n°${parcel.id} (150 m² à Sébikhotane)` 
-    : `Senegal Real Estate Consulting - Plot #${parcel.id} (150 sqm in Sebikhotane)`;
+    ? `Senegal Investment Consulting - Parcelle n°${parcel.id} (150 m² à Sébikhotane)` 
+    : `Senegal Investment Consulting - Plot #${parcel.id} (150 sqm in Sebikhotane)`;
 
   const shareDesc = isFR
     ? `Découvrez la parcelle n°${parcel.id} de 150 m² à Sébikhotane (proche AIBD & Diamniadio). Prix échelonné : 3 000 € d'acompte + 300 €/mois (ou 13 500 € comptant). Délibération municipale & NICAD.`
@@ -176,9 +177,9 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-white/10 pb-3">
                   <div>
-                    <span className="text-micro font-mono uppercase tracking-widest text-secondary-fixed font-bold block">
-                      Sénégal Immobilier Consulting
-                    </span>
+                    {/* La marque remplace le nom écrit : celui-ci est gravé
+                        dans le logo, l'afficher en plus le doublerait. */}
+                    <Logo className="h-10 w-auto mb-1.5" label="Senegal Investment Consulting" />
                     <h4 className="font-serif text-lg font-bold text-white mt-0.5">
                       {isFR ? 'Domaine de Sébikhotane' : 'Sebikhotane Estate'}
                     </h4>

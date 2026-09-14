@@ -3,6 +3,7 @@ import { Globe, PhoneCall, Search, ShieldCheck, Calculator, FileText, Share2 } f
 import { Language, SiteSettings, UITranslations } from '../types';
 import { TRANSLATIONS } from '../data';
 import { hiddenAnchors } from '../site/sectionsCatalog';
+import Logo from './Logo';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -137,21 +138,17 @@ export default function Navbar({
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             id="nav-logo"
-            className="flex items-center gap-2.5 text-left cursor-pointer group min-w-0 tap-44"
+            className="flex items-center text-left cursor-pointer group min-w-0 tap-44"
           >
-            <div className="w-9 h-9 rounded-micro bg-secondary-fixed text-primary flex items-center justify-center font-bold font-serif text-sm shadow-elev-1 group-hover:scale-105 transition-transform duration-400 ease-spring shrink-0">
-              SIC
-            </div>
-            {/* `min-w-0` + `truncate` : le nom complet ne doit pas passer sur deux
-                lignes en 375px, sinon la navbar grandit et décale tout le chrome. */}
-            <div className="min-w-0">
-              <span className="font-serif text-sm sm:text-lg font-bold tracking-tight text-white group-hover:text-secondary-fixed transition-colors block leading-tight truncate max-w-[38vw] sm:max-w-none">
-                {settings.companyName || 'Sénégal Immobilier Consulting'}
-              </span>
-              <span className="text-micro font-mono tracking-widest uppercase text-secondary-fixed/80 font-medium hidden sm:block">
-                Sébikhotane
-              </span>
-            </div>
+            {/* La marque porte elle-même le nom de l'entreprise et le filet
+                tricolore : rien n'est répété en texte à côté. `h-10` est le
+                plancher de lisibilité (voir components/Logo). La marque reste
+                plus étroite que l'ancien bloc « pastille + nom », donc la barre
+                ne se charge pas — même en 320 px. */}
+            <Logo
+              label={settings?.companyName || 'Senegal Investment Consulting'}
+              className="h-10 sm:h-12 w-auto origin-left transition-transform duration-400 ease-spring group-hover:scale-[1.03]"
+            />
           </button>
 
           {/* Desktop Navigation Linkages - Streamlined to 4 Essential Anchors */}
