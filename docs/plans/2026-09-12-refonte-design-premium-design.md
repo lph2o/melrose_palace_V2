@@ -1,4 +1,4 @@
-# Refonte design premium — Sénégal Immobilier Consulting
+# Refonte design premium — Senegal Investment Consulting
 
 > Document de référence. Il fait autorité sur toute contribution visuelle.
 > Les jetons sont implémentés dans `src/index.css` (`@theme`) ; le filet de

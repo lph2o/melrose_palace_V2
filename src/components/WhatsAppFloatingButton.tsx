@@ -13,7 +13,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
   const quickMessages = currentLanguage === 'FR' ? [
     {
       label: '📄 Recevoir le dossier complet',
-      text: 'Bonjour ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', je souhaite recevoir le dossier complet du projet de Sébikhotane (54 parcelles).',
+      text: 'Bonjour ' + (settings?.companyName || 'Senegal Investment Consulting') + ', je souhaite recevoir le dossier complet du projet de Sébikhotane (54 parcelles).',
     },
     {
       label: '🟢 Vérifier une parcelle disponible',
@@ -30,7 +30,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
   ] : [
     {
       label: '📄 Request full documentation',
-      text: 'Hello ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', I would like to receive the full documentation for the Sebikotane project.',
+      text: 'Hello ' + (settings?.companyName || 'Senegal Investment Consulting') + ', I would like to receive the full documentation for the Sebikotane project.',
     },
     {
       label: '🟢 Check available plots',
@@ -48,8 +48,8 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
 
   const handleOpenWhatsApp = (customText?: string) => {
     const defaultText = currentLanguage === 'FR'
-      ? 'Bonjour ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', je souhaite avoir des informations concernant les parcelles de 150 m² à Sébikhotane.'
-      : 'Hello ' + (settings?.companyName || 'Sénégal Immobilier Consulting') + ', I would like information regarding the 150 sqm plots in Sebikotane.';
+      ? 'Bonjour ' + (settings?.companyName || 'Senegal Investment Consulting') + ', je souhaite avoir des informations concernant les parcelles de 150 m² à Sébikhotane.'
+      : 'Hello ' + (settings?.companyName || 'Senegal Investment Consulting') + ', I would like information regarding the 150 sqm plots in Sebikotane.';
     
     const message = customText || defaultText;
     const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(message)}`;
@@ -69,7 +69,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
               </div>
               <div>
                 <h4 className="font-bold text-sm leading-tight text-white">
-                  Sénégal Immobilier Consulting
+                  Senegal Investment Consulting
                 </h4>
                 <p className="text-caption text-emerald-100 flex items-center gap-1 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

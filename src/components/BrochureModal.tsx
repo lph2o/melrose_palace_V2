@@ -127,8 +127,8 @@ export default function BrochureModal({
               </div>
               <p className="text-caption text-white/70">
                 {isFR
-                  ? 'Document officiel Sénégal Immobilier Consulting — PDF'
-                  : 'Official document — Sénégal Immobilier Consulting — PDF'}
+                  ? 'Document officiel Senegal Investment Consulting — PDF'
+                  : 'Official document — Senegal Investment Consulting — PDF'}
               </p>
             </div>
           </div>

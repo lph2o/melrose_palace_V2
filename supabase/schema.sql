@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sénégal Immobilier Consulting — Schéma Supabase
+-- Senegal Investment Consulting — Schéma Supabase
 -- À exécuter UNE FOIS dans le Dashboard Supabase → SQL Editor.
 --
 -- Après exécution, créez le compte administrateur :

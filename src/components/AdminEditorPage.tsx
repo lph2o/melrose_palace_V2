@@ -223,7 +223,7 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
               <Compass className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <p className="font-mono text-caption uppercase tracking-[0.35em] text-secondary-fixed/70 mb-2">
-              Sénégal Immobilier Consulting
+              Senegal Investment Consulting
             </p>
             <h1 className="font-serif text-2xl font-bold tracking-tight">Éditeur visuel</h1>
             <p className="text-xs text-white/60 mt-2 max-w-xs">

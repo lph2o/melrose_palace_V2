@@ -479,7 +479,7 @@ export default function AdminPage({
                 Espace Gérant
               </h1>
               <p className="font-mono text-micro sm:text-caption uppercase tracking-[0.25em] text-(--admin-muted) truncate">
-                Sénégal Immobilier Consulting
+                Senegal Investment Consulting
               </p>
             </div>
           </div>
@@ -562,7 +562,7 @@ export default function AdminPage({
               <div className="min-w-0">
                 <p className="font-serif text-base font-bold text-(--admin-text) leading-tight truncate">Espace Gérant</p>
                 <p className="font-mono text-micro uppercase tracking-[0.25em] text-(--admin-muted) truncate">
-                  Sénégal Immobilier Consulting
+                  Senegal Investment Consulting
                 </p>
               </div>
             )}
@@ -1322,7 +1322,7 @@ export default function AdminPage({
                                         {lead.phone && (
                                           <a
                                             href={`https://wa.me/${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                              'Bonjour, je vous contacte depuis Sénégal Immobilier Consulting.'
+                                              'Bonjour, je vous contacte depuis Senegal Investment Consulting.'
                                             )}`}
                                             target="_blank"
                                             rel="noopener noreferrer"

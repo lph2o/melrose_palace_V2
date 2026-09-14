@@ -47,7 +47,7 @@ export default function ShareSiteModal({
 
   const shareUrl = `${window.location.origin}${window.location.pathname}`;
 
-  const company = settings.companyName || 'Sénégal Immobilier Consulting';
+  const company = settings.companyName || 'Senegal Investment Consulting';
   const shareTitle = isFR
     ? `${company} — Parcelles de 150 m² à Sébikhotane (54 lots, dés 300 €/mois)`
     : `${company} — 150 sqm plots in Sebikhotane (54 plots, from €300/month)`;

@@ -1,9 +1,9 @@
 ---
 name: puck-editor-parcelles
-description: Documente l'éditeur visuel Puck du site Sénégal Immobilier Consulting (route /admin/editor). À charger dès qu'une tâche touche à l'édition de contenu, aux sections de la page d'accueil, aux blocs Puck, à leurs props, ou au stockage du JSON de composition dans Supabase. Contient la liste des blocs et de leurs champs, la convention « un champ objet `content` par bloc », l'emplacement et le schéma du JSON persisté, et la procédure pour ajouter un nouveau bloc éditable.
+description: Documente l'éditeur visuel Puck du site Senegal Investment Consulting (route /admin/editor). À charger dès qu'une tâche touche à l'édition de contenu, aux sections de la page d'accueil, aux blocs Puck, à leurs props, ou au stockage du JSON de composition dans Supabase. Contient la liste des blocs et de leurs champs, la convention « un champ objet `content` par bloc », l'emplacement et le schéma du JSON persisté, et la procédure pour ajouter un nouveau bloc éditable.
 ---
 
-# Éditeur visuel Puck — Sénégal Immobilier Consulting
+# Éditeur visuel Puck — Senegal Investment Consulting
 
 ## Ce que c'est
 

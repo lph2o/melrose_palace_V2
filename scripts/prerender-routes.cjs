@@ -73,7 +73,7 @@ function headBlock({ lang, meta, canonical, alternates }) {
 
   rows.push(
     `<meta property="og:type" content="website" />`,
-    `<meta property="og:site_name" content="Sénégal Immobilier Consulting" />`,
+    `<meta property="og:site_name" content="Senegal Investment Consulting" />`,
     `<meta property="og:title" content="${esc(meta.title)}" />`,
     `<meta property="og:description" content="${esc(meta.description)}" />`,
     `<meta property="og:url" content="${esc(canonical)}" />`,
