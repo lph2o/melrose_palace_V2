@@ -12,7 +12,9 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "convert:videos": "bash scripts/convert-videos.sh",
-    "audit:mobile": "npm run build && node scripts/build-mobile-audit.cjs && echo '→ Ouvrir public/mobile-audit-standalone.html'"
+    "audit:mobile": "npm run build && node scripts/build-mobile-audit.cjs && echo '→ Ouvrir public/mobile-audit-standalone.html'",
+    "brochure": "node scripts/brochure/render.cjs",
+    "brochure:previews": "swift scripts/pdf-to-jpg.swift public/pdf/Dun-Tni-Brochure-Premium.pdf public/pdf/plaquette 1100"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
