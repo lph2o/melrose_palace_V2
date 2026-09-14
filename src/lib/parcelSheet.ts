@@ -1,5 +1,5 @@
 import { Language, Parcel, SiteSettings } from '../types';
-import { PdfDocument, savePdf } from './pdf';
+import { PdfDocument, PdfImage, savePdf } from './pdf';
 
 /**
  * Fiche cadastrale d'une parcelle, générée côté client.
@@ -110,10 +110,97 @@ const BRAND = '#00352A';
 const BRAND_LIGHT = '#0F6B4F';
 const GOLD = '#C9A227';
 
+/** Hauteur de la marque dans l'en-tête, en points (≈ 15,5 mm). */
+const LOGO_HEIGHT = 44;
+
+/**
+ * La marque affichée sur la fiche : le fichier du site, sur le vert de
+ * l'en-tête.
+ *
+ * Le PDF n'embarque pas de transparence ici : le PNG est donc composé sur la
+ * couleur exacte du bandeau avant d'être converti en JPEG. Un fond différent
+ * (le jour où l'en-tête change) demande de changer `background` ici — sinon un
+ * rectangle de l'ancienne couleur apparaîtrait autour du logo.
+ */
+const BRAND_LOGO_SOURCE = '/logo/logo-lockup.png';
+
 export interface ParcelSheetOptions {
   language?: Language;
   settings?: SiteSettings;
   generatedAt?: Date;
+  /**
+   * Marque de l'en-tête, déjà composée sur le fond de la fiche.
+   *
+   * `undefined` (défaut) : `buildParcelSheetWithBrand` la charge depuis
+   * `public/logo/` — c'est le cas normal. `null` : pas de marque du tout, et
+   * c'est alors le nom écrit qui reprend sa place. Laisser `undefined` quand on
+   * veut seulement vérifier la mise en page.
+   */
+  brandLogo?: PdfImage | null;
+}
+
+let logoCache: Map<string, Promise<PdfImage | null>> | null = null;
+
+/**
+ * Compose la marque sur `background` et renvoie un JPEG prêt à embarquer.
+ *
+ * Le navigateur fait le travail (canvas) : pas de dépendance, pas de fichier
+ * intermédiaire à maintenir en double, et la marque reste celle du site — un
+ * logo remplacé se propage tout seul. En cas d'échec (hors-ligne, image
+ * absente), on renvoie `null` : la fiche se rabat sur le nom écrit.
+ */
+export function renderBrandLogoOn(
+  background: string,
+  heightPt: number = LOGO_HEIGHT,
+  source: string = BRAND_LOGO_SOURCE
+): Promise<PdfImage | null> {
+  const key = `${source}|${background}|${heightPt}`;
+  logoCache = logoCache ?? new Map();
+  const cached = logoCache.get(key);
+  if (cached) return cached;
+
+  const job = new Promise<PdfImage | null>((resolve) => {
+    if (typeof document === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      try {
+        // Taille embarquée : 300 dpi, doublés (écrans haute densité). Au-delà,
+        // on n'ajoute que du poids — la marque fait 15 mm de haut sur la page.
+        // Le ratio source ne sert que si elle est plus petite que la cible.
+        const targetHeight = (heightPt / 72) * 300 * 2;
+        const scale = Math.min(1, targetHeight / Math.max(1, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const pixelHeight = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = pixelHeight;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          resolve(null);
+          return;
+        }
+        context.fillStyle = background;
+        context.fillRect(0, 0, width, pixelHeight);
+        context.drawImage(image, 0, 0, width, pixelHeight);
+        const encoded = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+        const binary = atob(encoded);
+        const data = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) data[i] = binary.charCodeAt(i);
+        resolve({ width, height: pixelHeight, data });
+      } catch {
+        resolve(null);
+      }
+    };
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+
+  logoCache.set(key, job);
+  return job;
 }
 
 function zoneLabel(parcel: Parcel, language: Language): string {
@@ -154,15 +241,28 @@ export function buildParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {
   const { height } = doc;
 
   // ---------------------------------------------------------------- En-tête
-  doc.fillRect(0, height - 116, doc.width, 116, BRAND);
-  doc.fillRect(0, height - 122, doc.width, 6, GOLD);
+  // Le bandeau s'est creusé pour accueillir la marque au-dessus du titre :
+  // l'emblème et le nom y sont gravés, donc le nom n'est pas réécrit à côté.
+  doc.fillRect(0, height - 140, doc.width, 140, BRAND);
+  doc.fillRect(0, height - 146, doc.width, 6, GOLD);
 
-  doc.text(margin, height - 52, copy.title, { size: 18, bold: true, color: '#FFFFFF' });
-  doc.text(margin, height - 72, copy.subtitle, { size: 9.5, color: '#8FD5C1' });
-  doc.text(margin, height - 92, settings?.companyName || 'Sénégal Immobilier Consulting', {
-    size: 9,
-    color: '#FFFFFF',
-  });
+  if (options.brandLogo) {
+    doc.drawImage(
+      margin,
+      height - 32 - LOGO_HEIGHT,
+      PdfDocument.imageWidth(options.brandLogo, LOGO_HEIGHT),
+      LOGO_HEIGHT,
+      options.brandLogo
+    );
+  } else {
+    doc.text(margin, height - 92, settings?.companyName || 'Senegal Investment Consulting', {
+      size: 9,
+      color: '#FFFFFF',
+    });
+  }
+
+  doc.text(margin, height - 108, copy.title, { size: 18, bold: true, color: '#FFFFFF' });
+  doc.text(margin, height - 128, copy.subtitle, { size: 9.5, color: '#8FD5C1' });
 
   const reference = String(parcel.id).padStart(3, '0');
   doc.text(doc.width - margin, height - 40, copy.lotLabel, { size: 7.5, bold: true, color: GOLD, align: 'right' });
@@ -175,7 +275,7 @@ export function buildParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {
   });
 
   // Bandeau de statut
-  let cursor = height - 156;
+  let cursor = height - 180;
   doc.fillRect(margin, cursor - 6, contentWidth, 26, '#F1EFE7');
   doc.text(margin + 12, cursor + 3, `${copy.status[parcel.status]} • ${zoneLabel(parcel, language)}`, {
     size: 10,
@@ -282,7 +382,7 @@ export function buildParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {
     maxWidth: contentWidth - 150,
   });
   doc.text(doc.width - margin, 62, `${copy.generatedOn} ${dateLabel}`, { size: 8.5, color: MUTED, align: 'right' });
-  doc.text(margin, 48, 'Sénégal Immobilier Consulting • Sébikhotane, Région de Dakar (Sénégal)', {
+  doc.text(margin, 48, 'Senegal Investment Consulting • Sébikhotane, Région de Dakar (Sénégal)', {
     size: 7.5,
     color: MUTED,
     maxWidth: contentWidth,
@@ -291,9 +391,29 @@ export function buildParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {
   return doc;
 }
 
+/**
+ * Comme `buildParcelSheet`, mais avec la marque chargée au préalable.
+ *
+ * Fonction asynchrone à cause de l'image : c'est la seule partie de la fiche
+ * qui doit attendre quelque chose. Si la marque ne se charge pas, la fiche est
+ * produite quand même, avec le nom écrit.
+ */
+export async function buildParcelSheetWithBrand(
+  parcel: Parcel,
+  options: ParcelSheetOptions = {}
+): Promise<PdfDocument> {
+  const brandLogo = options.brandLogo !== undefined
+    ? options.brandLogo
+    : await renderBrandLogoOn(BRAND);
+  return buildParcelSheet(parcel, { ...options, brandLogo });
+}
+
 /** Construit puis télécharge la fiche cadastrale d'une parcelle. */
-export function downloadParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {}): string {
-  const doc = buildParcelSheet(parcel, options);
+export async function downloadParcelSheet(
+  parcel: Parcel,
+  options: ParcelSheetOptions = {}
+): Promise<string> {
+  const doc = await buildParcelSheetWithBrand(parcel, options);
   const filename = `fiche-cadastrale-lot-${String(parcel.id).padStart(3, '0')}-sebikhotane.pdf`;
   savePdf(doc, filename);
   return filename;

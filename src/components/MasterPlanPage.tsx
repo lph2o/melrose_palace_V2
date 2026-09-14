@@ -166,7 +166,7 @@ export default function MasterPlanPage({
         toastError:
           'Génération de la fiche impossible. Réessayez ou écrivez-nous sur WhatsApp.',
         waReserveMessage: (id: number, dims: string, zone: string) =>
-          `Bonjour ${settings.companyName || 'Sénégal Immobilier Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${id} (${dims} - ${zone}).`,
+          `Bonjour ${settings.companyName || 'Senegal Investment Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${id} (${dims} - ${zone}).`,
       }
     : {
         home: 'Home',
@@ -267,7 +267,7 @@ export default function MasterPlanPage({
         toastDownloaded: (id: number) => `Cadastral sheet for plot #${id} downloaded (PDF).`,
         toastError: 'Could not generate the sheet. Try again or message us on WhatsApp.',
         waReserveMessage: (id: number, dims: string, zone: string) =>
-          `Hello ${settings.companyName || 'Senegal Real Estate Consulting'}, I would like to reserve or receive detailed information about Plot #${id} (${dims} - ${zone}).`,
+          `Hello ${settings.companyName || 'Senegal Investment Consulting'}, I would like to reserve or receive detailed information about Plot #${id} (${dims} - ${zone}).`,
       };
 
   /* Les libellés de zone (nombre de lots et plages) étaient écrits à la main dans
@@ -569,9 +569,10 @@ export default function MasterPlanPage({
    */
   const triggerDownload = (parcel: Parcel) => {
     setDownloadingId(parcel.id);
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       try {
-        downloadParcelSheet(parcel, { language: currentLanguage, settings });
+        // Asynchrone : la fiche embarque la marque, qui se charge d'abord.
+        await downloadParcelSheet(parcel, { language: currentLanguage, settings });
         setToastMessage(L.toastDownloaded(parcel.id));
       } catch (error) {
         console.error('[fiche-cadastrale] génération impossible', error);

@@ -54,6 +54,37 @@ const HELVETICA_WIDTHS = [
 
 const ASCII_START = 32;
 
+/**
+ * Espaces exotiques : WinAnsi n'en connaît qu'une, l'espace simple.
+ * `Intl.NumberFormat` insère par exemple une espace fine insécable (U+202F)
+ * dans « 3 000 € » — sans cette conversion, elle s'écrit « 3?000 € ».
+ */
+const SPACE_LIKE = /[\u00a0\u1680\u2000-\u200b\u202f\u205f\u3000]/;
+
+/**
+ * Nettoie un texte avant de le mesurer et de l'écrire.
+ *
+ * Deux corrections, apprises à l'usage : les espaces exotiques deviennent une
+ * espace simple, et les pictogrammes (emoji des puces, flèches, symboles
+ * techniques) sont **retirés** au lieu d'être remplacés par « ? ». Un « ? » en
+ * tête de puce (« ? Offre 10 Premiers ») abîme la phrase ; la puce est de toute
+ * façon dessinée à part. Les caractères typographiques de WinAnsi (€ – — ’ “ ”
+ * • œ…) sont préservés, eux.
+ */
+function cleanForPdf(value: string): string {
+  let out = '';
+  for (const char of value) {
+    if (SPACE_LIKE.test(char)) {
+      out += ' ';
+      continue;
+    }
+    const code = char.codePointAt(0) ?? 0;
+    if (code >= 0x2190 && WIN_ANSI_OVERRIDES[char] === undefined) continue;
+    out += char;
+  }
+  return out;
+}
+
 /** Largeur approximative d'un caractère, en points, pour une taille donnée. */
 function charWidth(char: string, size: number, bold: boolean): number {
   const code = char.charCodeAt(0);
@@ -71,6 +102,20 @@ function charWidth(char: string, size: number, bold: boolean): number {
   }
 
   return (units / 1000) * size * (bold ? 1.06 : 1);
+}
+
+/**
+ * Image JPEG embarquée dans le document.
+ *
+ * Le PDF ne sait pas lire un PNG : il embarque du JPEG (`/DCTDecode`), des
+ * octets tels quels, sans recompression. Une marque à fond transparent doit
+ * donc être **composée sur la couleur de son support** avant d'arriver ici —
+ * voir `renderBrandLogoOn` dans `parcelSheet.ts`.
+ */
+export interface PdfImage {
+  width: number;
+  height: number;
+  data: Uint8Array;
 }
 
 export interface PdfTextOptions {
@@ -96,6 +141,31 @@ export class PdfDocument {
     return this.ops;
   }
 
+  /* ---------------------------------------------------------------- Images */
+
+  private images: PdfImage[] = [];
+
+  /**
+   * Pose une image JPEG. `x`/`y` sont le coin **bas-gauche**, en points.
+   * Une image déjà posée n'est embarquée qu'une fois.
+   */
+  drawImage(x: number, y: number, w: number, h: number, image: PdfImage): this {
+    let index = this.images.indexOf(image);
+    if (index === -1) {
+      this.images.push(image);
+      index = this.images.length - 1;
+    }
+    this.ops.push(
+      `q ${round(w)} 0 0 ${round(h)} ${round(x)} ${round(y)} cm /Im${index + 1} Do Q`
+    );
+    return this;
+  }
+
+  /** Largeur d'une image à une hauteur donnée, ratio préservé. */
+  static imageWidth(image: PdfImage, height: number): number {
+    return height * (image.width / image.height);
+  }
+
   private static rgb(hex: string): string {
     const clean = hex.replace('#', '');
     const int = parseInt(clean.length === 3
@@ -110,7 +180,7 @@ export class PdfDocument {
   /** Mesure la largeur d'un texte. */
   measure(value: string, size: number, bold = false): number {
     let total = 0;
-    for (const char of value) total += charWidth(char, size, bold);
+    for (const char of cleanForPdf(value)) total += charWidth(char, size, bold);
     return total;
   }
 
@@ -157,7 +227,8 @@ export class PdfDocument {
   /** Écrit une ligne de texte ; `y` est la ligne de base. */
   text(x: number, y: number, value: string, options: PdfTextOptions = {}): this {
     const { size = 10, bold = false, color = '#000000', maxWidth, align = 'left' } = options;
-    const content = maxWidth ? this.truncate(value, maxWidth, size, bold) : value;
+    const normalized = cleanForPdf(value);
+    const content = maxWidth ? this.truncate(normalized, maxWidth, size, bold) : normalized;
     if (!content) return this;
     const left = align === 'right'
       ? x - this.measure(content, size, bold)
@@ -179,40 +250,85 @@ export class PdfDocument {
   ): number {
     const { size = 10, lineHeight = size * 1.45 } = options;
     let cursor = y;
-    for (const line of this.wrap(value, maxWidth, size, options.bold)) {
+    for (const line of this.wrap(cleanForPdf(value), maxWidth, size, options.bold)) {
       this.text(x, cursor, line, { ...options, maxWidth: undefined });
       cursor -= lineHeight;
     }
     return cursor;
   }
 
-  /** Sérialise le document en PDF (ASCII pur). */
+  /**
+   * Sérialise le document en PDF (ASCII pur).
+   *
+   * À réserver aux documents sans image : un JPEG n'est pas du texte, donc
+   * `buildParts()` (ou `savePdf()`) est alors la bonne porte de sortie.
+   */
   build(): string {
+    const parts = this.buildParts();
+    if (parts.some((part) => typeof part !== 'string')) {
+      throw new Error(
+        'Ce document embarque une image : utiliser buildParts() ou savePdf(), le PDF n’est plus ASCII.'
+      );
+    }
+    return parts.join('');
+  }
+
+  /**
+   * Sérialise le document en morceaux prêts pour un `Blob`.
+   *
+   * Les images sont insérées comme octets bruts, pas comme texte : c'est la
+   * seule façon d'embarquer un JPEG sans le réencoder en base 64. Les
+   * décalages de la table `xref` sont comptés en OCTETS ; les morceaux texte
+   * étant ASCII, `length` y vaut bien un nombre d'octets.
+   */
+  buildParts(): BlobPart[] {
+    const parts: BlobPart[] = [];
+    let offset = 0;
+    const push = (chunk: string | Uint8Array): void => {
+      parts.push(chunk as BlobPart);
+      offset += typeof chunk === 'string' ? chunk.length : chunk.byteLength;
+    };
+
     const stream = `${this.ops.join('\n')}\n`;
-    const objects = [
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${round(this.width)} ${round(this.height)}] `
-        + '/Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
-      `<< /Length ${stream.length} >>\nstream\n${stream}endstream`,
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+
+    // Ressources de la page : les polices, plus les images réellement posées.
+    const xObjects = this.images
+      .map((_, index) => `/Im${index + 1} ${7 + index} 0 R`)
+      .join(' ');
+    const xObjectDict = this.images.length ? ` /XObject << ${xObjects} >>` : '';
+
+    const objects: Array<Array<string | Uint8Array>> = [
+      ['<< /Type /Catalog /Pages 2 0 R >>'],
+      ['<< /Type /Pages /Kids [3 0 R] /Count 1 >>'],
+      [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${round(this.width)} ${round(this.height)}] `
+        + `/Resources << /Font << /F1 5 0 R /F2 6 0 R >>${xObjectDict} >> /Contents 4 0 R >>`],
+      [`<< /Length ${stream.length} >>\nstream\n`, stream, 'endstream'],
+      ['<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'],
+      ['<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'],
+      ...this.images.map((image) => [
+        `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} `
+          + `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.data.byteLength} >>\nstream\n`,
+        image.data,
+        '\nendstream',
+      ]),
     ];
 
-    let pdf = '%PDF-1.4\n';
+    push('%PDF-1.4\n');
     const offsets: number[] = [];
-    objects.forEach((body, index) => {
-      offsets.push(pdf.length);
-      pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+    objects.forEach((chunks, index) => {
+      offsets.push(offset);
+      push(`${index + 1} 0 obj\n`);
+      chunks.forEach(push);
+      push('\nendobj\n');
     });
 
-    const xrefStart = pdf.length;
-    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.forEach((offset) => {
-      pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+    const xrefStart = offset;
+    push(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`);
+    offsets.forEach((objectOffset) => {
+      push(`${String(objectOffset).padStart(10, '0')} 00000 n \n`);
     });
-    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
-    return pdf;
+    push(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`);
+    return parts;
   }
 }
 
@@ -242,7 +358,7 @@ function pdfLiteral(value: string): string {
 
 /** Déclenche le téléchargement d'un document PDF dans le navigateur. */
 export function savePdf(doc: PdfDocument, filename: string): void {
-  const blob = new Blob([doc.build()], { type: 'application/pdf' });
+  const blob = new Blob(doc.buildParts(), { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
