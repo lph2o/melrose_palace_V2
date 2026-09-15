@@ -1,6 +1,6 @@
 import { Landmark } from 'lucide-react';
 import { Language, SiteSettings, UITranslations } from '../types';
-import { TRANSLATIONS } from '../data';
+import { TRANSLATIONS, BANK_PARTNER_LOGO } from '../data';
 import { useSite } from '../site/SiteContext';
 import { openWhatsApp } from '../site/whatsapp';
 import { RichText } from '../components/RichText';
@@ -10,6 +10,12 @@ export interface BankingContent {
   description: string;
   disclaimer: string;
   cta: string;
+  /** Intitulé au-dessus du logo partenaire (ex. « Notre partenaire bancaire »). */
+  partnerLabel: string;
+  /** Nom du partenaire, utilisé en texte alternatif de son logo. */
+  partnerName: string;
+  /** URL du logo. Fichier produit par `scripts/make-partner-logo.cjs`. */
+  partnerLogo: string;
 }
 
 export function defaultBankingContent(lang: Language, _settings: SiteSettings): BankingContent {
@@ -19,6 +25,9 @@ export function defaultBankingContent(lang: Language, _settings: SiteSettings): 
     description: t.banking.desc,
     disclaimer: t.banking.disclaimer,
     cta: t.banking.btn,
+    partnerLabel: t.banking.partnerLabel,
+    partnerName: t.banking.partnerName,
+    partnerLogo: BANK_PARTNER_LOGO,
   };
 }
 
@@ -44,12 +53,28 @@ export function BankingSection({ content }: { content?: Partial<BankingContent> 
           </p>
           <p className="text-caption text-outline italic">⚠️ {c.disclaimer}</p>
         </div>
-        <button
-          onClick={() => openWhatsApp(settings, ui.bankWaMsg)}
-          className="px-6 py-3 bg-primary text-white rounded-inner text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 cursor-pointer shadow-elev-1"
-        >
-          {c.cta}
-        </button>
+
+        {/* Bloc partenaire : le logo porte la crédibilité que le texte seul
+            n'apporte pas — un nom d'établissement se vérifie d'un coup d'œil.
+            Le filet vertical ne sert qu'en ligne, où les deux blocs coexistent. */}
+        <div className="flex flex-col items-center gap-3 shrink-0 md:border-l md:border-gray-200 md:pl-6">
+          <span className="font-mono text-caption uppercase tracking-widest text-outline text-center">
+            {c.partnerLabel}
+          </span>
+          <img
+            src={c.partnerLogo}
+            alt={c.partnerName}
+            className="h-9 w-auto"
+            loading="lazy"
+            decoding="async"
+          />
+          <button
+            onClick={() => openWhatsApp(settings, ui.bankWaMsg)}
+            className="px-6 py-3 bg-primary text-white rounded-inner text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 cursor-pointer shadow-elev-1"
+          >
+            {c.cta}
+          </button>
+        </div>
       </div>
     </section>
   );

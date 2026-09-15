@@ -167,7 +167,9 @@
   .geo-note p{ font-size:13px; }
 
   /* ============ PAGE 3 : L'OFFRE ============ */
-  #offre{ padding:18mm 16mm 16mm; }
+  /* Marges resserrées (18/16 → 15/11 mm) pour absorber le bloc partenaire
+     bancaire ajouté en bas de page 4 : sans cela le document passe à 8 pages. */
+  #offre{ padding:15mm 16mm 10mm; }
   #garanties{ padding:18mm 16mm 16mm; }
   .offre-top{ display:grid; grid-template-columns:1.2fr .8fr; gap:12mm; align-items:start; }
   .offre-top h2{ font-size:34px; max-width:10em; color:var(--dusk); }
@@ -180,12 +182,14 @@
   .feature .icon{ width:32px; height:32px; margin-bottom:12px; }
   .feature h3{ font-size:18px; color:var(--dusk); margin-bottom:8px; }
 
-  .plate{ margin-top:14mm; display:grid; grid-template-columns:56mm 1fr; gap:0; border:1px solid var(--line); position:relative; }
+  .plate{ margin-top:10mm; display:grid; grid-template-columns:56mm 1fr; gap:0; border:1px solid var(--line); position:relative; }
   .plate img{ width:100%; height:100%; object-fit:cover; display:block; filter:sepia(.14) saturate(1.2) contrast(1.08) brightness(.97); }
+  /* Bandeau partenaire : prolonge le cadre du bloc, sans le refermer. */
+  .plate-partner{ display:flex; align-items:center; gap:10px; padding:8px 18px; border:1px solid var(--line); border-top:none; background:var(--parchment); }
   .plate-text{ padding:16px 18px; }
   .plate-text .mono-tag{ display:block; margin-bottom:8px; }
 
-  .strip-stats{ display:flex; margin-top:12mm; border:1px solid var(--line); }
+  .strip-stats{ display:flex; margin-top:8mm; border:1px solid var(--line); }
   .strip-stats > div{ flex:1; padding:14px 16px; border-right:1px solid var(--line); }
   .strip-stats > div:last-child{ border-right:none; }
   .strip-stats .k{ font-family:var(--mono); font-size:9px; letter-spacing:.06em; color:var(--ink-soft); text-transform:uppercase; }
@@ -446,8 +450,22 @@
     <div class="plate-text">
       <span class="mono-tag">FINANCEMENT BANCAIRE</span>
       <h3 style="font-size:17px; color:var(--dusk); margin-bottom:6px;">Une durée adaptée à votre budget</h3>
-      <p>Nous travaillons à des partenariats avec des banques sénégalaises afin que les clients éligibles puissent financer leur acquisition sur une durée plus longue. Financement possible selon profil et acceptation de l'établissement partenaire.</p>
+      <p>Avec la Banque Islamique du Sénégal (BIS), établissement de finance islamique depuis 1982, les clients éligibles peuvent financer leur acquisition sans intérêts — Mourabaha, Istisna ou Tawarruq — selon profil et acceptation de la banque.</p>
+      <!-- Le logo du partenaire est posé en SVG : c'est Chrome qui imprime le
+           PDF, donc la marque reste vectorielle et nette à l'agrandissement,
+           là où un PNG importé serait pixellisé à l'impression.
+           Bloc volontairement compact : la page 4 est pleine, et tout ce qui
+           s'y ajoute fait basculer le document de 7 à 8 pages. -->
     </div>
+  </div>
+
+  <!-- Le logo du partenaire est dans un bandeau SOUS le bloc, pas dedans :
+       `height:100%` sur l'image du bloc fige la hauteur de la rangée, et tout
+       texte ajouté dans la colonne de droite déborde sous le cadre — le logo y
+       était coupé en deux. Le bandeau, lui, participe à la hauteur du flux. -->
+  <div class="plate-partner">
+    <span class="mono-tag" style="flex:none; text-transform:uppercase;">Partenaire bancaire</span>
+    <img src="../brand/partenaire-bis.svg" alt="Banque Islamique du Sénégal" style="height:20px; display:block;">
   </div>
 
   <div class="strip-stats">

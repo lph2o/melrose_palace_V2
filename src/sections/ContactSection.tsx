@@ -85,7 +85,7 @@ export function defaultContactContent(lang: Language, _settings: SiteSettings): 
       { value: 'Paiement comptant à 13 500 €', label: ui.contactFormInterest2Short },
       { value: 'Pack Terrain + Clôture de sécurisation', label: ui.contactFormInterest3 },
       { value: 'Pack Terrain + Début de construction', label: ui.contactFormInterest4 },
-      { value: 'Financement bancaire partenaire', label: ui.contactFormInterest5 },
+      { value: 'Financement BIS (banque islamique)', label: ui.contactFormInterest5 },
     ],
   };
 }
