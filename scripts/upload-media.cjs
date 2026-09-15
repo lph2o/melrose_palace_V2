@@ -78,10 +78,12 @@ function remoteFiles() {
     { url: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=400&auto=format&fit=crop', dest: 'images/blog-1.jpg' },
     { url: 'https://images.unsplash.com/photo-1590674899484-d5640e854abe?q=80&w=400&auto=format&fit=crop', dest: 'images/blog-2.jpg' },
     { url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=400&auto=format&fit=crop', dest: 'images/blog-3.jpg' },
-    { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop', dest: 'images/avatar-1.jpg' },
-    { url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop', dest: 'images/avatar-2.jpg' },
-    { url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop', dest: 'images/avatar-3.jpg' },
   ];
+  // Les avatars des témoignages ne sont plus des placeholders distants : ils
+  // proviennent des photos réelles des clients, recadrées par
+  // `scripts/make-avatar-assets.swift` dans `public/images/avatar-<n>.jpg`,
+  // donc repris par `localFiles()` ci-dessus. Ne pas réintroduire d'URL
+  // distante ici : elle écraserait les portraits des acquéreurs.
 }
 
 async function main() {
