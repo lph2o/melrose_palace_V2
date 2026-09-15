@@ -86,6 +86,10 @@ export interface UITranslations {
   packsLearnMore: string;
   packsWaPrefix: string;
   packsWaSuffix: string;
+  /** Bouton de chaque carte de service (section « Nos différents services »). */
+  servicesInquiryCta: string;
+  servicesWaPrefix: string;
+  servicesWaSuffix: string;
   promoBadge: string;
   promoText: string;
   promoCta: string;
@@ -243,6 +247,20 @@ export interface ComplementaryPack {
   };
 }
 
+export interface ServiceItem {
+  id: string;
+  /** Nom d'une icône du registre `SECTION_ICONS` (`src/sections/icons.tsx`). */
+  icon: string;
+  title: {
+    FR: string;
+    EN: string;
+  };
+  description: {
+    FR: string;
+    EN: string;
+  };
+}
+
 export interface SiteSettings {
   companyName: string;
   projectName?: string;
@@ -321,6 +339,8 @@ export interface SiteContent {
   paymentTiers: PaymentTier[];
   connectivity: ConnectivityItem[];
   packs: ComplementaryPack[];
+  /** Métiers de l'agence (vente, location, terrains, juridique) — section Services. */
+  services: ServiceItem[];
   testimonials: Testimonial[];
   faq: FAQItem[];
   blogArticles: BlogArticle[];

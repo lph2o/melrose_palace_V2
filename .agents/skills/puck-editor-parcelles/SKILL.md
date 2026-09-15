@@ -135,7 +135,7 @@ ligne n'existe (ou si Supabase n'est pas configuré, ou si la table manque).
 
 Tous les blocs sont dans `puckConfig.components`. Ordre par défaut dans
 `buildDefaultPage()` : Hero → Garanties → Vision → Videos → Localisation →
-Simulateur → Packs → Banque → Témoignages → Articles → FAQ → Contact.
+Simulateur → Packs → Banque → Témoignages → Services → Articles → FAQ → Contact.
 
 | `type` (clé) | Label éditeur | Section source | Champs éditables |
 | --- | --- | --- | --- |
@@ -146,8 +146,9 @@ Simulateur → Packs → Banque → Témoignages → Articles → FAQ → Contac
 | `Localisation` | Localisation stratégique | `LocationSection.tsx` | sectionTag, title, description, cardTag, regionPill, triangleTitle, triangleDesc, distancesFootnote, requestPlanCta, aibdTitle/Sub, terTitle/Sub, diamniadioTitle/Sub, ndayaneTitle/Sub |
 | `Simulateur` | Simulateur de financement | `SimulatorSection.tsx` | transparencyTag, title, description, 5 libellés de lignes, resultTag/Title/Subtitle, cashTitle, cashDesc, studyCta, colDepositLabel, colRemainingLabel, colMonthlyLabel, colDurationLabel, depositBaseTag, depositFlexTag, perMonthUnit, recommendedTag, monthsUnit, depositShortcut1-4 (€) |
 | `Packs` | Packs complémentaires | `PacksSection.tsx` | sectionTag, title, description, includedLabel, learnMoreCta |
-| `Banque` | Financement bancaire | `BankingSection.tsx` | title, description, disclaimer, cta |
+| `Banque` | Financement BIS (banque islamique) | `BankingSection.tsx` | title, description, disclaimer, cta, partnerLabel, partnerName |
 | `Temoignages` | Témoignages | `TestimonialsSection.tsx` | sectionTag, title, description |
+| `Services` | Nos différents services | `ServicesSection.tsx` | sectionTag, title, description, inquiryCta |
 | `Articles` | Articles & guides | `InsightsSection.tsx` | sectionTag, title, description, readGuideCta |
 | `FAQ` | FAQ | `FaqSection.tsx` | sectionTag, title, description |
 | `Contact` | Contact & dossier | `ContactSection.tsx` | 20 champs de libellés/placeholders + `interestOptions[]` |
@@ -157,7 +158,7 @@ Simulateur → Packs → Banque → Témoignages → Articles → FAQ → Contac
 Les **listes de contenu** restent pilotées par l'Espace Gérant → onglet
 « Contenu du site » (`AdminContentTab.tsx`, stocké dans `settings.content`) :
 
-`packs`, `faq`, `blogArticles`, `testimonials`, `paymentTiers`,
+`packs`, `services`, `faq`, `blogArticles`, `testimonials`, `paymentTiers`,
 `connectivity`, `videos`.
 
 Raison : dupliquer ces listes dans la composition Puck créerait deux sources de
@@ -247,6 +248,24 @@ lecture, numéro WhatsApp, e-mail, adresse, prix (`basePrice`, `cashPrice`,
 Aucune migration de schéma n'est nécessaire pour un nouveau bloc : `data` est du
 `jsonb` libre. Le bloc n'existe que pour les pages publiées **après** son ajout ;
 les compositions existantes l'ignorent simplement.
+
+> ⚠️ **Conséquence à ne pas rater : un nouveau bloc n'apparaît pas sur le site
+> quand une composition est déjà publiée pour cette langue.** `buildDefaultPage()`
+> ne sert que de repli (aucune ligne en base) : si `puck_pages.home-fr` existe,
+> c'est elle qui est rendue, et un bloc ajouté au code reste invisible **en
+> français** tant qu'il n'est pas présent dans le JSON stocké. Vérifier l'état
+> avant d'annoncer qu'une section est en ligne :
+>
+> ```bash
+> # une ligne par langue publiée, avec ses blocs
+> node -e "require('dotenv').config({path:'.env.local'});const u=process.env.NEXT_PUBLIC_SUPABASE_URL,k=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;fetch(u+'/rest/v1/puck_pages?select=id,data',{headers:{apikey:k,Authorization:'Bearer '+k}}).then(r=>r.json()).then(rows=>rows.forEach(x=>console.log(x.id,(x.data.content||[]).map(c=>c.type).join(' → '))))"
+> ```
+>
+> Deux voies pour publier le bloc : le gérant ouvre `/admin/editor` et publie
+> (le canevas montre déjà le bloc), ou l'on insère l'item dans le JSON stocké —
+> sauvegarde complète de la ligne d'abord, insertion du seul bloc manquant,
+> puis contrôle que **les autres blocs sont identiques au bit près**. Les deux
+> langues se traitent séparément (`home-fr` / `home-en`).
 
 ## Assets publics & contenus dérivés
 

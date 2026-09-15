@@ -16,6 +16,7 @@ import {
   SimulatorContent,
 } from '../sections/SimulatorSection';
 import { PacksSection, defaultPacksContent, PacksContent } from '../sections/PacksSection';
+import { ServicesSection, defaultServicesContent, ServicesContent } from '../sections/ServicesSection';
 import { BankingSection, defaultBankingContent, BankingContent } from '../sections/BankingSection';
 import {
   TestimonialsSection,
@@ -285,8 +286,26 @@ export const puckConfig: Config = {
       render: (props) => <PacksSection content={props.content as Partial<PacksContent>} />,
     },
 
+    Services: {
+      label: 'Nos différents services',
+      fields: {
+        content: {
+          type: 'object',
+          label: 'Contenu de l’en-tête',
+          objectFields: {
+            sectionTag: t('Sur-titre'),
+            title: t('Titre'),
+            description: ta('Description'),
+            inquiryCta: t('Bouton de chaque carte'),
+          },
+        },
+      },
+      defaultProps: { content: {} },
+      render: (props) => <ServicesSection content={props.content as Partial<ServicesContent>} />,
+    },
+
     Banque: {
-      label: 'Financement bancaire',
+      label: 'Financement BIS (banque islamique)',
       fields: {
         content: {
           type: 'object',
@@ -296,6 +315,8 @@ export const puckConfig: Config = {
             description: ta('Description'),
             disclaimer: ta('Avertissement'),
             cta: t('Bouton'),
+            partnerLabel: t('Intitulé du partenaire'),
+            partnerName: t('Nom du partenaire (texte alternatif du logo)'),
           },
         },
       },
@@ -449,6 +470,7 @@ export function buildDefaultPage(lang: Language, settings: SiteSettings): Data {
       { type: 'Packs', props: { id: defaultId('Packs'), content: defaultPacksContent(lang, settings) } },
       { type: 'Banque', props: { id: defaultId('Banque'), content: defaultBankingContent(lang, settings) } },
       { type: 'Temoignages', props: { id: defaultId('Temoignages'), content: defaultTestimonialsContent(lang, settings) } },
+      { type: 'Services', props: { id: defaultId('Services'), content: defaultServicesContent(lang, settings) } },
       { type: 'Articles', props: { id: defaultId('Articles'), content: defaultInsightsContent(lang, settings) } },
       { type: 'FAQ', props: { id: defaultId('FAQ'), content: defaultFaqContent(lang, settings) } },
       { type: 'Contact', props: { id: defaultId('Contact'), content: defaultContactContent(lang, settings) } },

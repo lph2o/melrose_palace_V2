@@ -201,6 +201,10 @@ export default function Navbar({
                 {t.nav.simulator}
               </button>
             )}
+            {/* « Nos Services » n'est pas ajouté à cette barre : mesuré en A/B,
+                le 5ᵉ lien porte le logo à 0 px de large à 1024 px de viewport (la
+                barre passe de 73 à 108 px de haut, le logo est écrasé). Le lien
+                reste dans le menu mobile et dans le pied de page. */}
           </div>
 
           {/* Controls Cluster - Clean, Uncluttered, Breathable */}
@@ -413,6 +417,14 @@ export default function Navbar({
                   className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
                 >
                   {t.nav.packs} {ui.packsSuffix}
+                </button>
+              )}
+              {sectionVisible('services') && (
+                <button
+                  onClick={() => handleNavLink('services')}
+                  className="text-left font-serif text-base text-white/90 hover:text-secondary-fixed min-h-[44px] flex items-center transition-colors duration-400"
+                >
+                  {t.nav.services}
                 </button>
               )}
               {sectionVisible('faqs-section') && (

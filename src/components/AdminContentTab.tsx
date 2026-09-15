@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+  Briefcase,
   Building2,
   Video,
   Table2,
   MapPin,
   Package,
+  Sparkles,
   MessageSquareQuote,
   HelpCircle,
   Newspaper,
@@ -47,11 +49,13 @@ import {
   BlogArticle,
   ComplementaryPack,
   ConnectivityItem,
+  ServiceItem,
   Testimonial,
   PaymentTier,
   VideoContent,
 } from '../types';
 import { DEFAULT_SITE_CONTENT } from '../data';
+import { SECTION_ICONS, SectionIcon } from '../sections/icons';
 
 const EASE = [0.32, 0.72, 0, 1] as const;
 
@@ -631,6 +635,22 @@ function PreviewPack({ p, lang }: { p: ComplementaryPack; lang: 'FR' | 'EN' }) {
   );
 }
 
+function PreviewService({ s, lang }: { s: ServiceItem; lang: 'FR' | 'EN' }) {
+  return (
+    <div className="bg-white p-3 rounded-inner border border-gray-300 shadow-elev-1 space-y-2">
+      <span className="w-8 h-8 rounded-micro bg-primary/5 ring-1 ring-secondary/30 flex items-center justify-center">
+        <SectionIcon name={s.icon} className="w-4 h-4 text-secondary" />
+      </span>
+      <p className="font-serif font-bold text-caption text-primary leading-snug">
+        {s.title[lang] || 'Titre du service'}
+      </p>
+      <p className="text-micro text-on-surface-variant font-light leading-relaxed line-clamp-3">
+        {s.description[lang] || 'Description…'}
+      </p>
+    </div>
+  );
+}
+
 function PreviewTestimonial({ t, lang }: { t: Testimonial; lang: 'FR' | 'EN' }) {
   return (
     <div className="bg-white p-3.5 rounded-inner border border-gray-300 shadow-elev-1 flex flex-col justify-between space-y-3">
@@ -971,6 +991,7 @@ export default function AdminContentTab({
   const tiers: PaymentTier[] = content.paymentTiers;
   const connectivity: ConnectivityItem[] = content.connectivity;
   const packs: ComplementaryPack[] = content.packs;
+  const services: ServiceItem[] = content.services;
   const testimonials: Testimonial[] = content.testimonials;
   const faq: FAQItem[] = content.faq;
   const blog: BlogArticle[] = content.blogArticles;
@@ -1417,6 +1438,80 @@ export default function AdminContentTab({
                 onEN={(val) => setLines('packs', i, 'features', 'EN', val)}
                 max={300}
                 hint="Chaque ligne devient une puce ✓ sur la carte du pack"
+              />
+            </FormGroup>
+          </ItemCard>
+        ))}
+      </Section>
+
+      {/* Services */}
+      <Section
+        icon={<Briefcase className="w-4 h-4" strokeWidth={1.5} />}
+        title={`Services (${services.length})`}
+        sub="Les métiers affichés par la section « Nos différents services »"
+      >
+        <ActionsBar
+          count={services.length}
+          addLabel="Ajouter un service"
+          onAdd={() =>
+            addItem('services', () => ({
+              id: `service-${Date.now()}`,
+              icon: 'House',
+              title: { FR: '', EN: '' },
+              description: { FR: '', EN: '' },
+            }))
+          }
+          onMoveAllUp={() => moveAll('services', -1)}
+          onMoveAllDown={() => moveAll('services', 1)}
+        />
+        {services.map((s, i) => (
+          <ItemCard
+            key={s.id ?? i}
+            title={`Service ${i + 1} — ${s.title.FR}`}
+            dirty={dirty('services', i)}
+            {...reorderProps('services', i, services.length)}
+            renderPreview={(lang) => <PreviewService s={s} lang={lang} />}
+          >
+            <FormGroup icon={<Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />} label="Icône">
+              <div className="min-w-0">
+                <label className={labelCls} htmlFor={`service-icon-${i}`}>
+                  Icône de la carte
+                </label>
+                <select
+                  id={`service-icon-${i}`}
+                  value={s.icon}
+                  onChange={(e) => setField('services', i, 'icon', e.target.value)}
+                  className={`${inputCls} mt-1.5 cursor-pointer`}
+                >
+                  {Object.keys(SECTION_ICONS).map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-micro text-(--admin-muted-2) font-mono">
+                  Nom d’icône du registre partagé (section, éditeur, Espace Gérant)
+                </p>
+              </div>
+            </FormGroup>
+            <FormGroup icon={<Type className="w-3.5 h-3.5" strokeWidth={1.5} />} label="Textes FR / EN">
+              <LangPair
+                label="Titre"
+                fr={s.title.FR}
+                en={s.title.EN}
+                onFR={(val) => setLang('services', i, 'title', 'FR', val)}
+                onEN={(val) => setLang('services', i, 'title', 'EN', val)}
+                max={60}
+              />
+              <LangPair
+                label="Description"
+                fr={s.description.FR}
+                en={s.description.EN}
+                textarea
+                rows={3}
+                onFR={(val) => setLang('services', i, 'description', 'FR', val)}
+                onEN={(val) => setLang('services', i, 'description', 'EN', val)}
+                max={260}
               />
             </FormGroup>
           </ItemCard>

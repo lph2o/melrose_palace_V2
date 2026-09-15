@@ -266,6 +266,19 @@ export default function Footer({
               >
                 {isFR ? 'Packs Clôture & Construction' : 'Fencing & Construction Packs'}
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab('home');
+                  setTimeout(() => {
+                    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="text-left hover:text-secondary-fixed transition-colors py-2.5 min-h-[44px] flex items-center"
+              >
+                {isFR
+                  ? 'Nos Services (Vente, Location, Juridique)'
+                  : 'Our Services (Sales, Lettings, Legal)'}
+              </button>
               {onOpenBrochure && (
                 <button
                   onClick={onOpenBrochure}

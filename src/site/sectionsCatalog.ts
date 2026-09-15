@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Briefcase,
   Calculator,
   Compass,
   Contact,
@@ -49,8 +50,9 @@ export const SITE_SECTIONS: SiteSectionMeta[] = [
   { type: 'Localisation', label: 'Localisation', anchor: 'location', desc: 'Localisation stratégique et infrastructures', icon: Layers },
   { type: 'Simulateur', label: 'Simulateur', anchor: 'simulator-section', desc: 'Simulateur de financement interactif', icon: Calculator },
   { type: 'Packs', label: 'Packs', anchor: 'packs-section', desc: 'Packs complémentaires du domaine', icon: Package },
-  { type: 'Banque', label: 'Banque', anchor: 'banking', desc: 'Financement bancaire partenaire', icon: Landmark },
+  { type: 'Banque', label: 'Banque', anchor: 'banking', desc: 'Financement avec la Banque Islamique du Sénégal (BIS)', icon: Landmark },
   { type: 'Temoignages', label: 'Témoignages', anchor: 'testimonials', desc: 'Témoignages des acquéreurs', icon: MessageSquareQuote },
+  { type: 'Services', label: 'Services', anchor: 'services', desc: 'Nos métiers : vente, location, terrains, juridique', icon: Briefcase },
   { type: 'Articles', label: 'Articles', anchor: 'insights', desc: 'Articles et guides du blog', icon: Newspaper },
   { type: 'FAQ', label: 'FAQ', anchor: 'faqs-section', desc: 'Questions fréquentes', icon: FileQuestion },
   { type: 'Contact', label: 'Contact', anchor: 'contact', desc: 'Formulaire de contact et coordonnées', icon: Contact },

@@ -1,8 +1,19 @@
-import { ConnectivityItem, AdvantageItem, FAQItem, Parcel, BlogArticle, ComplementaryPack, SiteSettings, Testimonial, VideoContent, SiteContent } from './types';
+import { ConnectivityItem, AdvantageItem, FAQItem, Parcel, BlogArticle, ComplementaryPack, ServiceItem, SiteSettings, Testimonial, VideoContent, SiteContent } from './types';
 
 /** Racine des médias hébergés dans Supabase Storage (bucket « site-media »). */
 export const SITE_MEDIA_BASE_URL =
   'https://ywvztcdgssbgeawkcphe.supabase.co/storage/v1/object/public/site-media';
+
+/**
+ * Logo du partenaire bancaire — Banque Islamique du Sénégal (BIS).
+ *
+ * Fichier tiers, posé à côté de la marque du site : il est produit par
+ * `scripts/make-partner-logo.cjs` à partir du SVG officiel publié par la
+ * banque, et non dessiné ici. Le partenaire est nommé, donc son logo doit être
+ * le sien : un logo redessiné ou à demi ressemblant serait pire que pas de
+ * logo du tout.
+ */
+export const BANK_PARTNER_LOGO = `${SITE_MEDIA_BASE_URL}/images/partenaire-bis.png`;
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   companyName: 'Senegal Investment Consulting',
@@ -367,12 +378,12 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'bank-financing',
     question: {
-      FR: 'Est-il possible de financer son terrain avec une banque ?',
-      EN: 'Can I finance my land purchase through a bank?',
+      FR: 'Est-il possible de financer son terrain avec la banque islamique ?',
+      EN: 'Can I finance my plot through the Islamic bank?',
     },
     answer: {
-      FR: 'Nous travaillons activement sur des solutions de partenariat avec des banques sénégalaises afin de permettre aux clients éligibles (notamment les salariés de la diaspora et résidents) de financer leur acquisition sur une durée plus longue. Important : financement bancaire possible selon profil et acceptation de l\'établissement partenaire.',
-      EN: 'We are currently developing partnerships with Senegalese banks so eligible clients (diaspora employees and residents) can finance their land over longer durations. Note: bank financing remains subject to applicant profile and partner bank approval.',
+      FR: 'Oui. Nous travaillons avec la Banque Islamique du Sénégal (BIS), la seule banque du pays à opérer exclusivement en finance islamique. Elle finance l\'acquisition d\'un terrain sous forme de Mourabaha, d\'Istisna ou de Tawarruq — donc sans intérêts. L\'accord reste soumis à l\'étude du dossier par la banque. Nos formules directes (3 000 € d\'apport puis 300 €/mois, ou 13 500 € comptant) restent disponibles sans passer par une banque.',
+      EN: 'Yes. We work with the Banque Islamique du Sénégal (BIS), the country\'s only bank operating exclusively in Islamic finance. It finances a plot purchase through Murabaha, Istisna or Tawarruq — with no interest. Approval remains subject to the bank\'s review of the application. Our direct plans (€3,000 down then €300/month, or €13,500 cash) remain available without a bank.',
     },
   },
   {
@@ -535,6 +546,7 @@ export const TRANSLATIONS = {
       guarantees: 'Sécurisation',
       simulator: 'Simulateur',
       packs: 'Packs Services',
+      services: 'Nos Services',
       faq: 'FAQ Juridique',
     },
     hero: {
@@ -659,15 +671,22 @@ export const TRANSLATIONS = {
       ],
     },
     banking: {
-      title: 'Financer Mon Terrain avec une Banque',
-      desc: 'Nous travaillons sur des solutions de partenariat avec des banques sénégalaises afin que les clients éligibles (salariés diaspora, entrepreneurs) puissent financer leur acquisition sur une durée plus longue.',
-      disclaimer: 'Financement bancaire possible selon profil et acceptation de l\'établissement partenaire.',
-      btn: 'Être notifié des offres bancaires',
+      title: 'Financer Mon Terrain avec la Banque Islamique du Sénégal',
+      desc: 'Nous travaillons avec la Banque Islamique du Sénégal (BIS) — établissement de finance islamique depuis 1982 — pour permettre aux clients éligibles, salariés de la diaspora comme résidents, de financer leur acquisition sans intérêts et sur une durée adaptée à leur budget, par Mourabaha, Istisna ou Tawarruq.',
+      disclaimer: 'Financement accordé par la BIS selon le profil du demandeur et l\'acceptation de son dossier par la banque.',
+      btn: 'Étudier mon dossier BIS',
+      partnerLabel: 'Notre partenaire bancaire',
+      partnerName: 'Banque Islamique du Sénégal',
     },
     packs: {
       sectionTag: 'PACKS COMPLÉMENTAIRES',
       title: 'Accompagnement Progressif de Votre Projet',
       desc: 'Achetez votre terrain de 150 m² aujourd\'hui et avancez à votre rythme dans la sécurisation et la construction avec notre équipe.',
+    },
+    services: {
+      sectionTag: 'NOS SERVICES',
+      title: 'Nos Différents Services',
+      desc: 'Achat, location, investissement foncier ou sécurisation juridique : nous vous accompagnons de la première visite jusqu\'à la signature des actes.',
     },
     contact: {
       title: 'Passez à l\'Action dès Aujourd\'hui',
@@ -765,11 +784,14 @@ export const TRANSLATIONS = {
       contactFormInterest2Short: 'Paiement comptant (13 500 €)',
       contactFormInterest3: 'Pack Terrain + Clôture de sécurisation',
       contactFormInterest4: 'Pack Terrain + Début de construction',
-      contactFormInterest5: 'Financement bancaire partenaire',
+      contactFormInterest5: 'Financement BIS (banque islamique)',
       packsIncludedLabel: 'Inclus dans ce pack :',
       packsLearnMore: 'En savoir plus',
       packsWaPrefix: 'Bonjour Senegal Investment Consulting, je souhaite avoir des informations et un devis pour le « ',
       packsWaSuffix: ' » à Sébikhotane.',
+      servicesInquiryCta: 'Nous consulter',
+      servicesWaPrefix: 'Bonjour Senegal Investment Consulting, je souhaite des informations sur votre service « ',
+      servicesWaSuffix: ' ».',
       promoBadge: 'OFFRE SPÉCIALE LANCEMENT',
       promoText: '10 Premières Parcelles : Frais de bornage & constitution de dossier offerts ! (Encore {remaining} disponibles)',
       promoCta: 'Choisir ma parcelle →',
@@ -780,7 +802,7 @@ export const TRANSLATIONS = {
       heroStatSizeVal: '150 m² • Délibération & NICAD',
       heroStatPayLabel: 'Paiement Échelonné',
       heroStatPayVal: "3 000 € d'apport • 300 €/mois × 40 mois",
-      bankWaMsg: 'Bonjour Senegal Investment Consulting, je souhaite être tenu informé des solutions de financement bancaire avec vos établissements partenaires pour les parcelles de Sébikhotane.',
+      bankWaMsg: 'Bonjour Senegal Investment Consulting, je souhaite étudier mon dossier de financement avec la Banque Islamique du Sénégal (BIS) pour une parcelle à Sébikhotane.',
       dossierWaMsg: 'Bonjour Senegal Investment Consulting, je souhaite recevoir le dossier complet (délibération, plan cadastral, grille tarifaire) pour le programme de Sébikhotane.',
       simWaMsgPrefix: "Bonjour Senegal Investment Consulting, je souhaite étudier mon plan de financement personnalisé pour une parcelle de 150 m² à Sébikhotane :",
       simWaMsgSuffix: "Merci de me recontacter pour m'indiquer la disponibilité.",
@@ -818,6 +840,7 @@ export const TRANSLATIONS = {
       guarantees: 'Security & Title',
       simulator: 'Simulator',
       packs: 'Packs & Services',
+      services: 'Our Services',
       faq: 'Legal FAQ',
     },
     hero: {
@@ -942,15 +965,22 @@ export const TRANSLATIONS = {
       ],
     },
     banking: {
-      title: 'Bank Financing Solutions',
-      desc: 'We are structuring partnerships with Senegalese banking institutions so eligible clients can finance their land across extended repayment schedules.',
-      disclaimer: 'Bank financing available subject to applicant eligibility and partner bank credit approval.',
-      btn: 'Notify me about bank financing',
+      title: 'Finance Your Plot with the Islamic Bank of Senegal',
+      desc: 'We work with the Banque Islamique du Sénégal (BIS) — an Islamic finance institution since 1982 — enabling eligible clients, diaspora employees and residents alike, to finance their purchase interest-free over a schedule that fits their budget, through Murabaha, Istisna or Tawarruq.',
+      disclaimer: 'Financing granted by BIS subject to the applicant\'s profile and the bank\'s approval.',
+      btn: 'Review my BIS application',
+      partnerLabel: 'Our banking partner',
+      partnerName: 'Banque Islamique du Sénégal (BIS)',
     },
     packs: {
       sectionTag: 'COMPLEMENTARY PACKS',
       title: 'Step-by-Step Project Realization',
       desc: 'Purchase your 150 sqm plot today and advance securely toward fencing and villa construction at your own pace.',
+    },
+    services: {
+      sectionTag: 'OUR SERVICES',
+      title: 'Our Different Services',
+      desc: 'Buying, letting, land investment or legal security: we support you from the first viewing through to the signing of the deeds.',
     },
     contact: {
       title: 'Start Your Journey Today',
@@ -1048,11 +1078,14 @@ export const TRANSLATIONS = {
       contactFormInterest2Short: 'Cash payment (€13,500)',
       contactFormInterest3: 'Land + Security Fencing Pack',
       contactFormInterest4: 'Land + Construction Starter Pack',
-      contactFormInterest5: 'Partner bank financing',
+      contactFormInterest5: 'BIS financing (Islamic bank)',
       packsIncludedLabel: 'Included in this pack:',
       packsLearnMore: 'Learn more',
       packsWaPrefix: 'Hello Senegal Investment Consulting, I would like information and a quote for the “',
       packsWaSuffix: '” in Sébikhotane.',
+      servicesInquiryCta: 'Get in touch',
+      servicesWaPrefix: 'Hello Senegal Investment Consulting, I would like information about your “',
+      servicesWaSuffix: '” service.',
       promoBadge: 'SPECIAL LAUNCH PROMO',
       promoText: 'First 10 Plots: Boundary survey & registration costs included! ({remaining} still available)',
       promoCta: 'Pick my plot →',
@@ -1063,7 +1096,7 @@ export const TRANSLATIONS = {
       heroStatSizeVal: '150 sqm • Deliberation & NICAD',
       heroStatPayLabel: 'Flexible Payment Plan',
       heroStatPayVal: '€3,000 down • €300/mo × 40 months',
-      bankWaMsg: 'Hello Senegal Investment Consulting, I would like to be kept informed of bank financing solutions with your partner institutions for the Sébikhotane plots.',
+      bankWaMsg: 'Hello Senegal Investment Consulting, I would like to review my financing application with the Banque Islamique du Sénégal (BIS) for a plot in Sébikhotane.',
       dossierWaMsg: 'Hello Senegal Investment Consulting, I would like to receive the complete file (deliberation, cadastral plan, pricing grid) for the Sébikhotane program.',
       simWaMsgPrefix: 'Hello Senegal Investment Consulting, I would like to study my custom financing plan for a 150 sqm plot in Sébikhotane:',
       simWaMsgSuffix: 'Please contact me back to confirm availability.',
@@ -1246,10 +1279,57 @@ export const VIDEO_ITEMS: VideoContent[] = [
   },
 ];
 
+/**
+ * Métiers de l'agence — section « Nos différents services ».
+ *
+ * Une seule liste pour les deux langues (champs `{ FR, EN }`) : ces quatre
+ * activités sont des données d'entreprise, pas des textes de mise en page. Les
+ * `id` servent de clé React et de repère pour le script de contenu.
+ */
+export const SERVICES: ServiceItem[] = [
+  {
+    id: 'house-sale',
+    icon: 'House',
+    title: { FR: 'Maison à vendre', EN: 'Houses for sale' },
+    description: {
+      FR: 'Villas et maisons sélectionnées à Dakar et dans la région : dossier vérifié, visites organisées et accompagnement complet jusqu\'à la mutation.',
+      EN: 'Selected villas and homes in Dakar and the surrounding region: vetted paperwork, viewings arranged and full support through to the title transfer.',
+    },
+  },
+  {
+    id: 'rental-management',
+    icon: 'Key',
+    title: { FR: 'Gestion locative', EN: 'Rental management' },
+    description: {
+      FR: 'Nous recherchons le locataire, encadrons le bail et encaissons les loyers pour votre compte — suivi à distance possible depuis l\'étranger.',
+      EN: 'We find the tenant, handle the lease and collect the rent on your behalf — with remote follow-up possible from abroad.',
+    },
+  },
+  {
+    id: 'land-sale',
+    icon: 'LandPlot',
+    title: { FR: 'Terrains à vendre', EN: 'Land for sale' },
+    description: {
+      FR: 'Le lotissement Dun Tni à Sébikhotane : 54 parcelles bornées de 120 à 200 m², dès 15 000 € — 3 000 € d\'apport puis 300 €/mois.',
+      EN: 'The Dun Tni estate in Sébikhotane: 54 surveyed plots from 120 to 200 sqm, from €15,000 — €3,000 deposit then €300/month.',
+    },
+  },
+  {
+    id: 'legal-support',
+    icon: 'Scale',
+    title: { FR: 'Accompagnement juridique', EN: 'Legal support' },
+    description: {
+      FR: 'Vérification des titres, délibération et NICAD, préparation des actes et suivi du dossier de mutation auprès des services compétents.',
+      EN: 'Title checks, municipal deliberation and NICAD, deed preparation and full follow-up of the transfer file with the relevant authorities.',
+    },
+  },
+];
+
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   paymentTiers: PAYMENT_SCHEDULE_TIERS,
   connectivity: CONNECTIVITY_ITEMS,
   packs: COMPLEMENTARY_PACKS,
+  services: SERVICES,
   testimonials: TESTIMONIALS,
   faq: FAQ_ITEMS,
   blogArticles: BLOG_ARTICLES,
