@@ -26,7 +26,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { Lead, SiteSettings, Parcel } from '../types';
-import { ADMIN_EMAIL } from '../lib/adminAuth';
+import { isAdminEmail } from '../lib/adminAuth';
 import AdminContentTab from './AdminContentTab';
 import AdminSectionsTab from './AdminSectionsTab';
 import {
@@ -298,11 +298,11 @@ export default function AdminPage({
       }
       // Session existante : vérifier que c'est bien l'administrateur
       const sessionEmail = await getSessionEmail();
-      if (sessionEmail !== ADMIN_EMAIL) {
+      if (!isAdminEmail(sessionEmail)) {
         await signOutAdmin();
         if (mounted) {
           setAuthState('signedOut');
-          setAuthError("Accès refusé : cet espace est réservé à l'administrateur.");
+          setAuthError("Accès refusé : cet espace est réservé aux administrateurs.");
         }
         return;
       }
@@ -312,11 +312,11 @@ export default function AdminPage({
       if (!mounted) return;
       if (isAuth) {
         const sessionEmail = await getSessionEmail();
-        if (sessionEmail !== ADMIN_EMAIL) {
+        if (!isAdminEmail(sessionEmail)) {
           await signOutAdmin();
           if (mounted) {
             setAuthState('signedOut');
-            setAuthError("Accès refusé : cet espace est réservé à l'administrateur.");
+            setAuthError("Accès refusé : cet espace est réservé aux administrateurs.");
           }
           return;
         }
@@ -362,10 +362,10 @@ export default function AdminPage({
     }
     // Vérifier que l'email correspond bien à l'administrateur
     const sessionEmail = await getSessionEmail();
-    if (sessionEmail !== ADMIN_EMAIL) {
+    if (!isAdminEmail(sessionEmail)) {
       await signOutAdmin();
       setAuthState('signedOut');
-      setAuthError("Accès refusé : cet espace est réservé à l'administrateur.");
+      setAuthError("Accès refusé : cet espace est réservé aux administrateurs.");
       return;
     }
     setAuthState('signedIn');

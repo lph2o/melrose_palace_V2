@@ -55,8 +55,10 @@ Importer le dépôt `lph2o/melrose_palace_V2` sur [vercel.com/new](https://verce
 2. **Auth → URL Configuration** : ajouter le domaine Vercel (`https://<projet>.vercel.app` et le domaine définitif)
    dans *Site URL* / *Redirect URLs*. La connexion e-mail/mot de passe du mono-admin fonctionne sinon, mais les liens
    de réinitialisation pointeraient vers `localhost`.
-3. Le compte admin doit correspondre à `ADMIN_EMAIL` (`src/lib/adminAuth.ts`) — le garde-fou client refuse toute autre
-   session ; c'est la RLS qui fait réellement autorité.
+3. Les comptes autorisés sont listés dans `ADMIN_EMAILS` (`src/lib/adminAuth.ts`) et dans `public.is_admin()`
+   (`supabase/schema.sql`) — **les deux listes doivent rester identiques** : le garde-fou client refuse la session, la
+   RLS refuse l'écriture. Ajouter un administrateur = créer le compte Supabase Auth, ajouter l'email aux deux listes,
+   redéployer, puis ré-exécuter `supabase/schema.sql` dans le SQL Editor.
 
 ## SEO / indexation
 

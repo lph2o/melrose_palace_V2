@@ -11,7 +11,8 @@
  * Prérequis :
  *   .env à la racine avec NEXT_PUBLIC_SUPABASE_URL,
  *   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, et SIC_ADMIN_PASSWORD
- *   (mot de passe du compte admin thiamabda@gmail.com).
+ *   (mot de passe d'un compte admin — voir `src/lib/adminAuth.ts`).
+ *   SIC_ADMIN_EMAIL permet de choisir lequel (défaut : le premier de la liste).
  *
  * Usage :
  *   node scripts/upload-media.cjs
@@ -23,7 +24,9 @@ const { createClient } = require('@supabase/supabase-js');
 
 const ROOT = path.join(__dirname, '..');
 const BUCKET = 'site-media';
-const ADMIN_EMAIL = 'thiamabda@gmail.com';
+// Doit rester aligné sur ADMIN_EMAILS de `src/lib/adminAuth.ts` (ce script est
+// en CommonJS et ne peut pas l'importer). SIC_ADMIN_EMAIL choisit le compte.
+const ADMIN_EMAIL = process.env.SIC_ADMIN_EMAIL || 'thiamabda@gmail.com';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

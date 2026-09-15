@@ -19,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Language, Parcel, SiteSettings } from '../types';
-import { ADMIN_EMAIL } from '../lib/adminAuth';
+import { isAdminEmail } from '../lib/adminAuth';
 import {
   clearPuckPage,
   fetchPuckPage,
@@ -89,9 +89,9 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
     const verify = async (): Promise<boolean> => {
       if (!(await getAdminSession())) return false;
       const sessionEmail = await getSessionEmail();
-      if (sessionEmail === ADMIN_EMAIL) return true;
+      if (isAdminEmail(sessionEmail)) return true;
       await signOutAdmin();
-      if (mounted) setAuthError("Accès refusé : cet espace est réservé à l'administrateur.");
+      if (mounted) setAuthError("Accès refusé : cet espace est réservé aux administrateurs.");
       return false;
     };
 
@@ -125,10 +125,10 @@ export default function AdminEditorPage({ settings, parcels, onBack }: AdminEdit
       return;
     }
     const sessionEmail = await getSessionEmail();
-    if (sessionEmail !== ADMIN_EMAIL) {
+    if (!isAdminEmail(sessionEmail)) {
       await signOutAdmin();
       setAuthState('signedOut');
-      setAuthError("Accès refusé : cet espace est réservé à l'administrateur.");
+      setAuthError("Accès refusé : cet espace est réservé aux administrateurs.");
       return;
     }
     setAuthState('signedIn');

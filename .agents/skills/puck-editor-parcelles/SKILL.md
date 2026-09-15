@@ -327,8 +327,10 @@ Deux implémentations divergentes = un canevas qui ne ressemble plus au site.
 ## Route, indexation et accès
 
 - URL : `/admin/editor` (ou `#/admin/editor`), **absente de la navigation publique**.
-- Auth : Supabase Auth (`src/lib/adminAuth.ts` → `ADMIN_EMAIL`). Une session d'un
-  autre compte est refusée et déconnectée.
+- Auth : Supabase Auth (`src/lib/adminAuth.ts` → `ADMIN_EMAILS`, testé par `isAdminEmail`). Une session d'un
+  autre compte est refusée et déconnectée. La même liste existe côté base dans `public.is_admin()`
+  (`supabase/schema.sql`) et porte les politiques d'écriture : modifier l'une sans l'autre donne un admin
+  qui se connecte mais que la base refuse d'écrire.
 - `noindex, nofollow` + canonical `/admin/editor` : `src/lib/seo.ts` (branche
   `view === 'admin'`).
 - Exclu du sitemap par construction (`scripts/generate-seo-files.cjs` ne liste
