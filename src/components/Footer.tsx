@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Language, SiteSettings } from '../types';
-import { TRANSLATIONS } from '../data';
+import { TRANSLATIONS, ESTATE_AREA_RANGE } from '../data';
 import {
   Mail,
   ArrowRight,
@@ -73,9 +73,10 @@ export default function Footer({
     typeof window === 'undefined'
       ? ''
       : `${window.location.origin}${window.location.pathname}`;
+  const surfaceRange = isFR ? ESTATE_AREA_RANGE.FR : ESTATE_AREA_RANGE.EN;
   const shareText = isFR
-    ? `${settings?.companyName || 'Senegal Investment Consulting'} — Parcelles de 150 m² à Sébikhotane (dès 300 €/mois)`
-    : `${settings?.companyName || 'Senegal Investment Consulting'} — 150 sqm plots in Sebikhotane (from €300/month)`;
+    ? `${settings?.companyName || 'Senegal Investment Consulting'} — Parcelles ${surfaceRange} à Sébikhotane (dès 300 €/mois)`
+    : `${settings?.companyName || 'Senegal Investment Consulting'} — Plots ${surfaceRange} in Sebikhotane (from €300/month)`;
   const enc = encodeURIComponent;
   const socialShares = [
     {
@@ -239,8 +240,8 @@ export default function Footer({
                 className="text-left hover:text-secondary-fixed transition-colors py-2.5 min-h-[44px] flex items-center"
               >
                 {isFR
-                  ? 'Les 20 Parcelles de 150 m² (Disponibilités)'
-                  : 'The 20 Plots of 150 sqm (Availability)'}
+                  ? `Les Parcelles ${surfaceRange} (Disponibilités)`
+                  : `The Plots ${surfaceRange} (Availability)`}
               </button>
               <button
                 onClick={() => {

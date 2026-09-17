@@ -11,7 +11,7 @@ import BrochureModal from './components/BrochureModal';
 import ShareSiteModal from './components/ShareSiteModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
 import { Language, BlogArticle, SiteSettings, Parcel } from './types';
-import { DEFAULT_SITE_SETTINGS, PARCELS } from './data';
+import { DEFAULT_SITE_SETTINGS, PARCELS, reconcileParcelArea } from './data';
 import { applySeo, detectLanguageFromPath, detectViewFromPath, langViewPath } from './lib/seo';
 import {
   fetchRemoteSettings,
@@ -77,7 +77,10 @@ export default function App() {
     try {
       const saved = localStorage.getItem('sic_parcels');
       if (saved) {
-        return JSON.parse(saved);
+        // Ce cache peut dater d'avant la réconciliation des surfaces : on le
+        // repasse par la même règle qu'à la lecture cloud, sinon un ancien
+        // enregistrement incohérent ressurgirait au premier rendu.
+        return (JSON.parse(saved) as Parcel[]).map(reconcileParcelArea);
       }
     } catch {
       // ignore
@@ -174,12 +177,19 @@ export default function App() {
     return upsertRemoteSettings(newSettings);
   };
 
-  // Retourne le résultat de la synchronisation cloud (ok + raison d'un échec)
-  const handleUpdateParcelStatus = async (
-    id: number,
-    status: 'Available' | 'Reserved' | 'Sold'
-  ): Promise<SyncResult> => {
-    const updated = parcels.map((p) => (p.id === id ? { ...p, status } : p));
+  /**
+   * Édition d'une parcelle (statut commercial, prix, prix comptant…) depuis
+   * l'Espace Gérant. `setParcels` est ce qui rend l'édition visible partout : la
+   * fiche du lot, la grille des paliers et le PDF lisent tous ce tableau, donc
+   * un prix corrigé se répercute sans rechargement.
+   *
+   * `upsertRemoteParcel` réconcilie la surface avant l'écriture : une édition de
+   * cotes ne peut pas laisser en base une surface qui les contredit.
+   *
+   * Retourne le résultat de la synchronisation cloud (ok + raison d'un échec).
+   */
+  const handleUpdateParcel = async (id: number, patch: Partial<Parcel>): Promise<SyncResult> => {
+    const updated = parcels.map((p) => (p.id === id ? { ...p, ...patch } : p));
     const changed = updated.find((p) => p.id === id);
     setParcels(updated);
     try {
@@ -189,6 +199,11 @@ export default function App() {
     }
     return changed ? upsertRemoteParcel(changed) : { ok: false, reason: 'unknown' };
   };
+
+  const handleUpdateParcelStatus = (
+    id: number,
+    status: 'Available' | 'Reserved' | 'Sold'
+  ): Promise<SyncResult> => handleUpdateParcel(id, { status });
 
   const handleResetDefaults = async (): Promise<void> => {
     setSettings(DEFAULT_SITE_SETTINGS);
@@ -346,6 +361,7 @@ export default function App() {
         parcels={parcels}
         onSaveSettings={handleSaveSettings}
         onUpdateParcelStatus={handleUpdateParcelStatus}
+        onUpdateParcel={handleUpdateParcel}
         onResetDefaults={handleResetDefaults}
         onBack={navigateAwayFromAdmin}
         onOpenEditor={navigateToEditor}

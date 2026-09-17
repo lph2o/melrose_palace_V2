@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Data as PuckData } from '@puckeditor/core';
 import { Lead, Parcel, SiteSettings } from '../types';
-import { DEFAULT_SITE_SETTINGS, DEFAULT_SITE_CONTENT, PARCELS } from '../data';
+import { DEFAULT_SITE_SETTINGS, DEFAULT_SITE_CONTENT, PARCELS, reconcileParcelArea } from '../data';
 
 // Les variables NEXT_PUBLIC_* sont exposées au client via `define` dans vite.config.ts
 const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
@@ -113,14 +113,19 @@ export async function fetchRemoteParcels(): Promise<Parcel[] | null> {
   for (const row of data) {
     remote.set(row.id as number, (row.data as Partial<Parcel>) ?? {});
   }
-  // Ordre et données par défaut de data.ts, surchargés par le cloud
-  return PARCELS.map((p) => ({ ...p, ...(remote.get(p.id) ?? {}) }));
+  // Ordre et données par défaut de data.ts, surchargés par le cloud. La surface
+  // est réconciliée : une édition Gérant ne peut pas la faire diverger des cotes
+  // affichées à côté (même règle que le garde-fou de build).
+  return PARCELS.map((p) => reconcileParcelArea({ ...p, ...(remote.get(p.id) ?? {}) }));
 }
 
 export async function upsertRemoteParcel(parcel: Parcel): Promise<SyncResult> {
+  // On enregistre la version réconciliée : la base ne doit pas héberger une
+  // surface que le site refuserait d'afficher au chargement suivant.
+  const safe = reconcileParcelArea(parcel);
   return runUpsert(() =>
     supabase!.from('parcels').upsert(
-      { id: parcel.id, data: parcel, updated_at: new Date().toISOString() },
+      { id: safe.id, data: safe, updated_at: new Date().toISOString() },
       { onConflict: 'id' }
     )
   );

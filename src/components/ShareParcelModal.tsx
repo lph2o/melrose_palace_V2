@@ -27,12 +27,12 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
 
   // Tailored share text
   const shareTitle = isFR 
-    ? `Senegal Investment Consulting - Parcelle n°${parcel.id} (150 m² à Sébikhotane)` 
-    : `Senegal Investment Consulting - Plot #${parcel.id} (150 sqm in Sebikhotane)`;
+    ? `Senegal Investment Consulting - Parcelle n°${parcel.id} (${parcel.area} m² à Sébikhotane)` 
+    : `Senegal Investment Consulting - Plot #${parcel.id} (${parcel.area} sqm in Sebikhotane)`;
 
   const shareDesc = isFR
-    ? `Découvrez la parcelle n°${parcel.id} de 150 m² à Sébikhotane (proche AIBD & Diamniadio). Prix échelonné : 3 000 € d'acompte + 300 €/mois (ou 13 500 € comptant). Délibération municipale & NICAD.`
-    : `Explore plot #${parcel.id} of 150 sqm in Sebikhotane (near AIBD & Diamniadio). Installments: 3,000 € down payment + 300 €/mo (or 13,500 € cash). Municipal decree & NICAD.`;
+    ? `Découvrez la parcelle n°${parcel.id} de ${parcel.area} m² à Sébikhotane (proche AIBD & Diamniadio). Prix échelonné : 3 000 € d'acompte + 300 €/mois (ou 13 500 € comptant). Délibération municipale & NICAD.`
+    : `Explore plot #${parcel.id} of ${parcel.area} sqm in Sebikhotane (near AIBD & Diamniadio). Installments: 3,000 € down payment + 300 €/mo (or 13,500 € cash). Municipal decree & NICAD.`;
 
   const handleCopyLink = async () => {
     try {
@@ -53,8 +53,8 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
 
   const whatsappInquiryMessage = encodeURIComponent(
     isFR
-      ? `Bonjour, je souhaite avoir des informations concernant la parcelle n° ${parcel.id} de 150 m² à Sébikhotane.`
-      : `Hello, I would like information about plot #${parcel.id} (150 sqm) in Sebikotane.`
+      ? `Bonjour, je souhaite avoir des informations concernant la parcelle n° ${parcel.id} de ${parcel.area} m² à Sébikhotane.`
+      : `Hello, I would like information about plot #${parcel.id} (${parcel.area} sqm) in Sebikotane.`
   );
   const directWhatsAppUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappInquiryMessage}`;
 
@@ -124,7 +124,7 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
                 {isFR ? 'Partager la Parcelle' : 'Share Plot Passport'}
               </h3>
               <p className="text-xs text-outline mt-0.5 font-light">
-                {isFR ? `Parcelle n°${parcel.id} • 150 m² • Sébikhotane` : `Plot #${parcel.id} • 150 sqm • Sebikhotane`}
+                {isFR ? `Parcelle n°${parcel.id} • ${parcel.area} m² • Sébikhotane` : `Plot #${parcel.id} • ${parcel.area} sqm • Sebikhotane`}
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function ShareParcelModal({ parcel, currentLanguage, onClose, wha
                     <div className="text-xs text-white/85 space-y-0.5">
                       <p>
                         📐 {isFR ? 'Surface' : 'Area'} :{' '}
-                        <strong className="text-white">150 m²</strong>
+                        <strong className="text-white">{parcel.area} m²</strong>
                       </p>
                       <p>
                         📜 {isFR ? 'Statut' : 'Status'} :{' '}

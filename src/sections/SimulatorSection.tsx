@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Language, PaymentTier, SiteSettings, UITranslations } from '../types';
 import { PAYMENT_SCHEDULE_TIERS, TRANSLATIONS } from '../data';
+import { buildPaymentSchedule, scheduleFormula } from '../lib/payment';
 import { useSite } from '../site/SiteContext';
 import { openWhatsApp } from '../site/whatsapp';
 import { RichText } from '../components/RichText';
@@ -91,20 +92,34 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
   const [simulatorDeposit, setSimulatorDeposit] = useState<number>(settings.defaultDeposit || 3000);
   const [simulatorMonthly, setSimulatorMonthly] = useState<number>(settings.defaultMonthly || 300);
 
-  const calculatedRemaining = Math.max(0, settings.basePrice - simulatorDeposit);
-  const calculatedDuration = simulatorMonthly > 0 ? Math.ceil(calculatedRemaining / simulatorMonthly) : 40;
+  // Échéancier cohérent par construction : mensualité pleine, dernier versement
+  // plus petit s'il en faut un, et un total qui tombe juste sur le prix.
+  const schedule = buildPaymentSchedule(settings.basePrice, simulatorDeposit, simulatorMonthly);
+  const formula = scheduleFormula(schedule);
 
-  // Les paliers restent pilotés par l'Espace Gérant → onglet Contenu.
+  // Paliers pilotés par l'Espace Gérant → onglet Contenu. Seuls l'acompte et la
+  // mensualité saisis font foi : le reste, la durée et le dernier versement sont
+  // recalculés, sinon la grille peut afficher des produits qui ne tombent pas
+  // juste (cf. audit du simulateur).
   const tiers: PaymentTier[] = settings.content?.paymentTiers ?? PAYMENT_SCHEDULE_TIERS;
+  const tierSchedule = (tier: PaymentTier) =>
+    buildPaymentSchedule(
+      settings.basePrice,
+      tier.deposit,
+      tier.monthly > 0 ? tier.monthly : settings.defaultMonthly
+    );
 
   const openWhatsAppSimulator = () => {
     // Récapitulatif bilingue : les valeurs sont neutres, seuls les libellés
     // changent (un visiteur anglophone ne doit pas recevoir de français).
     const short =
       language === 'FR'
-        ? { deposit: 'Apport', remaining: 'Reste', monthly: 'Mensualité', duration: 'Durée' }
-        : { deposit: 'Deposit', remaining: 'Remaining', monthly: 'Monthly', duration: 'Term' };
-    const msg = `${ui.simWaMsgPrefix}\n- ${short.deposit} : ${simulatorDeposit.toLocaleString()} €\n- ${short.remaining} : ${calculatedRemaining.toLocaleString()} €\n- ${short.monthly} : ${simulatorMonthly} €${c.perMonthUnit}\n- ${short.duration} : ${calculatedDuration} ${c.monthsUnit}.\n${ui.simWaMsgSuffix}`;
+        ? { deposit: 'Apport', remaining: 'Reste', monthly: 'Mensualité', duration: 'Durée', final: 'Dernier versement' }
+        : { deposit: 'Deposit', remaining: 'Remaining', monthly: 'Monthly', duration: 'Term', final: 'Final installment' };
+    const finalLine = schedule.hasFinalBalance
+      ? `\n- ${short.final} : ${schedule.lastPayment.toLocaleString()} €`
+      : '';
+    const msg = `${ui.simWaMsgPrefix}\n- ${short.deposit} : ${schedule.deposit.toLocaleString()} €\n- ${short.remaining} : ${schedule.remaining.toLocaleString()} €\n- ${short.monthly} : ${schedule.monthly} €${c.perMonthUnit}\n- ${short.duration} : ${schedule.duration} ${c.monthsUnit}.${finalLine}\n${ui.simWaMsgSuffix}`;
     openWhatsApp(settings, msg);
   };
 
@@ -195,10 +210,13 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                       <th className="pb-1.5">{c.colRemainingLabel}</th>
                       <th className="pb-1.5">{c.colMonthlyLabel}</th>
                       <th className="pb-1.5">{c.colDurationLabel}</th>
+                      <th className="pb-1.5">{ui.simulatorColFinalBalance}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10 text-xs font-mono">
-                    {tiers.map((tier, idx) => (
+                    {tiers.map((tier, idx) => {
+                      const row = tierSchedule(tier);
+                      return (
                       /* Raccourci souris : la même sélection est déjà offerte au
                          clavier par les quatre boutons d'acompte ci-dessus. La
                          ligne ne prend donc pas `role="button"` (28px de haut,
@@ -210,14 +228,18 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
                           simulatorDeposit === tier.deposit ? 'bg-white/10 font-bold text-secondary-fixed' : ''
                         }`}
                       >
-                        <td className="py-1.5">{tier.deposit.toLocaleString()} €</td>
-                        <td className="py-1.5">{tier.remaining.toLocaleString()} €</td>
-                        <td className="py-1.5">{tier.monthly} €</td>
+                        <td className="py-1.5">{row.deposit.toLocaleString()} €</td>
+                        <td className="py-1.5">{row.remaining.toLocaleString()} €</td>
+                        <td className="py-1.5">{row.monthly} €</td>
                         <td className="py-1.5 font-bold">
-                          {tier.duration} {c.monthsUnit}
+                          {row.duration} {c.monthsUnit}
+                        </td>
+                        <td className="py-1.5">
+                          {row.hasFinalBalance ? `${row.lastPayment.toLocaleString()} €` : '—'}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -252,7 +274,7 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
               <div className="flex justify-between items-center py-1.5 border-b border-gray-200">
                 <span className="text-on-surface-variant">{c.remainingLabel}</span>
                 <span className="font-mono font-bold text-sm text-primary">
-                  {calculatedRemaining.toLocaleString()} €
+                  {schedule.remaining.toLocaleString()} €
                 </span>
               </div>
 
@@ -266,9 +288,27 @@ export function SimulatorSection({ content }: { content?: Partial<SimulatorConte
               <div className="flex justify-between items-center py-2 bg-secondary/10 px-3 rounded-micro text-secondary">
                 <span className="font-bold">{c.durationRowLabel}</span>
                 <span className="font-mono font-bold text-base">
-                  {calculatedDuration} {c.monthsUnit}
+                  {schedule.duration > 0 ? `${schedule.duration} ${c.monthsUnit}` : '—'}
                 </span>
               </div>
+
+              {/* Le dernier versement est plus petit quand la division ne tombe
+                  pas juste : l'afficher évite un produit mensualité × durée qui
+                  dépasse le reste à payer. */}
+              {schedule.hasFinalBalance && (
+                <div className="flex justify-between items-center py-2 bg-surface-container-low px-3 rounded-micro">
+                  <span className="font-bold text-primary">{ui.simulatorFinalBalance}</span>
+                  <span className="font-mono font-bold text-base text-secondary">
+                    {schedule.lastPayment.toLocaleString()} €
+                  </span>
+                </div>
+              )}
+
+              {formula && (
+                <p className="text-caption font-mono text-on-surface-variant pt-1">
+                  {ui.simulatorBreakdown} {formula}
+                </p>
+              )}
             </div>
 
             {/* Cash payment alternative pill */}

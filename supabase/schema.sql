@@ -236,3 +236,181 @@ create policy "site-media admin delete"
   on storage.objects for delete
   to authenticated
   using (bucket_id = 'site-media' and public.is_admin());
+
+-- ---------------------------------------------------------------------
+-- 6. Référentiel cadastral — garde-fou de la table `parcels`
+--
+-- POURQUOI : `parcels` n'est qu'un magasin de SURCHARGES (le statut vendue /
+-- réservée / disponible) par-dessus les données par défaut de `src/data.ts`.
+-- Rien n'empêchait d'y écrire `{ "area": 999 }` sur un lot de 120 m² : le site
+-- affichait alors une surface contredisant les cotes imprimées juste à côté,
+-- et c'est exactement par là qu'est passée l'incohérence du lot 46.
+--
+-- CE QUI EST CONTRÔLÉ : un déclencheur refuse toute ligne dont `data.area`
+-- diffère de la surface du référentiel, ou dont `data.dimensions` diffère des
+-- cotes du référentiel. Les deux sont donc verrouillés ensemble.
+--
+-- POURQUOI UN RÉFÉRENTIEL ET PAS LE CALCUL EN SQL : la règle de dérivation
+-- (rectangle, trapèze, exception de forme du lot 54) vit dans `src/data.ts`.
+-- La réécrire en PL/pgSQL créerait une seconde vérité qui finirait par
+-- diverger — le problème même qu'on supprime. Le bloc `values` ci-dessous est
+-- donc la copie conforme de `PARCELS` : le build le vérifie
+-- (`scripts/check-parcels.cjs`) et échoue s'il prend du retard.
+--
+-- Pour changer une cote ou une surface : modifiez `src/data.ts`, lancez
+-- `npm run build` (ou `npm run verify:parcels`), puis reportez ici les lignes
+-- signalées. Le référentiel n'est jamais édité « à la main » sans la source.
+-- ---------------------------------------------------------------------
+
+create table if not exists public.parcel_cadastre (
+  id         int primary key,
+  dimensions text not null,
+  area       numeric not null check (area > 0),
+  updated_at timestamptz not null default now()
+);
+
+-- Aucune politique : la table est illisible et inmodifiable via l'API publique
+-- (clé anon comprise). Seul le déclencheur ci-dessous, SECURITY DEFINER, la lit.
+alter table public.parcel_cadastre enable row level security;
+
+drop policy if exists "parcel_cadastre public read" on public.parcel_cadastre;
+
+drop policy if exists "parcel_cadastre admin write" on public.parcel_cadastre;
+create policy "parcel_cadastre admin write"
+  on public.parcel_cadastre for all
+  to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+insert into public.parcel_cadastre (id, dimensions, area) values
+  ( 1, '12.00 m × 12.00 m', 144),
+  ( 2, '10.00 m × 12.00 m', 120),
+  ( 3, '10.00 m × 12.00 m', 120),
+  ( 4, '10.00 m / 18.00 m × 12.00 m', 168),
+  ( 5, '15.00 m × 10.00 m', 150),
+  ( 6, '15.00 m × 10.00 m', 150),
+  ( 7, '15.00 m × 10.00 m', 150),
+  ( 8, '15.00 m × 10.00 m', 150),
+  ( 9, '15.00 m × 10.00 m', 150),
+  (10, '15.00 m × 10.00 m', 150),
+  (11, '15.00 m × 8.00 / 12.00 m', 150),
+  (12, '15.00 m × 10.00 m', 150),
+  (13, '15.00 m × 18.20 m', 273),
+  (14, '15.00 m × 10.00 m', 150),
+  (15, '15.00 m × 10.00 m', 150),
+  (16, '15.00 m × 10.00 m', 150),
+  (17, '15.00 m × 10.00 m', 150),
+  (18, '15.00 m × 10.00 m', 150),
+  (19, '15.00 m × 12.00 m', 180),
+  (20, '15.00 m × 10.00 m', 150),
+  (21, '15.00 m × 10.00 m', 150),
+  (22, '15.00 m × 10.00 m', 150),
+  (23, '15.00 m × 10.00 m', 150),
+  (24, '15.00 m × 10.00 m', 150),
+  (25, '15.00 m × 10.00 m', 150),
+  (26, '15.00 m × 10.00 m', 150),
+  (27, '15.00 m × 10.00 m', 150),
+  (28, '15.00 m × 10.00 / 4.77 m', 111),
+  (29, '15.00 m × 10.00 m', 150),
+  (30, '15.00 m × 7.00 / 9.00 m', 120),
+  (31, '9.00 m × 15.17 m', 137),
+  (32, '10.00 m × 15.00 m', 150),
+  (33, '15.00 m × 10.00 m', 150),
+  (34, '15.00 m × 14.00 m', 210),
+  (35, '15.00 m × 10.00 m', 150),
+  (36, '15.00 m × 10.00 m', 150),
+  (37, '15.00 m × 10.00 m', 150),
+  (38, '15.00 m × 10.00 m', 150),
+  (39, '15.00 m × 10.00 m', 150),
+  (40, '15.00 m × 10.00 m', 150),
+  (41, '15.00 m × 10.00 m', 150),
+  (42, '15.00 m × 10.00 m', 150),
+  (43, '15.00 m × 10.00 m', 150),
+  (44, '15.00 m × 10.00 m', 150),
+  (45, '15.00 m × 10.00 m', 150),
+  (46, '21.00 m × 31.52 m', 662),
+  (47, '9.00 m × 15.00 m', 135),
+  (48, '9.00 m × 15.00 m', 135),
+  (49, '12.00 m × 15.00 m', 180),
+  (50, '15.00 m × 15.00 / 22.13 m', 278),
+  (51, '15.00 m × 10.00 m', 150),
+  (52, '15.00 m × 10.00 m', 150),
+  (53, '14.32 m × 19.78 m', 283),
+  (54, '30.00 m × 15.00 m (Façade Nord B1)', 225)
+on conflict (id) do update
+  set dimensions = excluded.dimensions,
+      area       = excluded.area,
+      updated_at = now();
+
+create or replace function public.parcels_enforce_cadastre()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  ref_dimensions text;
+  ref_area       numeric;
+begin
+  -- Une surcharge qui ne porte pas de surface (statut seul) reste autorisée :
+  -- elle ne peut rien contredire, le site complète avec les données du lot.
+  if new.data->>'area' is null then
+    return new;
+  end if;
+
+  if new.data->>'dimensions' is null then
+    raise exception
+      'Parcelle % : surface déclarée sans cotes — impossible de vérifier (voir supabase/schema.sql, section 6).',
+      new.id;
+  end if;
+
+  select c.dimensions, c.area into ref_dimensions, ref_area
+  from public.parcel_cadastre c
+  where c.id = new.id;
+
+  if ref_dimensions is null then
+    raise exception
+      'Parcelle % inconnue du référentiel cadastral : ajoutez-la d''abord (supabase/schema.sql, section 6).',
+      new.id;
+  end if;
+
+  if new.data->>'dimensions' is distinct from ref_dimensions then
+    raise exception
+      'Parcelle % : cotes « % » refusées, le référentiel cadastral porte « % ». Corrigez les cotes dans src/data.ts puis reportez-les ici.',
+      new.id, new.data->>'dimensions', ref_dimensions;
+  end if;
+
+  if (new.data->>'area')::numeric is distinct from ref_area then
+    raise exception
+      'Parcelle % : surface % m² refusée, % m² sont déduits des cotes « % ». La surface ne se saisit pas : elle découle des cotes.',
+      new.id, new.data->>'area', ref_area, ref_dimensions;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists parcels_enforce_cadastre on public.parcels;
+create trigger parcels_enforce_cadastre
+  before insert or update on public.parcels
+  for each row execute function public.parcels_enforce_cadastre();
+
+-- REMISE À NIVEAU DES LIGNES DÉJÀ EN BASE (facultatif, à lancer sciemment).
+-- Le déclencheur ne juge que les écritures futures : les surcharges enregistrées
+-- avant sa création peuvent encore contredire le référentiel. Pour les lister :
+--
+--   select p.id, p.data->>'dimensions' as cotes_base, c.dimensions as cotes_ref,
+--          p.data->>'area' as surface_base, c.area as surface_ref
+--   from public.parcels p
+--   join public.parcel_cadastre c on c.id = p.id
+--   where p.data->>'dimensions' is distinct from c.dimensions
+--      or (p.data->>'area')::numeric is distinct from c.area;
+--
+-- Supprimer une ligne non conforme suffit : le site retombe alors sur les
+-- données par défaut de `src/data.ts` (le statut commercial, lui, est à
+-- repointer à la main si besoin).
+--
+--   delete from public.parcels p
+--   using public.parcel_cadastre c
+--   where c.id = p.id
+--     and (p.data->>'dimensions' is distinct from c.dimensions
+--          or (p.data->>'area')::numeric is distinct from c.area);

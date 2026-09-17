@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Globe, PhoneCall, Search, ShieldCheck, Calculator, FileText, Share2 } from 'lucide-react';
 import { Language, SiteSettings, UITranslations } from '../types';
-import { TRANSLATIONS } from '../data';
+import { TRANSLATIONS, ESTATE_AREA_RANGE } from '../data';
 import { hiddenAnchors } from '../site/sectionsCatalog';
 import Logo from './Logo';
 import { motion, AnimatePresence } from 'motion/react';
@@ -33,6 +33,7 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = TRANSLATIONS[currentLanguage];
   const ui = t.ui as UITranslations;
+  const surfaceRange = currentLanguage === 'FR' ? ESTATE_AREA_RANGE.FR : ESTATE_AREA_RANGE.EN;
 
   // Sections masquées depuis l'Espace Gérant (onglet « Sections ») : les liens
   // et CTA qui pointent vers une ancre absente du DOM sont retirés, sinon ils
@@ -376,7 +377,7 @@ export default function Navbar({
                 <span>
                   {t.nav.masterPlan} {ui.mobileAvailableSuffix}
                 </span>
-                <span className="text-caption bg-secondary-fixed text-primary px-2 py-0.5 rounded-micro font-mono font-bold">150 m²</span>
+                <span className="text-caption bg-secondary-fixed text-primary px-2 py-0.5 rounded-micro font-mono font-bold">{surfaceRange}</span>
               </button>
 
               {sectionVisible('vision') && (

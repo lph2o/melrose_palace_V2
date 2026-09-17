@@ -410,6 +410,49 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
 ];
 
+/**
+ * Surface d'un lot, déduite de ses cotes officielles.
+ *
+ * - « 15.00 m × 10.00 m »        → rectangle : 15 × 10.
+ * - « 15.00 m × 8.00 / 12.00 m » → trapèze : les deux cotes séparées par « / »
+ *   sont les côtés parallèles, l'autre cote est la hauteur.
+ *
+ * Les cotes font foi : la surface n'est jamais saisie à côté d'elles, sinon
+ * les deux divergent — ce qui était le cas sur 13 lots (« 10 × 12 = 150 m² »).
+ */
+export const parseParcelCotes = (segment: string): number[] =>
+  (segment.replace(/\([^)]*\)/g, '').match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
+
+export const computeParcelArea = (dimensions: string): number => {
+  const [first = '', second = ''] = dimensions.split('×');
+  const a = parseParcelCotes(first);
+  const b = parseParcelCotes(second);
+  if (a.length > 1 && b.length === 1) return Math.round(((a[0] + a[1]) / 2) * b[0]);
+  if (b.length > 1 && a.length === 1) return Math.round(((b[0] + b[1]) / 2) * a[0]);
+  return Math.round((a[0] ?? 0) * (b[0] ?? 0));
+};
+
+/**
+ * Lots dont le plan officiel donne une forme non rectangulaire : le produit des
+ * cotes ne s'applique pas. Exporté pour que le garde-fou de build
+ * (`scripts/check-parcels.cjs`) distingue une exception documentée d'une
+ * surface saisie à la main.
+ */
+export const PARCEL_AREA_OVERRIDES: Record<number, number> = {
+  // Lot 54 : triangle au sommet nord (façade B1) — ½ × 30 m × 15 m.
+  54: 225,
+};
+
+/**
+ * Surface attendue d'un lot : la dérivation, sauf forme documentée.
+ *
+ * Source unique partagée par la construction des lots, la réconciliation des
+ * surcharges Gérant (`reconcileParcelArea`) et le garde-fou de build
+ * (`scripts/check-parcels.cjs`).
+ */
+export const expectedParcelArea = (id: number, dimensions: string): number =>
+  PARCEL_AREA_OVERRIDES[id] ?? computeParcelArea(dimensions);
+
 // 54 parcels of the official cadastral plan at Sébikhotane
 // Tranche 1 comprises 20 parcels with initial commercialization.
 // The first 10 parcels are marked with the special Promo status!
@@ -434,7 +477,6 @@ export const PARCELS: Parcel[] = Array.from({ length: 54 }, (_, i) => {
 
   // Exact dimensions from cadastral blueprint
   let dimensions = '15.00 m × 10.00 m';
-  let area = 150;
 
   if (id === 1) {
     dimensions = '12.00 m × 12.00 m';
@@ -442,15 +484,12 @@ export const PARCELS: Parcel[] = Array.from({ length: 54 }, (_, i) => {
     dimensions = '10.00 m × 12.00 m';
   } else if (id === 4) {
     dimensions = '10.00 m / 18.00 m × 12.00 m';
-    area = 165;
   } else if (id === 11) {
     dimensions = '15.00 m × 8.00 / 12.00 m';
   } else if (id === 13) {
     dimensions = '15.00 m × 18.20 m';
-    area = 175;
   } else if (id === 19) {
     dimensions = '15.00 m × 12.00 m';
-    area = 180;
   } else if (id === 28) {
     dimensions = '15.00 m × 10.00 / 4.77 m';
   } else if (id === 30) {
@@ -461,26 +500,25 @@ export const PARCELS: Parcel[] = Array.from({ length: 54 }, (_, i) => {
     dimensions = '10.00 m × 15.00 m';
   } else if (id === 34) {
     dimensions = '15.00 m × 14.00 m';
-    area = 160;
   } else if (id === 46) {
+    // 31.52 m est la cote périmétrique B7→B8 (bordure sud oblique du domaine),
+    // pas une profondeur perpendiculaire : la surface dérivée est donc un
+    // majorant, à confirmer sur le PV de bornage.
     dimensions = '21.00 m × 31.52 m';
-    area = 210;
   } else if (id === 47 || id === 48) {
     dimensions = '9.00 m × 15.00 m';
-    area = 135;
   } else if (id === 49) {
     dimensions = '12.00 m × 15.00 m';
-    area = 180;
   } else if (id === 50) {
     dimensions = '15.00 m × 15.00 / 22.13 m';
-    area = 225;
   } else if (id === 53) {
     dimensions = '14.32 m × 19.78 m';
-    area = 160;
   } else if (id === 54) {
     dimensions = '30.00 m × 15.00 m (Façade Nord B1)';
-    area = 215;
   }
+
+  // La surface découle des cotes officielles : elle ne peut plus les contredire.
+  const area = expectedParcelArea(id, dimensions);
 
   const orientations = [
     { FR: 'Façade Est sur voie centrale aménagée', EN: 'East Frontage on central avenue' },
@@ -514,8 +552,12 @@ export const PARCELS: Parcel[] = Array.from({ length: 54 }, (_, i) => {
     id,
     status: 'Available', // All available initially as confirmed by client
     area,
-    price: 15000,
-    cashPrice: 13500,
+    // Prix par défaut d'un lot : celui du « lot type » du site, pour qu'il
+    // n'existe qu'un seul endroit à changer. Un lot peut porter le sien (une
+    // surcharge Gérant arrive par la table `parcels`), et c'est alors ce prix
+    // qui pilote son échéancier — fiche, plan, infobulle et PDF.
+    price: DEFAULT_SITE_SETTINGS.basePrice,
+    cashPrice: DEFAULT_SITE_SETTINGS.cashPrice,
     isPromo,
     zone,
     zoneName,
@@ -527,6 +569,46 @@ export const PARCELS: Parcel[] = Array.from({ length: 54 }, (_, i) => {
     },
   };
 });
+
+// Fourchette de surface réellement commercialisée, dérivée des lots (17 lots
+// ne font pas 150 m²). Les textes génériques du domaine s'appuient dessus au
+// lieu de figer « 150 m² », qui devenait faux dès qu'on décrivait autre chose
+// que le lot type.
+const ESTATE_MIN_AREA = Math.min(...PARCELS.map((p) => p.area));
+const ESTATE_MAX_AREA = Math.max(...PARCELS.map((p) => p.area));
+
+export const ESTATE_AREA_RANGE: { FR: string; EN: string } = {
+  FR:
+    ESTATE_MIN_AREA === ESTATE_MAX_AREA
+      ? `${ESTATE_MIN_AREA} m²`
+      : `de ${ESTATE_MIN_AREA} à ${ESTATE_MAX_AREA} m²`,
+  EN:
+    ESTATE_MIN_AREA === ESTATE_MAX_AREA
+      ? `${ESTATE_MIN_AREA} sqm`
+      : `${ESTATE_MIN_AREA}–${ESTATE_MAX_AREA} sqm`,
+};
+
+/**
+ * Réaligne la surface d'un lot sur ses cotes.
+ *
+ * Appliqué à chaque frontière où des parcelles entrent dans l'app (table
+ * Supabase, cache localStorage) : une édition de l'Espace Gérant ne peut plus
+ * faire diverger la surface des dimensions affichées juste à côté. Le
+ * garde-fou de build veille sur les sources statiques, celui-ci sur les
+ * surcharges.
+ *
+ * Renvoie le lot tel quel s'il est déjà cohérent.
+ */
+export const reconcileParcelArea = (parcel: Parcel): Parcel => {
+  if (!parcel.dimensions) return parcel;
+  const expected = expectedParcelArea(parcel.id, parcel.dimensions);
+  if (expected === parcel.area) return parcel;
+  console.warn(
+    `[parcelles] Lot #${parcel.id} : ${parcel.area} m² enregistré incohérent avec les cotes ` +
+      `« ${parcel.dimensions} » — surface ramenée à ${expected} m².`
+  );
+  return { ...parcel, area: expected };
+};
 
 export const TRANSLATIONS = {
   FR: {
@@ -744,6 +826,9 @@ export const TRANSLATIONS = {
       simulatorColMonthly: 'Mensualité',
       simulatorColDuration: 'Durée',
       simulatorMonths: 'mois',
+      simulatorColFinalBalance: 'Dernier versement',
+      simulatorFinalBalance: 'Dont dernier versement :',
+      simulatorBreakdown: 'Détail :',
       simulatorResultTag: 'Estimation Personnalisée • 150 m²',
       simulatorResultTitle: 'Plan de Paiement Direct',
       simulatorResultSubtitle: 'Direct avec Senegal Investment Consulting (sans banque requise)',
@@ -804,9 +889,9 @@ export const TRANSLATIONS = {
       heroStatPayVal: "3 000 € d'apport • 300 €/mois × 40 mois",
       bankWaMsg: 'Bonjour Senegal Investment Consulting, je souhaite étudier mon dossier de financement avec la Banque Islamique du Sénégal (BIS) pour une parcelle à Sébikhotane.',
       dossierWaMsg: 'Bonjour Senegal Investment Consulting, je souhaite recevoir le dossier complet (délibération, plan cadastral, grille tarifaire) pour le programme de Sébikhotane.',
-      simWaMsgPrefix: "Bonjour Senegal Investment Consulting, je souhaite étudier mon plan de financement personnalisé pour une parcelle de 150 m² à Sébikhotane :",
+      simWaMsgPrefix: `Bonjour Senegal Investment Consulting, je souhaite étudier mon plan de financement personnalisé pour une parcelle ${ESTATE_AREA_RANGE.FR} à Sébikhotane :`,
       simWaMsgSuffix: "Merci de me recontacter pour m'indiquer la disponibilité.",
-      contactWaMsg: "Bonjour Senegal Investment Consulting, je m'appelle {name}. Je souhaite recevoir le dossier complet pour les parcelles de 150 m² à Sébikhotane ({interest}). Tél : {phone}, Email : {email}. Note : {message}",
+      contactWaMsg: `Bonjour Senegal Investment Consulting, je m'appelle {name}. Je souhaite recevoir le dossier complet pour les parcelles ${ESTATE_AREA_RANGE.FR} à Sébikhotane ({interest}). Tél : {phone}, Email : {email}. Note : {message}`,
       contactFormInterestPlaceholder: 'Choisir une formule',
       heroBrochureBtn: 'Plaquette PDF',
       navSearchTitle: 'Rechercher parcelles, guides (Cmd+K)...',
@@ -1038,6 +1123,9 @@ export const TRANSLATIONS = {
       simulatorColMonthly: 'Monthly',
       simulatorColDuration: 'Term',
       simulatorMonths: 'months',
+      simulatorColFinalBalance: 'Final installment',
+      simulatorFinalBalance: 'Including final installment:',
+      simulatorBreakdown: 'Breakdown:',
       simulatorResultTag: 'Personalized Estimate • 150 sqm',
       simulatorResultTitle: 'Direct Payment Plan',
       simulatorResultSubtitle: 'Direct with Senegal Investment Consulting (no bank required)',
@@ -1098,9 +1186,9 @@ export const TRANSLATIONS = {
       heroStatPayVal: '€3,000 down • €300/mo × 40 months',
       bankWaMsg: 'Hello Senegal Investment Consulting, I would like to review my financing application with the Banque Islamique du Sénégal (BIS) for a plot in Sébikhotane.',
       dossierWaMsg: 'Hello Senegal Investment Consulting, I would like to receive the complete file (deliberation, cadastral plan, pricing grid) for the Sébikhotane program.',
-      simWaMsgPrefix: 'Hello Senegal Investment Consulting, I would like to study my custom financing plan for a 150 sqm plot in Sébikhotane:',
+      simWaMsgPrefix: `Hello Senegal Investment Consulting, I would like to study my custom financing plan for a plot (${ESTATE_AREA_RANGE.EN}) in Sébikhotane:`,
       simWaMsgSuffix: 'Please contact me back to confirm availability.',
-      contactWaMsg: 'Hello Senegal Investment Consulting, my name is {name}. I would like to receive the complete file for the 150 sqm plots in Sébikhotane ({interest}). Phone: {phone}, Email: {email}. Note: {message}',
+      contactWaMsg: `Hello Senegal Investment Consulting, my name is {name}. I would like to receive the complete file for the plots (${ESTATE_AREA_RANGE.EN}) in Sébikhotane ({interest}). Phone: {phone}, Email: {email}. Note: {message}`,
       contactFormInterestPlaceholder: 'Choose an option',
       heroBrochureBtn: 'PDF Brochure',
       navSearchTitle: 'Search plots, guides (Cmd+K)...',

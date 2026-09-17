@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageCircle, X, Check, Phone, ArrowUpRight } from 'lucide-react';
 import { SiteSettings, Language } from '../types';
+import { ESTATE_AREA_RANGE } from '../data';
 
 interface WhatsAppFloatingButtonProps {
   settings: SiteSettings;
@@ -9,6 +10,8 @@ interface WhatsAppFloatingButtonProps {
 
 export default function WhatsAppFloatingButton({ settings, currentLanguage }: WhatsAppFloatingButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // Surface réelle du domaine : tous les lots ne font pas 150 m².
+  const surfaceRange = currentLanguage === 'FR' ? ESTATE_AREA_RANGE.FR : ESTATE_AREA_RANGE.EN;
 
   const quickMessages = currentLanguage === 'FR' ? [
     {
@@ -17,7 +20,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
     },
     {
       label: '🟢 Vérifier une parcelle disponible',
-      text: 'Bonjour, je souhaite vérifier les parcelles de 150 m² actuellement disponibles à Sébikhotane.',
+      text: `Bonjour, je souhaite vérifier les parcelles ${surfaceRange} actuellement disponibles à Sébikhotane.`,
     },
     {
       label: '💰 Étudier mon financement',
@@ -34,7 +37,7 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
     },
     {
       label: '🟢 Check available plots',
-      text: 'Hello, I would like to check which 150 sqm plots are currently available in Sebikotane.',
+      text: `Hello, I would like to check which plots (${surfaceRange}) are currently available in Sebikotane.`,
     },
     {
       label: '💰 Review financing plan',
@@ -48,8 +51,8 @@ export default function WhatsAppFloatingButton({ settings, currentLanguage }: Wh
 
   const handleOpenWhatsApp = (customText?: string) => {
     const defaultText = currentLanguage === 'FR'
-      ? 'Bonjour ' + (settings?.companyName || 'Senegal Investment Consulting') + ', je souhaite avoir des informations concernant les parcelles de 150 m² à Sébikhotane.'
-      : 'Hello ' + (settings?.companyName || 'Senegal Investment Consulting') + ', I would like information regarding the 150 sqm plots in Sebikotane.';
+      ? 'Bonjour ' + (settings?.companyName || 'Senegal Investment Consulting') + `, je souhaite avoir des informations concernant les parcelles ${ESTATE_AREA_RANGE.FR} à Sébikhotane.`
+      : 'Hello ' + (settings?.companyName || 'Senegal Investment Consulting') + `, I would like information regarding the plots (${ESTATE_AREA_RANGE.EN}) in Sebikotane.`;
     
     const message = customText || defaultText;
     const url = `https://wa.me/${settings.whatsappCleanNumber}?text=${encodeURIComponent(message)}`;

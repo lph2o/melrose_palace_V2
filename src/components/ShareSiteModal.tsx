@@ -13,6 +13,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { Language, SiteSettings } from '../types';
+import { ESTATE_AREA_RANGE } from '../data';
 import { ModalShell, useModalClose } from '../ui';
 
 /**
@@ -48,9 +49,10 @@ export default function ShareSiteModal({
   const shareUrl = `${window.location.origin}${window.location.pathname}`;
 
   const company = settings.companyName || 'Senegal Investment Consulting';
+  const surfaceRange = isFR ? ESTATE_AREA_RANGE.FR : ESTATE_AREA_RANGE.EN;
   const shareTitle = isFR
-    ? `${company} — Parcelles de 150 m² à Sébikhotane (54 lots, dés 300 €/mois)`
-    : `${company} — 150 sqm plots in Sebikhotane (54 plots, from €300/month)`;
+    ? `${company} — Parcelles ${surfaceRange} à Sébikhotane (54 lots, dés 300 €/mois)`
+    : `${company} — Plots ${surfaceRange} in Sebikhotane (54 plots, from €300/month)`;
   const shareDesc = isFR
     ? "Terrain titré à Sébikhotane (délibération municipale & NICAD), à moins de 20 min de l'AIBD et de la gare TER. Apport 3 000 € puis 300 €/mois."
     : 'Titled land in Sebikotane (municipal deliberation & NICAD), under 20 min from AIBD airport and the TER station. €3,000 down then €300/month.';
@@ -125,8 +127,8 @@ export default function ShareSiteModal({
               </h3>
               <p className="text-xs text-outline mt-0.5 font-light">
                 {isFR
-                  ? 'Sébikhotane • 54 parcelles de 150 m²'
-                  : 'Sébikhotane • 54 plots of 150 sqm'}
+                  ? `Sébikhotane • 54 parcelles ${surfaceRange}`
+                  : `Sébikhotane • 54 plots ${surfaceRange}`}
               </p>
             </div>
           </div>

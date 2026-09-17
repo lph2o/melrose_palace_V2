@@ -39,6 +39,12 @@ export interface UITranslations {
   simulatorColMonthly: string;
   simulatorColDuration: string;
   simulatorMonths: string;
+  /** En-tête de la colonne du dernier versement (échelonnement). */
+  simulatorColFinalBalance: string;
+  /** Libellé du dernier versement quand il est plus petit que la mensualité. */
+  simulatorFinalBalance: string;
+  /** Libellé de la formule vérifiable « 36 × 300 € + 200 € = 11 000 € ». */
+  simulatorBreakdown: string;
   simulatorResultTag: string;
   simulatorResultTitle: string;
   simulatorResultSubtitle: string;

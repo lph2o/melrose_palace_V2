@@ -28,7 +28,8 @@ import {
   Calculator
 } from 'lucide-react';
 import { Language, Parcel, SiteSettings } from '../types';
-import { TRANSLATIONS, PARCELS, PAYMENT_SCHEDULE_TIERS, DEFAULT_SITE_SETTINGS } from '../data';
+import { TRANSLATIONS, PARCELS, PAYMENT_SCHEDULE_TIERS, DEFAULT_SITE_SETTINGS, ESTATE_AREA_RANGE } from '../data';
+import { buildPaymentSchedule, buildParcelSchedule } from '../lib/payment';
 import {
   CADASTRAL_BORNES,
   CADASTRAL_PERIMETER_MEASUREMENTS,
@@ -60,6 +61,23 @@ export default function MasterPlanPage({
 }: MasterPlanPageProps) {
   const t = TRANSLATIONS[currentLanguage];
   const isFR = currentLanguage === 'FR';
+  // Surface réelle des lots du domaine (tous ne font pas 150 m²).
+  const surfaceRange = isFR ? ESTATE_AREA_RANGE.FR : ESTATE_AREA_RANGE.EN;
+  // Échéancier du « lot type » : il ne sert plus qu'aux repères de la page (KPI
+  // de financement). Chaque lot calcule le sien sur SON prix via `scheduleFor` :
+  // une fiche de lot ne doit pas annoncer les conditions d'un autre lot.
+  const referenceSchedule = buildPaymentSchedule(
+    settings.basePrice,
+    settings.defaultDeposit,
+    settings.defaultMonthly
+  );
+  /**
+   * Échéancier propre à un lot : son prix pilote la durée et le dernier
+   * versement, l'acompte et la mensualité restant ceux du Gérant. La règle vit
+   * dans `buildParcelSchedule` pour que la fiche, le plan, le PDF et l'Espace
+   * Gérant ne puissent pas en diverger.
+   */
+  const scheduleFor = (parcel: Parcel) => buildParcelSchedule(parcel.price, settings);
   // Libellés de la page. Elle est très dense en texte statique (plan SVG,
   // cartes, répertoire) : un dictionnaire local évite d'éparpiller des
   // ternaires FR/EN dans 1 500 lignes de JSX.
@@ -69,17 +87,16 @@ export default function MasterPlanPage({
         breadcrumb: 'Plan Cadastral & Disponibilités',
         headerBadge: 'Domaine de Sébikhotane • Tranche 1 (20 Parcelles)',
         headerTitle: 'Plan Directeur & Choix de Parcelle',
-        headerIntro:
-          "Découvrez nos 20 parcelles viabilisées de 150 m² chacune. Bénéficiez de la formule échelonnée à 300 €/mois ou d'un tarif préférentiel au comptant.",
+        headerIntro: `Découvrez nos parcelles viabilisées ${surfaceRange}. Bénéficiez de la formule échelonnée à 300 €/mois ou d'un tarif préférentiel au comptant.`,
         kpiDomain: 'Domaine Sébikhotane',
-        kpiLots: 'lots certifiés (150 m²)',
+        kpiLots: `lots certifiés (${surfaceRange})`,
         kpiPhase: 'Tranche 1 Active',
         kpiPhaseSub: 'lots en commercialisation',
         kpiPromo: 'Offre 10 Premiers',
         kpiPromoLots: 'Lots 1 à 10',
         kpiPromoSub: 'frais de notaire offerts',
         kpiFinancing: 'Financement',
-        kpiFinancingSub: '/ mois (40 mois)',
+        kpiFinancingSub: (months: number) => (months > 0 ? `/ mois (${months} mois)` : '/ mois'),
         filterLabel: 'Filtrer :',
         fPhase1: 'Tranche 1 (20 lots)',
         fAll: 'Tous (54 lots)',
@@ -104,7 +121,7 @@ export default function MasterPlanPage({
         t1Reserved: 'T1 RÉSERVÉE',
         t1Available: 'T1 DISPO',
         svgTitleBadge: 'DOMAINE DE SÉBIKHOTANE',
-        svgTitleSub: '54 Parcelles de 150 m² • Tranche 1 (Lots 1-20)',
+        svgTitleSub: `54 Parcelles ${surfaceRange} • Tranche 1 (Lots 1-20)`,
         svgTitleLine3: '✓ Bornage B1 à B17 • Délibération & NICAD',
         mapHelper:
           "Cliquez sur l'un des 54 lots pour consulter ses dimensions et le réserver",
@@ -127,10 +144,16 @@ export default function MasterPlanPage({
         securityTitle: 'Délibération Communale + NICAD',
         securitySub: 'Bornage officiel géomètre B1 à B17 avec PV de bornage',
         finTitle: 'Modalités de Financement',
+        finScheduleFor: (id: number, area: number, price: number) =>
+          `Lot #${String(id).padStart(2, '0')} • ${area} m² • ${price.toLocaleString()} €`,
         finInstallments: 'Option Échelonnée :',
-        finOver40: 'Sur 40 mois (coût total : 15 000 € sans intérêts bancaires)',
+        finOverMonths: (months: number, total: number) =>
+          months > 0
+            ? `Sur ${months} mois (coût total : ${total.toLocaleString()} € sans intérêts bancaires)`
+            : `Coût total : ${total.toLocaleString()} € sans intérêts bancaires`,
+        finFinalBalance: (amount: number) => `Dont un dernier versement de ${amount.toLocaleString()} €`,
         finCash: 'Option Paiement Comptant :',
-        finCashNote: 'Remise immédiate de 1 500 € pour paiement comptant',
+        finCashNote: (saving: number) => `Remise immédiate de ${saving.toLocaleString()} € pour paiement comptant`,
         trust1: 'Propriété directe garantie avec mutation accompagnée',
         trust2: 'Remboursement intégral si engagements non respectés',
         trust3: 'Clôture et viabilisation incluses',
@@ -140,9 +163,10 @@ export default function MasterPlanPage({
         downloadSheet: 'Télécharger Fiche Cadastrale PDF',
         selectParcel: 'Sélectionnez une parcelle sur le plan.',
         simTag: 'Échéancier Officiel Sébikhotane',
-        simTitle: 'Simulateur de Paiement Échelonné (150 m²)',
-        simDesc:
-          'Choisissez votre apport initial pour adapter la durée de vos mensualités à 300 €/mois.',
+        simTitle: `Simulateur de Paiement Échelonné (${surfaceRange})`,
+        simDesc: `Choisissez votre apport initial pour adapter la durée de vos mensualités à ${settings.defaultMonthly} €/mois.`,
+        simScope: (id: number, area: number) =>
+          `Lot sélectionné : #${String(id).padStart(2, '0')} • ${area} m²`,
         simNoFees: 'Sans Frais de Dossier Bancaire',
         simOption: 'Option',
         simPopular: 'Populaire',
@@ -150,9 +174,10 @@ export default function MasterPlanPage({
         simRemaining: 'Reste à payer :',
         simMonthly: 'Mensualité :',
         simDuration: 'Durée :',
+        simFinalBalance: 'Dernier versement',
         perMonth: '€ / mois',
         months: 'mois',
-        dirTitle: 'Répertoire Cadastral des Parcelles (150 m²)',
+        dirTitle: `Répertoire Cadastral des Parcelles (${surfaceRange})`,
         dirDesc:
           'Sélectionnez une parcelle pour la situer sur le plan cadastral et lancer votre demande.',
         dirPhase1: 'Tranche 1 (Lots 1 à 20)',
@@ -165,25 +190,24 @@ export default function MasterPlanPage({
         toastDownloaded: (id: number) => `Fiche cadastrale du lot n°${id} téléchargée (PDF).`,
         toastError:
           'Génération de la fiche impossible. Réessayez ou écrivez-nous sur WhatsApp.',
-        waReserveMessage: (id: number, dims: string, zone: string) =>
-          `Bonjour ${settings.companyName || 'Senegal Investment Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${id} (${dims} - ${zone}).`,
+        waReserveMessage: (id: number, area: number, dims: string, zone: string) =>
+          `Bonjour ${settings.companyName || 'Senegal Investment Consulting'}, je souhaite réserver ou recevoir des informations détaillées concernant le Lot n° ${id} (${area} m² - ${dims} - ${zone}).`,
       }
     : {
         home: 'Home',
         breadcrumb: 'Cadastral Plan & Availability',
         headerBadge: 'Sébikhotane Estate • Phase 1 (20 Plots)',
         headerTitle: 'Master Plan & Plot Selection',
-        headerIntro:
-          'Discover our 20 serviced plots of 150 sqm each. Choose the installment plan at €300/month or the preferential cash price.',
+        headerIntro: `Discover our serviced plots, ${surfaceRange}. Choose the installment plan at €300/month or the preferential cash price.`,
         kpiDomain: 'Sébikhotane Estate',
-        kpiLots: 'certified plots (150 sqm)',
+        kpiLots: `certified plots (${surfaceRange})`,
         kpiPhase: 'Phase 1 Active',
         kpiPhaseSub: 'plots on sale',
         kpiPromo: 'First 10 Offer',
         kpiPromoLots: 'Plots 1 to 10',
         kpiPromoSub: 'notary fees included',
         kpiFinancing: 'Financing',
-        kpiFinancingSub: '/ month (40 months)',
+        kpiFinancingSub: (months: number) => (months > 0 ? `/ month (${months} months)` : '/ month'),
         filterLabel: 'Filter:',
         fPhase1: 'Phase 1 (20 plots)',
         fAll: 'All (54 plots)',
@@ -208,7 +232,7 @@ export default function MasterPlanPage({
         t1Reserved: 'P1 RESERVED',
         t1Available: 'P1 AVAILABLE',
         svgTitleBadge: 'SÉBIKHOTANE ESTATE',
-        svgTitleSub: '54 Plots of 150 sqm • Phase 1 (Plots 1-20)',
+        svgTitleSub: `54 Plots ${surfaceRange} • Phase 1 (Plots 1-20)`,
         svgTitleLine3: '✓ Boundary markers B1 to B17 • Deliberation & NICAD',
         mapHelper: 'Click any of the 54 plots to view its dimensions and reserve it',
         legendWest: 'West Zone (Plots 1-14)',
@@ -230,10 +254,16 @@ export default function MasterPlanPage({
         securityTitle: 'Municipal Deliberation + NICAD',
         securitySub: 'Official surveyor boundary markers B1 to B17 with survey report',
         finTitle: 'Financing Terms',
+        finScheduleFor: (id: number, area: number, price: number) =>
+          `Plot #${String(id).padStart(2, '0')} • ${area} sqm • €${price.toLocaleString()}`,
         finInstallments: 'Installment plan:',
-        finOver40: 'Over 40 months (total cost: €15,000 with no bank interest)',
+        finOverMonths: (months: number, total: number) =>
+          months > 0
+            ? `Over ${months} months (total cost: €${total.toLocaleString()} with no bank interest)`
+            : `Total cost: €${total.toLocaleString()} with no bank interest`,
+        finFinalBalance: (amount: number) => `Including a final installment of €${amount.toLocaleString()}`,
         finCash: 'Cash payment option:',
-        finCashNote: '€1,500 immediate discount for cash payment',
+        finCashNote: (saving: number) => `€${saving.toLocaleString()} immediate discount for cash payment`,
         trust1: 'Direct ownership guaranteed with guided title transfer',
         trust2: 'Full refund if commitments are not met',
         trust3: 'Fencing and site servicing included',
@@ -243,9 +273,10 @@ export default function MasterPlanPage({
         downloadSheet: 'Download Cadastral Sheet (PDF)',
         selectParcel: 'Select a plot on the plan.',
         simTag: 'Official Sébikhotane Payment Schedule',
-        simTitle: 'Installment Payment Simulator (150 sqm)',
-        simDesc:
-          'Choose your down payment to adjust how long your €300/month installments run.',
+        simTitle: `Installment Payment Simulator (${surfaceRange})`,
+        simDesc: `Choose your down payment to adjust how long your €${settings.defaultMonthly}/month installments run.`,
+        simScope: (id: number, area: number) =>
+          `Selected plot: #${String(id).padStart(2, '0')} • ${area} sqm`,
         simNoFees: 'No Bank Application Fees',
         simOption: 'Option',
         simPopular: 'Popular',
@@ -253,9 +284,10 @@ export default function MasterPlanPage({
         simRemaining: 'Remaining:',
         simMonthly: 'Monthly:',
         simDuration: 'Term:',
+        simFinalBalance: 'Final installment',
         perMonth: '€ / month',
         months: 'months',
-        dirTitle: 'Plot Cadastral Directory (150 sqm)',
+        dirTitle: `Plot Cadastral Directory (${surfaceRange})`,
         dirDesc: 'Select a plot to locate it on the cadastral plan and start your request.',
         dirPhase1: 'Phase 1 (Plots 1 to 20)',
         dirAll: 'All 54 Plots',
@@ -266,8 +298,8 @@ export default function MasterPlanPage({
         toastMaxCompare: 'You can compare up to 3 plots at most.',
         toastDownloaded: (id: number) => `Cadastral sheet for plot #${id} downloaded (PDF).`,
         toastError: 'Could not generate the sheet. Try again or message us on WhatsApp.',
-        waReserveMessage: (id: number, dims: string, zone: string) =>
-          `Hello ${settings.companyName || 'Senegal Investment Consulting'}, I would like to reserve or receive detailed information about Plot #${id} (${dims} - ${zone}).`,
+        waReserveMessage: (id: number, area: number, dims: string, zone: string) =>
+          `Hello ${settings.companyName || 'Senegal Investment Consulting'}, I would like to reserve or receive detailed information about Plot #${id} (${area} sqm - ${dims} - ${zone}).`,
       };
 
   /* Les libellés de zone (nombre de lots et plages) étaient écrits à la main dans
@@ -365,6 +397,12 @@ export default function MasterPlanPage({
   // Bottom table tab
   const [gridTab, setGridTab] = useState<'phase1' | 'all'>('phase1');
 
+  // Prix du lot sélectionné — et non le prix de référence du « lot type » — :
+  // il pilote l'échéancier de la fiche ET la grille des paliers, qui décrivent
+  // tous les deux le lot affiché à côté d'elles.
+  const selectedPrice = selectedParcel?.price ?? settings.basePrice;
+  const selectedSchedule = buildParcelSchedule(selectedPrice, settings);
+
   // Listen for query parameters like ?plot=12 on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -388,6 +426,18 @@ export default function MasterPlanPage({
       onClearGlobalSelectParcel?.();
     }
   }, [globalSelectedParcelId, onClearGlobalSelectParcel, allParcels]);
+
+  // La fiche du lot garde un instantané de sa parcelle : sans cette
+  // resynchronisation, une édition de l'Espace Gérant (prix, prix comptant,
+  // statut) ne se verrait qu'après avoir resélectionné le lot à la main. React
+  // ignore le `return current` : aucun rendu superflu.
+  useEffect(() => {
+    setSelectedParcel((current) => {
+      if (!current) return current;
+      const live = allParcels.find((p) => p.id === current.id);
+      return live && live !== current ? live : current;
+    });
+  }, [allParcels]);
 
   // Official parcel coordinates and geometry from surveyor cadastre (54 parcels)
   const getParcelGeometry = (id: number) => {
@@ -656,7 +706,7 @@ export default function MasterPlanPage({
             <span className="text-micro uppercase font-bold text-outline tracking-wider block">{L.kpiFinancing}</span>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
               <span className="font-serif text-2xl font-bold text-primary">300 €</span>
-              <span className="text-xs text-outline font-sans">{L.kpiFinancingSub}</span>
+              <span className="text-xs text-outline font-sans">{L.kpiFinancingSub(referenceSchedule.duration)}</span>
             </div>
           </div>
         </div>
@@ -1050,6 +1100,9 @@ export default function MasterPlanPage({
                   {/* Parcels (All 54) */}
                   {allParcels.map((parcel) => {
                     const geo = getParcelGeometry(parcel.id);
+                    // Échéancier de CE lot : chaque rectangle du plan porte son
+                    // propre prix, jamais celui du lot type.
+                    const parcelSchedule = scheduleFor(parcel);
                     const isSelected = selectedParcel?.id === parcel.id;
                     const isPromo = parcel.isPromo || parcel.id <= 10;
                     const isPhase1 = parcel.id <= 20;
@@ -1161,7 +1214,7 @@ export default function MasterPlanPage({
                           fill={isSelected ? '#FFFFFF' : (cadastreViewMode === 'official' ? textColor : '#64748B')}
                           opacity={isSelected ? 0.95 : 0.75}
                         >
-                          150 m²
+                          {parcel.area} m²
                         </text>
 
                         {/* Tranche 1 indicator badge — vrai statut commercial */}
@@ -1195,8 +1248,8 @@ export default function MasterPlanPage({
 
                         <title>
                           {isFR
-                            ? `Parcelle #${parcel.id} (${geo.dimensions})\nZone : ${geo.zoneNameFR}\nSurface : ${parcel.area} m²\nFinancement : 3 000 € acompte + 300 €/mois (40 mois)\nComptant : 13 500 €`
-                            : `Plot #${parcel.id} (${geo.dimensions})\nZone: ${zoneLabel(geo.zone, geo.zoneNameFR)}\nArea: ${parcel.area} sqm\nFinancing: €3,000 down + €300/month (40 months)\nCash: €13,500`}
+                            ? `Parcelle #${parcel.id} (${parcel.dimensions || geo.dimensions})\nZone : ${geo.zoneNameFR}\nSurface : ${parcel.area} m²\nPrix : ${parcel.price.toLocaleString()} €\nFinancement : ${parcelSchedule.deposit.toLocaleString()} € acompte + ${parcelSchedule.monthly} €/mois (${parcelSchedule.duration} mois${parcelSchedule.hasFinalBalance ? ` + solde de ${parcelSchedule.lastPayment.toLocaleString()} €` : ''})\nComptant : ${parcel.cashPrice.toLocaleString()} €`
+                            : `Plot #${parcel.id} (${parcel.dimensions || geo.dimensions})\nZone: ${zoneLabel(geo.zone, geo.zoneNameFR)}\nArea: ${parcel.area} sqm\nPrice: €${parcel.price.toLocaleString()}\nFinancing: €${parcelSchedule.deposit.toLocaleString()} down + €${parcelSchedule.monthly}/month (${parcelSchedule.duration} months${parcelSchedule.hasFinalBalance ? ` + €${parcelSchedule.lastPayment.toLocaleString()} balance` : ''})\nCash: €${parcel.cashPrice.toLocaleString()}`}
                         </title>
                       </g>
                     );
@@ -1464,30 +1517,42 @@ export default function MasterPlanPage({
 
                 {/* Financial Offer Tabs */}
                 <div className="bg-[#0f3d2e] text-white p-4.5 rounded-card space-y-3">
-                  <span className="text-micro font-mono uppercase tracking-wider text-secondary-fixed font-bold block">
-                    {L.finTitle}
-                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-micro font-mono uppercase tracking-wider text-secondary-fixed font-bold block">
+                      {L.finTitle}
+                    </span>
+                    {/* Le lot, sa surface et son prix : l'échéancier ci-dessous
+                        les décrit, il ne décrit pas un « lot type ». */}
+                    <span className="text-caption text-white/70 font-mono">
+                      {L.finScheduleFor(selectedParcel.id, selectedParcel.area, selectedParcel.price)}
+                    </span>
+                  </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-baseline">
                       <span className="text-xs text-white/85">{L.finInstallments}</span>
                       <strong className="text-sm font-bold text-secondary-fixed">
-                        {settings.defaultDeposit.toLocaleString()} € + {settings.defaultMonthly} €{' '}
+                        {selectedSchedule.deposit.toLocaleString()} € + {selectedSchedule.monthly} €{' '}
                         {isFR ? '/ mois' : '/ month'}
                       </strong>
                     </div>
                     <div className="text-caption text-white/70">
-                      {L.finOver40}
+                      {L.finOverMonths(selectedSchedule.duration, selectedSchedule.total)}
+                      {selectedSchedule.hasFinalBalance && (
+                        <span className="block text-secondary-fixed">
+                          {L.finFinalBalance(selectedSchedule.lastPayment)}
+                        </span>
+                      )}
                     </div>
 
                     <div className="border-t border-white/10 pt-2 flex justify-between items-baseline">
                       <span className="text-xs text-white/85">{L.finCash}</span>
                       <strong className="text-sm font-bold text-white">
-                        13 500 €
+                        {selectedParcel.cashPrice.toLocaleString()} €
                       </strong>
                     </div>
                     <div className="text-caption text-secondary-fixed font-mono">
-                      {L.finCashNote}
+                      {L.finCashNote(selectedParcel.price - selectedParcel.cashPrice)}
                     </div>
                   </div>
                 </div>
@@ -1515,7 +1580,8 @@ export default function MasterPlanPage({
                     href={`https://wa.me/${whatsappClean}?text=${encodeURIComponent(
                       L.waReserveMessage(
                         selectedParcel.id,
-                        selectedParcel.dimensions || '150 m²',
+                        selectedParcel.area,
+                        selectedParcel.dimensions || '—',
                         selectedParcel.zoneName?.[currentLanguage] || 'Sébikhotane'
                       )
                     )}`}
@@ -1588,6 +1654,11 @@ export default function MasterPlanPage({
               <p className="text-xs text-outline font-light">
                 {L.simDesc}
               </p>
+              {selectedParcel && (
+                <p className="text-micro font-mono font-bold uppercase tracking-wider text-gold-ink">
+                  {L.simScope(selectedParcel.id, selectedParcel.area)}
+                </p>
+              )}
             </div>
 
             <span className="text-xs bg-secondary-fixed/20 text-[#0f3d2e] font-bold px-3 py-1.5 rounded-inner self-start md:self-auto">
@@ -1599,6 +1670,16 @@ export default function MasterPlanPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {(settings.content?.paymentTiers ?? PAYMENT_SCHEDULE_TIERS).map((tier, idx) => {
               const isSelected = selectedTierIdx === idx;
+              // Reste, durée et dernier versement sont dérivés : seuls l'acompte
+              // et la mensualité saisis font foi.
+              // Le prix du lot sélectionné pilote la grille : afficher les
+              // montants du lot type à côté d'un lot qui en diffère serait la
+              // même incohérence que l'on vient de retirer de la fiche.
+              const row = buildPaymentSchedule(
+                selectedPrice,
+                Math.min(tier.deposit, selectedPrice),
+                tier.monthly > 0 ? tier.monthly : settings.defaultMonthly
+              );
               return (
                 <div
                   key={idx}
@@ -1622,24 +1703,32 @@ export default function MasterPlanPage({
 
                   <div>
                     <span className="text-micro uppercase font-bold opacity-70 block">{L.simDeposit}</span>
-                    <span className="font-serif text-2xl font-bold">{tier.deposit.toLocaleString()} €</span>
+                    <span className="font-serif text-2xl font-bold">{row.deposit.toLocaleString()} €</span>
                   </div>
 
                   <div className="border-t border-current/10 pt-2.5 space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="opacity-80">{L.simRemaining}</span>
-                      <strong>{tier.remaining.toLocaleString()} €</strong>
+                      <strong>{row.remaining.toLocaleString()} €</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-80">{L.simMonthly}</span>
                       <strong className={isSelected ? 'text-secondary-fixed' : 'text-[#0F6B4F]'}>
-                        {tier.monthly} {L.perMonth}
+                        {row.monthly} {L.perMonth}
                       </strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-80">{L.simDuration}</span>
-                      <strong>{tier.duration} {L.months}</strong>
+                      <strong>{row.duration > 0 ? `${row.duration} ${L.months}` : '—'}</strong>
                     </div>
+                    {row.hasFinalBalance && (
+                      <div className="flex justify-between">
+                        <span className="opacity-80">{L.simFinalBalance}</span>
+                        <strong className={isSelected ? 'text-secondary-fixed' : 'text-[#0F6B4F]'}>
+                          {row.lastPayment.toLocaleString()} €
+                        </strong>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

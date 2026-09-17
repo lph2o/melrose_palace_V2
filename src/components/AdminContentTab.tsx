@@ -1276,6 +1276,14 @@ export default function AdminContentTab({
                     max={3}
                   />
                 </div>
+                {/* Reste, durée et dernier versement sont dérivés à l'affichage
+                    (cf. src/lib/payment.ts) : les saisir ici n'a aucun effet, et
+                    c'est volontaire — sinon la grille peut annoncer un produit
+                    mensualité × durée qui dépasse le reste à régler. */}
+                <p className="text-caption text-(--admin-muted-2) mt-2 leading-relaxed">
+                  Seuls l'acompte et la mensualité sont utilisés : le reste, la durée et le
+                  dernier versement sont recalculés à l'affichage depuis le prix de référence.
+                </p>
               </FormGroup>
             </ItemCard>
           ))}

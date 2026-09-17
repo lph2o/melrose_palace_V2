@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Lead, SiteSettings, Parcel } from '../types';
 import { isAdminEmail } from '../lib/adminAuth';
+import { buildParcelSchedule, validateParcelPrices } from '../lib/payment';
 import AdminContentTab from './AdminContentTab';
 import AdminSectionsTab from './AdminSectionsTab';
 import {
@@ -54,6 +55,9 @@ const inputCls =
   'transition-all duration-400 ease-spring';
 
 const labelCls = 'block font-mono text-caption uppercase tracking-[0.25em] text-(--admin-muted) mb-2';
+
+/** Montant en euros pour les aides de l'Espace Gérant (interface en français). */
+const eurosFR = (value: number) => `${value.toLocaleString('fr-FR')} €`;
 
 const primaryBtnCls =
   'group inline-flex items-center gap-2.5 px-6 py-3 rounded-full ' +
@@ -83,11 +87,127 @@ function IslandIcon({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Édition du prix échelonné et du prix comptant d'un lot.
+ *
+ * Les champs sont des brouillons validés au `blur` (ou à Entrée) : écrire à
+ * chaque frappe enverrait « 1 », « 18 », « 180 »… au cloud, et la fiche du lot
+ * annoncerait successivement un terrain à 1 €. La ligne d'aide sous les deux
+ * champs montre l'échéancier que ce prix produira, calculé par la **même règle**
+ * que la fiche publique (`buildParcelSchedule`) : l'aperçu ne peut pas mentir.
+ */
+function ParcelPriceEditor({
+  parcel,
+  settings,
+  onCommit,
+}: {
+  parcel: Parcel;
+  settings: SiteSettings;
+  onCommit: (id: number, patch: Partial<Parcel>) => void;
+}) {
+  const [price, setPrice] = useState<string>(String(parcel.price));
+  const [cashPrice, setCashPrice] = useState<string>(String(parcel.cashPrice));
+  const [error, setError] = useState<string | null>(null);
+
+  // Une édition venue d'ailleurs (autre session, temps réel) réaligne les
+  // brouillons : sinon un ancien prix resterait affiché dans les champs.
+  useEffect(() => {
+    setPrice(String(parcel.price));
+    setCashPrice(String(parcel.cashPrice));
+    setError(null);
+  }, [parcel.price, parcel.cashPrice]);
+
+  const draftPrice = Math.round(Number(price));
+  const draftCash = Math.round(Number(cashPrice));
+  const priceOk = Number.isFinite(draftPrice) && draftPrice > 0;
+  const schedule = buildParcelSchedule(priceOk ? draftPrice : 0, settings);
+
+  const commit = () => {
+    const verdict = validateParcelPrices(draftPrice, draftCash);
+    if (!verdict.ok) {
+      setError(verdict.error || 'Prix invalide.');
+      return;
+    }
+    setError(null);
+    // Rien à envoyer si la paire est identique : évite une écriture cloud pour
+    // un simple passage dans les champs.
+    if (draftPrice === parcel.price && draftCash === parcel.cashPrice) return;
+    onCommit(parcel.id, { price: draftPrice, cashPrice: draftCash });
+  };
+
+  // Aperçu de la fiche publique que ce prix produira : mêmes règles, mêmes
+  // chiffres, donc le Gérant voit la conséquence de sa saisie avant d'enregistrer.
+  const scheduleHint = (() => {
+    if (!priceOk) return 'Renseignez un prix échelonné pour voir l’échéancier de la fiche.';
+    if (settings.defaultMonthly <= 0) {
+      return 'Mensualité à 0 € : aucune fiche ne peut afficher d’échéancier.';
+    }
+    if (schedule.duration <= 0) {
+      return (
+        `Prix ≤ acompte de ${eurosFR(settings.defaultDeposit)} : la fiche ramènera ` +
+        'l’acompte au prix du lot.'
+      );
+    }
+    return (
+      `Fiche du lot : ${eurosFR(schedule.deposit)} + ${eurosFR(schedule.monthly)}/mois sur ` +
+      `${schedule.duration} mois (${eurosFR(schedule.total)})` +
+      (schedule.hasFinalBalance
+        ? `, dont ${eurosFR(schedule.lastPayment)} au dernier versement`
+        : '')
+    );
+  })();
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelCls}>Prix échelonné (€)</label>
+          <input
+            type="number"
+            min={1}
+            step={100}
+            inputMode="numeric"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+            className={`${inputCls} font-mono`}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Prix comptant (€)</label>
+          <input
+            type="number"
+            min={1}
+            step={100}
+            inputMode="numeric"
+            value={cashPrice}
+            onChange={(e) => setCashPrice(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+            className={`${inputCls} font-mono`}
+          />
+        </div>
+      </div>
+
+      <p className="text-caption text-(--admin-muted) font-mono">{scheduleHint}</p>
+
+      {error ? <p className="text-caption text-(--admin-rose)">{error}</p> : null}
+    </div>
+  );
+}
+
 interface AdminPageProps {
   settings: SiteSettings;
   onSaveSettings: (newSettings: SiteSettings) => Promise<SyncResult>;
   parcels: Parcel[];
   onUpdateParcelStatus: (id: number, status: 'Available' | 'Reserved' | 'Sold') => Promise<SyncResult>;
+  /** Édition libre d'une parcelle : statut, prix échelonné, prix comptant. */
+  onUpdateParcel: (id: number, patch: Partial<Parcel>) => Promise<SyncResult>;
   onResetDefaults: () => Promise<void>;
   onBack: () => void;
   /** Ouvre l'éditeur visuel Puck (/admin/editor). Absent = bouton masqué. */
@@ -100,7 +220,7 @@ type TabId = 'tarifs' | 'parcelles' | 'contact' | 'leads' | 'sections' | 'conten
 
 const TABS: { id: TabId; label: string; short: string; icon: React.ReactNode }[] = [
   { id: 'tarifs', label: 'Tarifs & Échéancier', short: 'Tarifs', icon: <Calculator className="w-4 h-4" strokeWidth={1.5} /> },
-  { id: 'parcelles', label: 'Statut des Parcelles', short: 'Parcelles', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} /> },
+  { id: 'parcelles', label: 'Parcelles : statut & prix', short: 'Parcelles', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'contact', label: 'WhatsApp & Promotions', short: 'WhatsApp', icon: <MessageCircle className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'leads', label: 'Demandes de contact', short: 'Demandes', icon: <Inbox className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'sections', label: 'Sections du site', short: 'Sections', icon: <Eye className="w-4 h-4" strokeWidth={1.5} /> },
@@ -158,6 +278,7 @@ export default function AdminPage({
   onSaveSettings,
   parcels,
   onUpdateParcelStatus,
+  onUpdateParcel,
   onResetDefaults,
   onBack,
   onOpenEditor,
@@ -397,10 +518,16 @@ export default function AdminPage({
     }, 6000);
   };
 
-  const handleStatusChange = async (id: number, status: 'Available' | 'Reserved' | 'Sold') => {
+  /**
+   * Édition d'une parcelle (statut, prix, prix comptant). Le site est mis à jour
+   * immédiatement (`onUpdateParcel` → `setParcels`), le cloud suit : la fiche du
+   * lot, la grille des paliers et le PDF lisent ce tableau, donc ils se
+   * répercutent sans rechargement.
+   */
+  const handleParcelPatch = async (id: number, patch: Partial<Parcel>) => {
     setSyncState('saving');
     setSyncReason(null);
-    const result = await onUpdateParcelStatus(id, status);
+    const result = await onUpdateParcel(id, patch);
     setSyncState(result.ok ? 'cloud' : 'local');
     setSyncReason(result.ok ? null : (result.reason ?? 'unknown'));
     setTimeout(() => {
@@ -408,6 +535,9 @@ export default function AdminPage({
       setSyncReason(null);
     }, 6000);
   };
+
+  const handleStatusChange = (id: number, status: 'Available' | 'Reserved' | 'Sold') =>
+    handleParcelPatch(id, { status });
 
   const handleReset = async () => {
     setSyncState('saving');
@@ -965,7 +1095,7 @@ export default function AdminPage({
                             <div className="space-y-5">
                               <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-(--admin-hairline)">
                                 <p className="font-mono text-caption uppercase tracking-[0.3em] text-(--admin-accent)/70">
-                                  Statuts en 1 clic
+                                  Statuts & prix en 1 clic
                                 </p>
                                 <span className="font-mono text-caption uppercase tracking-widest text-(--admin-muted)">
                                   {filteredParcels.length} / {parcels.length} parcelles
@@ -1020,42 +1150,58 @@ export default function AdminPage({
                                 {filteredParcels.map((parcel) => (
                                   <div
                                     key={parcel.id}
-                                    className="p-4 rounded-card bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) flex items-center justify-between gap-3 hover:bg-(--admin-shell) transition-colors duration-400"
+                                    className="p-4 rounded-card bg-(--admin-shell-soft) ring-1 ring-(--admin-ring-soft) flex flex-col gap-3 hover:bg-(--admin-shell) transition-colors duration-400"
                                   >
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <span className="w-6 h-6 rounded-micro bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) flex items-center justify-center font-mono text-caption text-(--admin-text-2)">
-                                          <LayoutGrid className="w-3 h-3" strokeWidth={1.5} />
-                                        </span>
-                                        <span className="font-serif font-bold text-sm text-(--admin-text)">
-                                          Parcelle #{parcel.id}
-                                        </span>
-                                        {parcel.isPromo && (
-                                          <span className="px-2 py-0.5 rounded-full bg-(--admin-accent)/10 ring-1 ring-(--admin-accent)/40 text-(--admin-accent) text-micro font-mono uppercase tracking-widest">
-                                            Promo
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-6 h-6 rounded-micro bg-(--admin-shell-strong) ring-1 ring-(--admin-ring) flex items-center justify-center font-mono text-caption text-(--admin-text-2)">
+                                            <LayoutGrid className="w-3 h-3" strokeWidth={1.5} />
                                           </span>
-                                        )}
+                                          <span className="font-serif font-bold text-sm text-(--admin-text)">
+                                            Parcelle #{parcel.id}
+                                          </span>
+                                          {parcel.isPromo && (
+                                            <span className="px-2 py-0.5 rounded-full bg-(--admin-accent)/10 ring-1 ring-(--admin-accent)/40 text-(--admin-accent) text-micro font-mono uppercase tracking-widest">
+                                              Promo
+                                            </span>
+                                          )}
+                                        </div>
+                                        {/* Surface et cotes issues des données : le prix
+                                            ci-dessous s'applique à cette emprise. */}
+                                        <p className="text-caption text-(--admin-muted) mt-1 font-mono">
+                                          {parcel.area} m²
+                                          {parcel.dimensions ? ` • ${parcel.dimensions}` : ''}
+                                        </p>
                                       </div>
-                                      <p className="text-caption text-(--admin-muted) mt-1 font-mono">150 m²</p>
+
+                                      <select
+                                        value={parcel.status}
+                                        onChange={(e) =>
+                                          handleStatusChange(
+                                            parcel.id,
+                                            e.target.value as Parcel['status']
+                                          )
+                                        }
+                                        className={statusSelectCls(parcel.status)}
+                                      >
+                                        <option value="Available" className="bg-(--admin-card) text-(--admin-green)">
+                                          🟢 Disponible
+                                        </option>
+                                        <option value="Reserved" className="bg-(--admin-card) text-(--admin-amber)">
+                                          🟠 Réservée
+                                        </option>
+                                        <option value="Sold" className="bg-(--admin-card) text-(--admin-rose)">
+                                          🔴 Vendue
+                                        </option>
+                                      </select>
                                     </div>
 
-                                    <select
-                                      value={parcel.status}
-                                      onChange={(e) =>
-                                        handleStatusChange(parcel.id, e.target.value as Parcel['status'])
-                                      }
-                                      className={statusSelectCls(parcel.status)}
-                                    >
-                                      <option value="Available" className="bg-(--admin-card) text-(--admin-green)">
-                                        🟢 Disponible
-                                      </option>
-                                      <option value="Reserved" className="bg-(--admin-card) text-(--admin-amber)">
-                                        🟠 Réservée
-                                      </option>
-                                      <option value="Sold" className="bg-(--admin-card) text-(--admin-rose)">
-                                        🔴 Vendue
-                                      </option>
-                                    </select>
+                                    <ParcelPriceEditor
+                                      parcel={parcel}
+                                      settings={settings}
+                                      onCommit={handleParcelPatch}
+                                    />
                                   </div>
                                 ))}
                               </div>

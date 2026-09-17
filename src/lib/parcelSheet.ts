@@ -1,5 +1,7 @@
 import { Language, Parcel, SiteSettings } from '../types';
+import { DEFAULT_SITE_SETTINGS } from '../data';
 import { PdfDocument, PdfImage, savePdf } from './pdf';
+import { buildParcelSchedule } from './payment';
 
 /**
  * Fiche cadastrale d'une parcelle, générée côté client.
@@ -20,6 +22,10 @@ interface Copy {
   finance: string;
   installment: string;
   installmentDetail: string;
+  /** Nombre de versements et coût total, ex. « 36 mensualités — coût total 11 000 € ». */
+  installmentCount: (months: number, total: string) => string;
+  /** Solde final plus petit que la mensualité, ex. « dont un dernier versement de 200 € ». */
+  finalBalance: (amount: string) => string;
   cash: string;
   cashDetail: string;
   disclaimer: string;
@@ -47,6 +53,8 @@ const COPY: Record<Language, Copy> = {
     finance: 'MODALITÉS DE FINANCEMENT',
     installment: 'Option échelonnée',
     installmentDetail: 'Sans intérêts bancaires — accompagnement jusqu\u2019à la mutation',
+    installmentCount: (months: number, total: string) => `${months} mensualités — coût total ${total}`,
+    finalBalance: (amount: string) => `dont un dernier versement de ${amount}`,
     cash: 'Paiement comptant',
     cashDetail: 'Remise immédiate pour un règlement en une fois',
     disclaimer:
@@ -79,6 +87,8 @@ const COPY: Record<Language, Copy> = {
     finance: 'PAYMENT OPTIONS',
     installment: 'Instalment plan',
     installmentDetail: 'No bank interest — assistance up to final transfer',
+    installmentCount: (months: number, total: string) => `${months} instalments — total cost ${total}`,
+    finalBalance: (amount: string) => `including a final instalment of ${amount}`,
     cash: 'Cash payment',
     cashDetail: 'Immediate discount for a single payment',
     disclaimer:
@@ -221,9 +231,24 @@ function euros(amount: number, language: Language): string {
   return `${formatted} €`;
 }
 
-/** Installe une police d'écriture « section » : titre gris + filet de séparation. */
-function section(doc: PdfDocument, title: string, y: number, margin: number, contentWidth: number): number {
+/**
+ * Installe une police d'écriture « section » : titre gris + filet de séparation.
+ *
+ * `trailing` s'affiche en bout de ligne, à droite : la place y est libre, donc
+ * y rappeler la surface et les cotes du lot ne décale aucune section.
+ */
+function section(
+  doc: PdfDocument,
+  title: string,
+  y: number,
+  margin: number,
+  contentWidth: number,
+  trailing = ''
+): number {
   doc.text(margin, y, title, { size: 8, bold: true, color: MUTED });
+  if (trailing) {
+    doc.text(margin + contentWidth, y, trailing, { size: 8, color: MUTED, align: 'right' });
+  }
   doc.strokeLine(margin, y - 6, margin + contentWidth, y - 6, RULE, 0.6);
   return y - 24;
 }
@@ -326,23 +351,43 @@ export function buildParcelSheet(parcel: Parcel, options: ParcelSheetOptions = {
 
   // -------------------------------------------------------- Financement
   cursor -= 10;
-  cursor = section(doc, copy.finance, cursor, margin, contentWidth);
+  // La surface et les cotes du lot rappelées sur la ligne du titre : c'est ce
+  // que le prix achète, et l'échéancier juste en dessous ne décrit que ce lot.
+  cursor = section(
+    doc,
+    copy.finance,
+    cursor,
+    margin,
+    contentWidth,
+    `${parcel.area} m² • ${parcel.dimensions || '—'}`
+  );
 
-  const deposit = Math.round(parcel.price / 5);
-  const months = 40;
-  const monthly = Math.round((parcel.price - deposit) / months / 10) * 10;
+  // Échéancier du lot, dérivé de SON prix par la règle partagée du site. Le PDF
+  // reconstruisait son propre calcul (acompte = prix / 5, durée figée à 40 mois)
+  // et pouvait donc remettre à l'acheteur des montants qui ne correspondaient
+  // ni à la fiche en ligne ni au coût total annoncé.
+  const schedule = buildParcelSchedule(parcel.price, {
+    defaultDeposit: settings?.defaultDeposit ?? DEFAULT_SITE_SETTINGS.defaultDeposit,
+    defaultMonthly: settings?.defaultMonthly ?? DEFAULT_SITE_SETTINGS.defaultMonthly,
+  });
+  const detailText =
+    copy.installmentCount(schedule.duration, euros(schedule.total, language)) +
+    (schedule.hasFinalBalance
+      ? ` (${copy.finalBalance(euros(schedule.lastPayment, language))})`
+      : '');
+
   const boxWidth = (contentWidth - 12) / 2;
   const boxHeight = 74;
 
   doc.fillRect(margin, cursor - boxHeight + 22, boxWidth, boxHeight, BRAND);
   doc.text(margin + 14, cursor, copy.installment.toUpperCase(), { size: 7.5, bold: true, color: '#8FD5C1', maxWidth: boxWidth - 28 });
-  doc.text(margin + 14, cursor - 20, `${euros(deposit, language)} + ${euros(monthly, language)}/${language === 'FR' ? 'mois' : 'month'}`, {
+  doc.text(margin + 14, cursor - 20, `${euros(schedule.deposit, language)} + ${euros(schedule.monthly, language)}/${language === 'FR' ? 'mois' : 'month'}`, {
     size: 13,
     bold: true,
     color: '#FFFFFF',
     maxWidth: boxWidth - 28,
   });
-  doc.paragraph(margin + 14, cursor - 38, boxWidth - 28, `${months} ${language === 'FR' ? 'mensualités — coût total' : 'instalments — total cost'} ${euros(parcel.price, language)}`, {
+  doc.paragraph(margin + 14, cursor - 38, boxWidth - 28, detailText, {
     size: 8,
     color: '#B9D6CC',
     lineHeight: 11,
