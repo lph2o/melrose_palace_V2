@@ -15,8 +15,15 @@
  *   dist/en/index.html            → /en
  *   dist/fr/plan/index.html       → /fr/plan
  *   dist/en/plan/index.html       → /en/plan
+ *   dist/fr/mentions-legales/index.html → /fr/mentions-legales
+ *   dist/en/legal-notice/index.html     → /en/legal-notice
  *   dist/admin/index.html         → /admin (noindex)
  *   dist/admin/editor/index.html  → /admin/editor (noindex)
+ *
+ * Les routes publiques ne sont pas listées ici : elles viennent de
+ * `src/seo/routeMeta.json`. Ajouter une vue (`home`, `masterplan`, `legal`…) se
+ * fait donc dans ce JSON seul — ce script, le sitemap et le client lisent tous
+ * la même source.
  *
  * Vercel sert un fichier existant **avant** d'appliquer une `rewrite` : ces
  * pages prennent donc le pas sur la réécriture SPA de vercel.json, sans toucher

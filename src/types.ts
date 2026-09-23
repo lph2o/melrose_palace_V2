@@ -267,6 +267,50 @@ export interface ServiceItem {
   };
 }
 
+/**
+ * Les trois vues publiques du site, chacune avec sa propre URL indexable
+ * (`src/seo/routeMeta.json`). « legal » est la page Mentions légales : elle
+ * existe pour que l'identité de l'éditeur soit vérifiable par un crawler comme
+ * par un acquéreur, et pas seulement affichée dans le pied de page.
+ */
+export type SiteView = 'home' | 'masterplan' | 'legal';
+
+/**
+ * Identité légale de l'éditeur du site.
+ *
+ * Ces valeurs viennent de l'avis d'immatriculation (NINEA) délivré au Sénégal :
+ * elles sont **recopiées telles quelles**, jamais reformulées ni déduites d'un
+ * autre libellé — un identifiant officiel approximatif est pire que pas
+ * d'identifiant du tout. Le gérant les corrige depuis l'Espace Gérant → onglet
+ * « Identité légale ».
+ *
+ * Un champ vidé (`''`) est **volontairement** masqué : il disparaît du pied de
+ * page et de la page Mentions légales. Un champ absent (`undefined`) retombe sur
+ * la valeur par défaut du site — c'est la différence entre « je n'ai pas cette
+ * information » et « ne l'affiche pas ».
+ */
+export interface LegalIdentity {
+  /** Dénomination sociale, telle qu'immatriculée (≠ la marque commerciale). */
+  legalName?: string;
+  /** Enseigne ou sigle (ex. « SCI SIC »). */
+  tradeName?: string;
+  /** Forme juridique (ex. « Société Civile Immobilière »). */
+  legalForm?: string;
+  /** Numéro d'Identification Nationale des Entreprises et Associations. */
+  ninea?: string;
+  /** Registre du commerce — valeur recopiée telle qu'elle figure sur l'avis. */
+  registry?: string;
+  /** Siège social enregistré (distinct du bureau de vente, s'il diffère). */
+  registeredOffice?: string;
+  /** Date d'immatriculation au format ISO « AAAA-MM-JJ » (champ date HTML). */
+  registrationDate?: string;
+  /** Activité principale déclarée. */
+  activity?: string;
+  /** Hébergeur du site — obligatoire dans des mentions légales complètes. */
+  hostName?: string;
+  hostAddress?: string;
+}
+
 export interface SiteSettings {
   companyName: string;
   projectName?: string;
@@ -310,6 +354,8 @@ export interface SiteSettings {
    * (ou absente) affiche toutes les sections.
    */
   hiddenSections?: string[];
+  /** Identité légale affichée dans le pied de page et sur /mentions-legales. */
+  legal?: LegalIdentity;
 }
 
 

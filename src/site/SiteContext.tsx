@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { BlogArticle, Language, Parcel, SiteSettings } from '../types';
+import { BlogArticle, Language, Parcel, SiteSettings, SiteView } from '../types';
 
 /**
  * Contexte partagé des sections éditables.
@@ -20,8 +20,11 @@ export interface SiteContextValue {
   language: Language;
   settings: SiteSettings;
   parcels: Parcel[];
-  /** Bascule entre les vues « home » et « masterplan » (History API). */
-  setActiveTab: (tab: 'home' | 'masterplan') => void;
+  /**
+   * Bascule entre les vues publiques « home », « masterplan » et « legal »
+   * (History API : l'URL suit, donc chaque vue reste partageable).
+   */
+  setActiveTab: (tab: SiteView) => void;
   /** Défilement vers une section par son id (ancres des blocs Puck). */
   scrollToSection: (id: string) => void;
   /** Ouvre la plaquette PDF ; absent si aucun gestionnaire n'est branché. */

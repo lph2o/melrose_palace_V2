@@ -24,12 +24,14 @@ import {
   Moon,
   FileText,
   Eye,
+  Landmark,
 } from 'lucide-react';
 import { Lead, SiteSettings, Parcel } from '../types';
 import { isAdminEmail } from '../lib/adminAuth';
 import { buildParcelSchedule, validateParcelPrices } from '../lib/payment';
 import AdminContentTab from './AdminContentTab';
 import AdminSectionsTab from './AdminSectionsTab';
+import AdminLegalTab from './AdminLegalTab';
 import {
   signInAdmin,
   signOutAdmin,
@@ -216,12 +218,13 @@ interface AdminPageProps {
   loading?: boolean;
 }
 
-type TabId = 'tarifs' | 'parcelles' | 'contact' | 'leads' | 'sections' | 'content';
+type TabId = 'tarifs' | 'parcelles' | 'contact' | 'legal' | 'leads' | 'sections' | 'content';
 
 const TABS: { id: TabId; label: string; short: string; icon: React.ReactNode }[] = [
   { id: 'tarifs', label: 'Tarifs & Échéancier', short: 'Tarifs', icon: <Calculator className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'parcelles', label: 'Parcelles : statut & prix', short: 'Parcelles', icon: <MapPin className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'contact', label: 'WhatsApp & Promotions', short: 'WhatsApp', icon: <MessageCircle className="w-4 h-4" strokeWidth={1.5} /> },
+  { id: 'legal', label: 'Identité légale', short: 'Légal', icon: <Landmark className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'leads', label: 'Demandes de contact', short: 'Demandes', icon: <Inbox className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'sections', label: 'Sections du site', short: 'Sections', icon: <Eye className="w-4 h-4" strokeWidth={1.5} /> },
   { id: 'content', label: 'Contenu du site', short: 'Contenu', icon: <FileText className="w-4 h-4" strokeWidth={1.5} /> },
@@ -1352,6 +1355,13 @@ export default function AdminPage({
                                 </div>
                               </div>
                             </div>
+                          )}
+
+                          {activeTab === 'legal' && (
+                            <AdminLegalTab
+                              settings={formData}
+                              onChange={(patch) => setFormData({ ...formData, ...patch })}
+                            />
                           )}
 
                           {activeTab === 'sections' && (

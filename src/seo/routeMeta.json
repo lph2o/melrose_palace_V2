@@ -3,6 +3,7 @@
   "routes": {
     "home": {
       "path": { "FR": "/fr", "EN": "/en" },
+      "sitemap": { "priority": "1.0", "changefreq": "weekly" },
       "meta": {
         "FR": {
           "title": "Acheter un terrain au Sénégal | Sébikhotane dès 300 €/mois",
@@ -26,6 +27,7 @@
     },
     "masterplan": {
       "path": { "FR": "/fr/plan", "EN": "/en/plan" },
+      "sitemap": { "priority": "0.8", "changefreq": "weekly" },
       "meta": {
         "FR": {
           "title": "Plan du domaine Sébikhotane | 54 parcelles avec NICAD",
@@ -44,6 +46,30 @@
           "shareTitle": "Cadastral map: all 54 plots in detail",
           "shareFooter": "OFFICIAL MAP  •  REAL-TIME AVAILABILITY  •  B1-B17 MARKERS",
           "kicker": "Cadastral map • Sebikhotane"
+        }
+      }
+    },
+    "legal": {
+      "path": { "FR": "/fr/mentions-legales", "EN": "/en/legal-notice" },
+      "sitemap": { "priority": "0.3", "changefreq": "yearly" },
+      "meta": {
+        "FR": {
+          "title": "Mentions légales | SCI SIC (NINEA 008387830)",
+          "description": "Société civile immobilière immatriculée au Sénégal : dénomination, NINEA 008387830, registre de commerce, siège social, hébergement et données personnelles.",
+          "ogImage": "/og/og-legal-fr.jpg",
+          "imageAlt": "Identité légale de l'éditeur du site — SCI SIC, NINEA 008387830, Dakar",
+          "shareTitle": "Mentions légales & identité de la société",
+          "shareFooter": "NINEA 008387830  •  SOCIÉTÉ IMMATRICULÉE EN 2021  •  DAKAR",
+          "kicker": "Informations légales • Sénégal"
+        },
+        "EN": {
+          "title": "Legal notice | SCI SIC (NINEA 008387830)",
+          "description": "The Senegalese real estate company behind this website: registered name, NINEA 008387830, trade register, registered office, hosting and personal data.",
+          "ogImage": "/og/og-legal-en.jpg",
+          "imageAlt": "Legal identity of the website publisher — SCI SIC, NINEA 008387830, Dakar",
+          "shareTitle": "Legal notice & company identity",
+          "shareFooter": "NINEA 008387830  •  REGISTERED IN 2021  •  DAKAR",
+          "kicker": "Legal information • Senegal"
         }
       }
     }

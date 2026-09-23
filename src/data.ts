@@ -37,6 +37,24 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   brochureUrl: `${SITE_MEDIA_BASE_URL}/pdf/Dun-Tni-Brochure-Premium.pdf`,
   heroImage: `${SITE_MEDIA_BASE_URL}/images/hero.jpg`,
   aerialImage: `${SITE_MEDIA_BASE_URL}/images/54_parcelles.png`,
+  // Identité légale — recopiée de l'avis d'immatriculation (NINEA) de la
+  // société, délivré à Dakar. Ce ne sont pas des textes marketing : chaque
+  // valeur est un identifiant ou une mention officielle, à ne pas reformuler.
+  // Le numéro de registre de commerce est reproduit tel quel (« Bordereau
+  // N° 00597 ») parce que c'est exactement ce que porte le document :
+  // l'afficher sous l'étiquette d'un numéro RCCM complet serait faux.
+  legal: {
+    legalName: 'SOCIETE CIVILE IMMOBILIERE SENEGAL IMMO CONSULTING',
+    tradeName: 'SCI SIC',
+    legalForm: 'Société Civile Immobilière',
+    ninea: '008387830',
+    registry: 'Bordereau N° 00597',
+    registeredOffice: 'Liberté 6, Immeuble Soda Marémé — Dakar, Sénégal',
+    registrationDate: '2021-02-19',
+    activity: "Activités des agences immobilières",
+    hostName: 'Vercel Inc.',
+    hostAddress: '440 N Barranca Ave #4133, Covina, CA 91723, États-Unis',
+  },
 };
 
 export const PAYMENT_SCHEDULE_TIERS = [
@@ -787,6 +805,46 @@ export const TRANSLATIONS = {
     },
     footerWord: 'Senegal Investment Consulting - Spécialiste de l\'aménagement foncier sécurisé et de l\'investissement immobilier au Sénégal.',
     allRightsReserved: 'Tous droits réservés. Senegal Investment Consulting.',
+    legal: {
+      sectionTag: 'INFORMATIONS LÉGALES',
+      breadcrumb: 'Mentions légales',
+      title: 'Mentions légales',
+      intro:
+        "Ce site est édité par la société immobilière sénégalaise qui porte le projet Dun Tni à Sébikhotane. Son identité légale est reproduite ci-dessous telle qu'elle figure sur son avis d'immatriculation délivré au Sénégal.",
+      identityTitle: "Identité de l'éditeur du site",
+      identityNote:
+        "Ces informations proviennent de l'avis d'immatriculation (NINEA) délivré par le Service régional de la statistique et de la démographie de Dakar. Elles sont vérifiables avant tout paiement, comme l'ensemble du dossier foncier.",
+      labels: {
+        legalName: 'Dénomination sociale',
+        tradeName: 'Enseigne / sigle',
+        legalForm: 'Forme juridique',
+        ninea: 'NINEA',
+        registry: 'Registre du commerce',
+        registeredOffice: 'Siège social',
+        registrationDate: "Date d'immatriculation",
+        activity: 'Activité principale',
+        hostName: 'Hébergeur',
+        hostAddress: 'Adresse',
+      },
+      hostTitle: 'Hébergement du site',
+      hostIntro: 'Le site est hébergé par :',
+      propertyTitle: 'Propriété intellectuelle',
+      propertyBody:
+        "Les textes, photographies, vues aériennes, plans cadastraux, marques et logos présents sur ce site sont protégés. Toute reproduction ou représentation, totale ou partielle, sans autorisation écrite préalable de l'éditeur est interdite.",
+      dataTitle: 'Données personnelles',
+      dataBody:
+        "Les informations transmises par les formulaires, par e-mail ou par WhatsApp servent uniquement à traiter votre demande : envoi du dossier, disponibilité des parcelles, suivi de votre acquisition. Elles ne sont ni vendues ni cédées à des tiers. Vous pouvez demander à les consulter, les corriger ou les supprimer en écrivant à l'adresse de contact ci-dessous.",
+      liabilityTitle: 'Informations & responsabilité',
+      liabilityBody:
+        "Les disponibilités, surfaces et prix présentés sur ce site sont indicatifs et susceptibles d'évoluer. Seuls les documents contractuels signés — délibération, acte de vente, échéancier — engagent l'éditeur. Les perspectives de valorisation et les projets d'infrastructure cités décrivent des programmes publics ou des prestations optionnelles, sans constituer une garantie de résultat.",
+      contactTitle: 'Contact',
+      contactIntro: 'Pour toute question relative aux présentes mentions légales :',
+      footerTitle: 'Identité légale',
+      footerLink: 'Mentions légales',
+      backHome: "Retour à l'accueil",
+      emptyNote:
+        "L'identité légale de l'éditeur n'a pas encore été renseignée.",
+    },
     ui: {
       heroExplorePlan: 'Explorer le Plan',
       visionOverlayBadge: 'Orthophoto Drone • 54 Parcelles',
@@ -1084,6 +1142,45 @@ export const TRANSLATIONS = {
     },
     footerWord: 'Senegal Investment Consulting - Specialized in secure land development and real estate investment in Senegal.',
     allRightsReserved: 'All rights reserved. Senegal Investment Consulting.',
+    legal: {
+      sectionTag: 'LEGAL INFORMATION',
+      breadcrumb: 'Legal notice',
+      title: 'Legal notice',
+      intro:
+        'This website is published by the Senegalese real estate company behind the Dun Tni project in Sebikotane. Its legal identity is reproduced below exactly as it appears on the registration notice issued in Senegal.',
+      identityTitle: 'Publisher identity',
+      identityNote:
+        'These details come from the registration notice (NINEA) issued by the Regional Statistics and Demography Service of Dakar. They can be verified before any payment, like the rest of the land file.',
+      labels: {
+        legalName: 'Registered name',
+        tradeName: 'Trade name',
+        legalForm: 'Legal form',
+        ninea: 'NINEA',
+        registry: 'Trade register',
+        registeredOffice: 'Registered office',
+        registrationDate: 'Registration date',
+        activity: 'Main activity',
+        hostName: 'Host',
+        hostAddress: 'Address',
+      },
+      hostTitle: 'Hosting',
+      hostIntro: 'This website is hosted by:',
+      propertyTitle: 'Intellectual property',
+      propertyBody:
+        'All content on this website (texts, photographs, aerial views, cadastral plans, trademarks and logos) is protected. Any reproduction or representation, in whole or in part, without the prior written consent of the publisher is prohibited.',
+      dataTitle: 'Personal data',
+      dataBody:
+        'Information sent through the forms, by email or via WhatsApp is used solely to handle your request: sending the file, plot availability, and follow-up on your purchase. It is never sold or passed to third parties. You may request access to, correction of, or deletion of your data by writing to the contact address below.',
+      liabilityTitle: 'Information & liability',
+      liabilityBody:
+        'Availability, areas and prices shown on this site are indicative and may change. Only signed contractual documents — deliberation, deed of sale, payment schedule — bind the publisher. Growth prospects and infrastructure projects mentioned describe public programmes or optional services and do not constitute a guarantee of results.',
+      contactTitle: 'Contact',
+      contactIntro: 'For any question regarding this legal notice:',
+      footerTitle: 'Company information',
+      footerLink: 'Legal notice',
+      backHome: 'Back to home',
+      emptyNote: 'The publisher legal identity has not been filled in yet.',
+    },
     ui: {
       heroExplorePlan: 'Explore the Plan',
       visionOverlayBadge: 'Drone Orthophoto • 54 Plots',

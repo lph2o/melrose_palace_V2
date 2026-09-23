@@ -32,8 +32,9 @@
          Le build (`npm run build`) exécute scripts/prerender-routes.cjs, qui
          réécrit TOUT ce bloc, avec les URLs absolues du domaine, dans
          dist/index.html et dans une page par route (/fr, /en, /fr/plan,
-         /en/plan). C'est ce HTML-là que lisent WhatsApp, Facebook, LinkedIn et
-         X — qui n'exécutent pas le JavaScript.
+         /en/plan, /fr/mentions-legales, /en/legal-notice). C'est ce HTML-là que
+         lisent WhatsApp, Facebook, LinkedIn et X — qui n'exécutent pas le
+         JavaScript.
 
          Les textes viennent de src/seo/routeMeta.json (source unique, aussi
          utilisée côté client par src/lib/seo.ts). Ne pas éditer les balises

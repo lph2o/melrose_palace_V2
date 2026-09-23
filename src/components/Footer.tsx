@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
-import { Language, SiteSettings } from '../types';
+import { Language, LegalIdentity, SiteSettings, SiteView } from '../types';
 import { TRANSLATIONS, ESTATE_AREA_RANGE } from '../data';
+import { FOOTER_FIELDS, legalRows, resolveLegalIdentity } from '../lib/legalIdentity';
 import {
   Mail,
   ArrowRight,
@@ -27,10 +28,76 @@ const NEWSLETTER_LEAD_INTEREST = 'Veille foncière & opportunités';
 
 interface FooterProps {
   currentLanguage: Language;
-  setActiveTab: (tab: 'home' | 'masterplan') => void;
+  setActiveTab: (tab: SiteView) => void;
   settings?: SiteSettings;
   onOpenBrochure?: () => void;
   onOpenShare?: () => void;
+}
+
+/**
+ * Bloc « identité légale » du pied de page.
+ *
+ * Volontairement discret mais complet : sur un site qui vend du foncier à la
+ * diaspora, la société qui encaisse doit être identifiable sans ouvrir un PDF.
+ * Le détail (hébergeur, données personnelles, responsabilité) vit sur la page
+ * Mentions légales, atteignable par le lien juste à côté.
+ */
+function LegalIdentityBlock({
+  identity,
+  language,
+  onOpenLegal,
+}: {
+  identity: LegalIdentity;
+  language: Language;
+  onOpenLegal?: () => void;
+}) {
+  const isFR = language === 'FR';
+  const copy = TRANSLATIONS[language].legal;
+  const rows = legalRows(identity, FOOTER_FIELDS, copy.labels, language);
+
+  return (
+    <div className="mt-12 pt-8 border-t border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-micro font-bold font-mono uppercase text-secondary-fixed tracking-wider">
+          {copy.footerTitle}
+        </span>
+        {onOpenLegal && (
+          <button
+            onClick={onOpenLegal}
+            className="text-caption font-semibold text-secondary-fixed hover:text-white underline transition-colors cursor-pointer min-h-[44px] inline-flex items-center"
+          >
+            {copy.footerLink} →
+          </button>
+        )}
+      </div>
+
+      {/* `m-0` / `ml-0` sur `dl` et `dd` : leurs marges par défaut (1em
+          vertical, 40px à gauche) ne sont pas réinitialisées par la feuille de
+          style du site et décaleraient les valeurs sous leurs libellés. */}
+      {rows.length === 0 ? (
+        <p className="text-caption text-white/60 font-light mt-2">{copy.emptyNote}</p>
+      ) : (
+        <dl className="m-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2.5 mt-3">
+          {rows.map((row) => (
+            <div key={row.field} className="min-w-0">
+              <dt className="text-micro font-mono uppercase tracking-wider text-white/50">
+                {row.label}
+              </dt>
+              <dd
+                className={`ml-0 text-caption text-white/85 ${
+                  row.field === 'ninea' || row.field === 'registry'
+                    ? 'font-mono font-bold tracking-wide'
+                    : 'font-light'
+                }`}
+              >
+                {row.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
 }
 
 export default function Footer({
@@ -66,6 +133,9 @@ export default function Footer({
   const newsletterEmail = settings?.contactEmail || 'globalequalite@gmail.com';
 
   const whatsappClean = settings?.whatsappCleanNumber || '33761235509';
+
+  // Identité légale effective (défauts du site + surcharges de l'Espace Gérant).
+  const legalIdentity = resolveLegalIdentity(settings);
 
   // Liens de partage directs (mêmes intentions que la modale de partage, mais
   // accessibles en un clic depuis le pied de page).
@@ -361,8 +431,18 @@ export default function Footer({
           </div>
         </div>
 
+        {/* Identité légale de l'éditeur (société, NINEA, registre, siège) */}
+        <LegalIdentityBlock
+          identity={legalIdentity}
+          language={currentLanguage}
+          onOpenLegal={() => {
+            setActiveTab('legal');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+
         {/* Lower row details */}
-        <div className="mt-12 text-center md:text-left text-white/60 text-caption border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2">
+        <div className="mt-8 text-center md:text-left text-white/60 text-caption border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-2">
           <div className="flex items-center space-x-3">
             <span>&copy; 2026 {t.allRightsReserved}</span>
             {/* L'accès gestionnaire a été volontairement retiré des pages

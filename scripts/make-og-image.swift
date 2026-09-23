@@ -2,7 +2,7 @@
 // 1200 × 630, aux couleurs de la marque, sans dépendance externe
 // (CoreGraphics + CoreText, fournis par macOS).
 //
-// Usage — les quatre visuels du site, un par route et par langue :
+// Usage — les six visuels du site, un par route et par langue :
 //
 //   swift scripts/make-og-image.swift --photo public/images/54_parcelles.png \
 //     --out public/og/og-home-fr.jpg --kicker "Sébikhotane • Sénégal" \
@@ -27,6 +27,23 @@
 //     --title "Cadastral map: all 54 plots in detail" \
 //     --subtitle "Certified B1-B17 boundary markers, real-time availability and financing simulator." \
 //     --footer "OFFICIAL MAP  •  REAL-TIME AVAILABILITY  •  B1-B17 MARKERS"
+//
+//   swift scripts/make-og-image.swift --photo public/images/54_parcelles.png \
+//     --out public/og/og-legal-fr.jpg --kicker "Informations légales • Sénégal" \
+//     --title "Mentions légales & identité de la société" \
+//     --subtitle "SCI SIC — NINEA 008387830 — société civile immobilière immatriculée à Dakar." \
+//     --footer "NINEA 008387830  •  SOCIÉTÉ IMMATRICULÉE EN 2021  •  DAKAR"
+//
+//   swift scripts/make-og-image.swift --photo public/images/54_parcelles.png \
+//     --out public/og/og-legal-en.jpg --kicker "Legal information • Senegal" \
+//     --title "Legal notice & company identity" \
+//     --subtitle "SCI SIC — NINEA 008387830 — Senegalese real estate company registered in Dakar." \
+//     --footer "NINEA 008387830  •  REGISTERED IN 2021  •  DAKAR"
+//
+// Si `swift` refuse de démarrer l'interpréteur (erreur « JIT session error »
+// sur certaines machines), compiler d'abord puis exécuter le binaire :
+//
+//   swiftc -O -o /tmp/make-og scripts/make-og-image.swift && /tmp/make-og ...
 //
 // Toutes les options sont obligatoires sauf --footer.
 //

@@ -1,5 +1,6 @@
-import { Language, SiteSettings } from '../types';
+import { Language, SiteSettings, SiteView } from '../types';
 import { COMPLEMENTARY_PACKS, FAQ_ITEMS } from '../data';
+import { resolveLegalIdentity } from './legalIdentity';
 import routeMetaJson from '../seo/routeMeta.json';
 
 /**
@@ -11,22 +12,26 @@ import routeMetaJson from '../seo/routeMeta.json';
  * servi. C'est pourquoi les mêmes copies existent à deux endroits :
  *
  *  1. `scripts/prerender-routes.cjs` (postbuild) écrit un `dist/<route>/index.html`
- *     par route (/fr, /en, /fr/plan, /en/plan) avec le <head> complet — c'est ce
- *     que lisent les crawlers qui n'exécutent pas JS ;
+ *     par route (/fr, /en, /fr/plan, /en/plan, /fr/mentions-legales,
+ *     /en/legal-notice) avec le <head> complet — c'est ce que lisent les
+ *     crawlers qui n'exécutent pas JS ;
  *  2. ce module réapplique les mêmes valeurs côté client à chaque navigation /
  *     changement de langue (titre, description, OG, Twitter, canonical,
  *     hreflang, JSON-LD, noindex sur /admin).
  *
  * Les deux lisent **`src/seo/routeMeta.json`** : une seule source de vérité, donc
- * aucune dérive possible entre le HTML pré-rendu et la version client.
+ * aucune dérive possible entre le HTML pré-rendu et la version client. Le
+ * sitemap (`scripts/generate-seo-files.cjs`, prebuild) y lit également ses
+ * routes : `sitemap.xml` et les balises pré-rendues ne peuvent pas diverger.
  *
  * Les images de partage (`public/og/*.jpg`, 1200×630) sont générées par
  * `swift scripts/make-og-image.swift` et servies depuis notre propre domaine
  * (pas de dépendance à Supabase pour une requête de crawler).
  */
 
-export type SeoView = 'home' | 'masterplan' | 'admin';
-export type PublicView = 'home' | 'masterplan';
+export type SeoView = SiteView | 'admin';
+/** Vues publiées et indexables — chacune a sa route dans `routeMeta.json`. */
+export type PublicView = SiteView;
 
 /* ------------------------------------------------------------------ */
 /* Source unique de vérité (partagée avec scripts/prerender-routes.cjs) */
@@ -44,10 +49,27 @@ export interface RouteMeta {
   kicker: string;
 }
 
-const PUBLISHED_ROUTES = routeMetaJson.routes as Record<
-  PublicView,
-  { path: Record<Language, string>; meta: Record<Language, RouteMeta> }
->;
+/**
+ * Indications de crawl d'une route, lues par le prébuild
+ * (`scripts/generate-seo-files.cjs`) pour écrire sitemap.xml. Elles vivent à
+ * côté de `path` et `meta` pour qu'ajouter une vue reste une édition du seul
+ * `routeMeta.json` : un sitemap qui liste des URLs que le pré-rendu ignore (ou
+ * l'inverse) est la panne SEO la plus banale et la plus silencieuse.
+ */
+export interface SitemapHints {
+  /** Priorité relative « 0.0 »–« 1.0 » : oriente la visite, ne l'accélère pas. */
+  priority: string;
+  /** Fréquence de modification annoncée : « weekly », « monthly », « yearly »… */
+  changefreq: string;
+}
+
+export interface PublicRouteMeta {
+  path: Record<Language, string>;
+  sitemap: SitemapHints;
+  meta: Record<Language, RouteMeta>;
+}
+
+const PUBLISHED_ROUTES = routeMetaJson.routes as Record<PublicView, PublicRouteMeta>;
 const ADMIN_META = routeMetaJson.admin as Record<Language, { title: string; description: string }>;
 
 /** Métadonnées d'une route publique dans une langue. */
@@ -63,9 +85,19 @@ export function detectLanguageFromPath(pathname: string): Language {
   return pathname.startsWith('/en') ? 'EN' : 'FR';
 }
 
-/** Vue déduite du chemin : suffixe « /plan » → masterplan, sinon home (admin géré à part). */
-export function detectViewFromPath(pathname: string): 'home' | 'masterplan' {
-  return /^\/(?:fr|en)?\/plan(?:\/|$)/.test(pathname) ? 'masterplan' : 'home';
+/**
+ * Vue déduite du chemin : « /plan » → masterplan, mentions légales → legal,
+ * sinon home (admin géré à part).
+ *
+ * Chaque chaîne reconnue ici doit exister dans les deux langues dans
+ * `src/seo/routeMeta.json` : la page est pré-rendue par langue, et une route
+ * absente du JSON ferait planter le postbuild.
+ */
+export function detectViewFromPath(pathname: string): SiteView {
+  if (/^\/(?:fr|en)?\/plan(?:\/|$)/.test(pathname)) return 'masterplan';
+  if (/^\/(?:fr|en)?\/mentions-legales(?:\/|$)/.test(pathname)) return 'legal';
+  if (/^\/(?:fr|en)?\/legal-notice(?:\/|$)/.test(pathname)) return 'legal';
+  return 'home';
 }
 
 /** Chemin canonique d'une vue publique dans une langue. */
@@ -121,8 +153,18 @@ function upsertJsonLd(id: string, data: unknown) {
 /* JSON-LD                                                             */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Fiche `Organization` de la marque, complétée par l'identité légale.
+ *
+ * Les identifiants officiels (NINEA, dénomination immatriculée, date
+ * d'immatriculation) sont ceux que le moteur peut rapprocher d'un site
+ * institutionnel : c'est ce qui distingue une société réelle d'une page de
+ * vente anonyme, exactement comme sur la page Mentions légales. Seuls les
+ * champs renseignés sont publiés — pas de clé vide.
+ */
 function organizationLd(settings: SiteSettings, url: string, image: string) {
-  return {
+  const identity = resolveLegalIdentity(settings);
+  const ld: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': ['Organization', 'RealEstateAgent'],
     name: settings.companyName,
@@ -138,6 +180,15 @@ function organizationLd(settings: SiteSettings, url: string, image: string) {
     areaServed: { '@type': 'Country', name: 'Sénégal' },
     priceRange: '€€',
   };
+
+  if (identity.legalName) ld.legalName = identity.legalName;
+  if (identity.ninea) {
+    ld.taxID = identity.ninea;
+    ld.identifier = { '@type': 'PropertyValue', name: 'NINEA', value: identity.ninea };
+  }
+  if (identity.registrationDate) ld.foundingDate = identity.registrationDate;
+
+  return ld;
 }
 
 function productLd(settings: SiteSettings, url: string, lang: Language, image: string) {
@@ -174,15 +225,20 @@ function faqLd(settings: SiteSettings, lang: Language) {
   };
 }
 
-function breadcrumbLd(url: string, lang: Language) {
+function breadcrumbLd(view: PublicView, url: string, lang: Language) {
   const home = lang === 'FR' ? 'Accueil' : 'Home';
-  const plan = lang === 'FR' ? 'Plan du domaine' : 'Domain map';
+  const crumb =
+    view === 'masterplan'
+      ? { FR: 'Plan du domaine', EN: 'Domain map' }
+      : { FR: 'Mentions légales', EN: 'Legal notice' };
+  // La racine se déduit du chemin de la vue (elle seule est commune aux pages).
+  const homeUrl = url.replace(/\/(?:plan|mentions-legales|legal-notice)$/, '');
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: home, item: url.replace(/\/plan$/, '') },
-      { '@type': 'ListItem', position: 2, name: plan, item: url },
+      { '@type': 'ListItem', position: 1, name: home, item: homeUrl },
+      { '@type': 'ListItem', position: 2, name: crumb[lang], item: url },
     ],
   };
 }
@@ -269,8 +325,8 @@ export function applySeo({ settings, language, view }: SeoInput) {
   const faq = faqLd(settings, language);
   if (faq) upsertJsonLd('ld-faq', faq);
   else document.getElementById('ld-faq')?.remove();
-  if (view === 'masterplan') {
-    upsertJsonLd('ld-breadcrumb', breadcrumbLd(url, language));
+  if (view === 'masterplan' || view === 'legal') {
+    upsertJsonLd('ld-breadcrumb', breadcrumbLd(view, url, language));
   } else {
     document.getElementById('ld-breadcrumb')?.remove();
   }

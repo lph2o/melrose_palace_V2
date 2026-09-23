@@ -57,31 +57,38 @@ const robots = isProd
 fs.writeFileSync(path.join(ROOT, 'public', 'robots.txt'), robots);
 
 /* ------------------------------------------------------------------ */
-/* sitemap.xml (routes par langue + vues)                              */
+/* sitemap.xml                                                         */
 /* ------------------------------------------------------------------ */
 
-const views = [
-  { suffix: '', fr: '/fr', en: '/en', priority: '1.0', freq: 'weekly' },
-  { suffix: '/plan', fr: '/fr/plan', en: '/en/plan', priority: '0.8', freq: 'weekly' },
-];
+// Les routes publiques viennent de `src/seo/routeMeta.json` — la même source
+// que le pré-rendu des balises de partage (scripts/prerender-routes.cjs) et que
+// le client (src/lib/seo.ts). Ajouter une vue (`home`, `masterplan`, `legal`…)
+// se fait donc dans ce JSON seul, jamais ici : un sitemap qui liste une URL
+// absente du pré-rendu (ou l'inverse) est une divergence invisible, et un
+// sitemap qui annonce `/admin` enverrait les crawlers sur l'espace gérant.
+const routeMeta = require(path.join(ROOT, 'src', 'seo', 'routeMeta.json'));
 
 let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
 sitemap +=
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
   'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
 
-for (const view of views) {
+for (const view of Object.values(routeMeta.routes)) {
+  // Une entrée par langue, avec des hreflang réciproques entre elles.
   const entries = [
-    { lang: 'fr', url: view.fr },
-    { lang: 'en', url: view.en },
+    { lang: 'fr', url: view.path.FR },
+    { lang: 'en', url: view.path.EN },
   ];
   for (const entry of entries) {
     sitemap += '  <url>\n';
     sitemap += `    <loc>${SITE_URL}${entry.url}</loc>\n`;
     sitemap += `    <lastmod>${today}</lastmod>\n`;
-    sitemap += `    <changefreq>${view.freq}</changefreq>\n`;
-    sitemap += `    <priority>${view.priority}</priority>\n`;
-    // hreflang réciproques dans le sitemap
+    if (view.sitemap?.changefreq) {
+      sitemap += `    <changefreq>${view.sitemap.changefreq}</changefreq>\n`;
+    }
+    if (view.sitemap?.priority) {
+      sitemap += `    <priority>${view.sitemap.priority}</priority>\n`;
+    }
     for (const alt of entries) {
       sitemap += `    <xhtml:link rel="alternate" hreflang="${alt.lang}" href="${SITE_URL}${alt.url}" />\n`;
     }

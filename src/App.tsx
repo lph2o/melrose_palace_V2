@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import MasterPlanPage from './components/MasterPlanPage';
+import LegalNoticePage from './components/LegalNoticePage';
 import Footer from './components/Footer';
 import SearchModal from './components/SearchModal';
 import BlogModal from './components/BlogModal';
@@ -10,7 +11,7 @@ import { SiteProvider } from './site/SiteContext';
 import BrochureModal from './components/BrochureModal';
 import ShareSiteModal from './components/ShareSiteModal';
 import WhatsAppFloatingButton from './components/WhatsAppFloatingButton';
-import { Language, BlogArticle, SiteSettings, Parcel } from './types';
+import { Language, BlogArticle, SiteSettings, Parcel, SiteView } from './types';
 import { DEFAULT_SITE_SETTINGS, PARCELS, reconcileParcelArea } from './data';
 import { applySeo, detectLanguageFromPath, detectViewFromPath, langViewPath } from './lib/seo';
 import {
@@ -33,11 +34,12 @@ const AdminEditorPage = lazy(() => import('./components/AdminEditorPage'));
 
 export default function App() {
   // Langue et vue initialisées depuis l'URL : /fr, /en, /fr/plan, /en/plan,
-  // /plan (FR) — et '/' par défaut (FR). URLs distinctes = SEO multilingue.
+  // /fr/mentions-legales, /en/legal-notice — et '/' par défaut (FR). URLs
+  // distinctes = SEO multilingue.
   const [language, setLanguageState] = useState<Language>(() =>
     detectLanguageFromPath(window.location.pathname)
   );
-  const [activeTab, setActiveTabState] = useState<'home' | 'masterplan'>(() =>
+  const [activeTab, setActiveTabState] = useState<SiteView>(() =>
     detectViewFromPath(window.location.pathname)
   );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -230,7 +232,7 @@ export default function App() {
     }
   };
 
-  const setActiveTab = (tab: 'home' | 'masterplan') => {
+  const setActiveTab = (tab: SiteView) => {
     setActiveTabState(tab);
     if (!onAdminRoute()) {
       window.history.pushState({}, '', langViewPath(language, tab));
@@ -390,7 +392,9 @@ export default function App() {
       <Navbar
         currentLanguage={language}
         setLanguage={setLanguage}
-        activeTab={activeTab}
+        // La barre ne connaît que « accueil » et « plan » : les mentions
+        // légales sont une page de service, aucun onglet n'y mène.
+        activeTab={activeTab === 'legal' ? 'home' : activeTab}
         setActiveTab={setActiveTab}
         scrollToSection={scrollToSection}
         onSearchTrigger={() => setIsSearchOpen(true)}
@@ -402,7 +406,7 @@ export default function App() {
       {/* Main Core Screen Contents Layer */}
       <main className="flex-grow">
         <AnimatePresence mode="wait">
-          {activeTab === 'home' ? (
+          {activeTab === 'home' && (
             <motion.div
               key="landing"
               initial={{ opacity: 0, y: 10 }}
@@ -412,7 +416,8 @@ export default function App() {
             >
               <HomePage />
             </motion.div>
-          ) : (
+          )}
+          {activeTab === 'masterplan' && (
             <motion.div
               key="masterplan"
               initial={{ opacity: 0, y: 10 }}
@@ -428,6 +433,17 @@ export default function App() {
                 settings={settings}
                 parcels={parcels}
               />
+            </motion.div>
+          )}
+          {activeTab === 'legal' && (
+            <motion.div
+              key="legal"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <LegalNoticePage setActiveTab={setActiveTab} />
             </motion.div>
           )}
         </AnimatePresence>

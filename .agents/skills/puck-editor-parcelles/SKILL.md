@@ -334,7 +334,8 @@ Deux implémentations divergentes = un canevas qui ne ressemble plus au site.
 - `noindex, nofollow` + canonical `/admin/editor` : `src/lib/seo.ts` (branche
   `view === 'admin'`).
 - Exclu du sitemap par construction (`scripts/generate-seo-files.cjs` ne liste
-  que `/fr`, `/en`, `/fr/plan`, `/en/plan`) et bloqué dans `robots.txt` par
+  que les routes publiques de `src/seo/routeMeta.json` : `/fr`, `/en`,
+  `/fr/plan`, `/en/plan`, `/fr/mentions-legales`, `/en/legal-notice`) et bloqué dans `robots.txt` par
   `Disallow: /admin` (préfixe, couvre donc `/admin/editor`).
 - L'éditeur est chargé en `lazy()` **et** le site public passe par
   `@puckeditor/core/rsc` (render-only) + zéro CSS Puck : vérifié par le build

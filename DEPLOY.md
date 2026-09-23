@@ -10,7 +10,7 @@ Runbook du déploiement du site (SPA **Vite + React 19 + Tailwind v4**, contenu 
 | `.vercelignore` | exclut du téléversement CLI les artefacts locaux (audit mobile, `dist/`, `.DS_Store`) |
 | `scripts/generate-seo-files.cjs` | généré avant chaque build (`prebuild`) : `robots.txt` + `sitemap.xml` |
 
-Le site est un **SPA à routes réelles** (`/fr`, `/en`, `/fr/plan`, `/en/plan`, `/admin`, `/admin/editor`) : sans le fallback
+Le site est un **SPA à routes réelles** (`/fr`, `/en`, `/fr/plan`, `/en/plan`, `/fr/mentions-legales`, `/en/legal-notice`, `/admin`, `/admin/editor`) : sans le fallback
 `rewrites → /index.html`, un accès direct à `/fr/plan` renverrait un 404. Les fichiers statiques (`robots.txt`,
 `sitemap.xml`, `/images`, `/videos`, `/pdf`) restent servis tels quels, Vercel vérifiant le système de fichiers avant
 d'appliquer la réécriture.
@@ -76,6 +76,7 @@ Le build écrit donc un vrai fichier par route, avec ses propres balises :
 | `dist/index.html` | `/` (repli SPA, carte FR) |
 | `dist/fr/index.html`, `dist/en/index.html` | `/fr`, `/en` |
 | `dist/fr/plan/index.html`, `dist/en/plan/index.html` | `/fr/plan`, `/en/plan` |
+| `dist/fr/mentions-legales/index.html`, `dist/en/legal-notice/index.html` | `/fr/mentions-legales`, `/en/legal-notice` |
 | `dist/admin/index.html`, `dist/admin/editor/index.html` | `/admin`, `/admin/editor` (`noindex`) |
 
 Vercel sert un fichier existant **avant** d'appliquer la réécriture SPA de `vercel.json` : ces pages
@@ -85,7 +86,7 @@ mêmes balises via `src/lib/seo.ts`).
 - Textes : **`src/seo/routeMeta.json`** — source unique, utilisée à la fois par le build
   (`scripts/prerender-routes.cjs`, postbuild) et par le client (`src/lib/seo.ts`). Modifier une
   accroche de partage se fait donc **dans ce JSON**, jamais dans les balises de `index.html`.
-- Images : `public/og/og-{home,plan}-{fr,en}.jpg` (1200×630), générées par
+- Images : `public/og/og-{home,plan,legal}-{fr,en}.jpg` (1200×630), générées par
   `swift scripts/make-og-image.swift` (voir l'en-tête du script pour la commande exacte), puis
   déployées depuis notre domaine. Régénérer si le visuel ou l'accroche changent.
 - Origine des URLs absolues : `SITE_URL`, sinon l'URL Vercel détectée automatiquement. En local,
@@ -108,7 +109,7 @@ curl -s  https://<domaine>/sitemap.xml | head    # URLs sur le bon domaine
 curl -sI https://<domaine>/admin/editor | grep -i x-robots-tag
 
 # Carte de partage propre à chaque route (doivent tous différer)
-for p in /fr /en /fr/plan /en/plan; do
+for p in /fr /en /fr/plan /en/plan /fr/mentions-legales /en/legal-notice; do
   echo "$p  $(curl -s https://<domaine>$p | grep -o '<title>[^<]*')"
   curl -s https://<domaine>$p | grep -o 'og:image" content="[^"]*"'
 done
